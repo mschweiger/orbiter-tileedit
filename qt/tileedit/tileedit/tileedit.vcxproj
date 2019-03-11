@@ -133,6 +133,7 @@
     <ClInclude Include="cmap.h" />
     <ClInclude Include="ddsread.h" />
     <ClInclude Include="elvread.h" />
+    <ClInclude Include="resource.h" />
     <ClInclude Include="tile.h" />
     <QtMoc Include="tilecanvas.h">
       <IncludePath Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.\GeneratedFiles;.;$(QTDIR)\include;.\GeneratedFiles\$(ConfigurationName);$(QTDIR)\include\QtCore;$(QTDIR)\include\QtGui;$(QTDIR)\include\QtANGLE;$(QTDIR)\include\QtWidgets</IncludePath>

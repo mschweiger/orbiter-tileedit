@@ -78,18 +78,23 @@ protected:
 class ElevTile : public Tile
 {
 public:
+	ElevTile(const ElevTile &etile);
 	static ElevTile *Load(const std::string &root, int lvl, int ilat, int ilng);
 	const std::string Layer() const { return std::string("Elev"); }
 	double nodeElevation(int ndx, int ndy);
+	ElevData &getData() { return m_edata; }
+	ElevData &getBaseData() { return m_edataBase; }
+	void dataChanged(int exmin = -1, int exmax = -1, int eymin = -1, int eymax = -1) { ExtractImage(exmin, exmax, eymin, eymax); }
 
 protected:
 	ElevTile(int lvl, int ilat, int ilng);
 	bool Load(const std::string &root);
 	void LoadSubset(const std::string &root, ElevTile *tile);
-	void ExtractImage();
+	void ExtractImage(int exmin = -1, int exmax = -1, int eymin = -1, int eymax = -1);
 
 private:
-	ElevData edata;
+	ElevData m_edata;
+	ElevData m_edataBase;
 };
 
 #endif // TILE_H

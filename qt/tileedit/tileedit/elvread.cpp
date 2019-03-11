@@ -1,5 +1,6 @@
 #include <windows.h>
 #include <vector>
+#include <algorithm>
 #include "elvread.h"
 
 #define TILE_FILERES 256
@@ -21,6 +22,33 @@ struct ELEVFILEHEADER { // file header for patch elevation data file
 };
 
 #pragma pack(pop)
+
+ElevData::ElevData()
+{
+	width = 0;
+	height = 0;
+	dmin = 0;
+	dmax = 0;
+}
+
+ElevData::ElevData(const ElevData &edata)
+	: width(edata.width)
+	, height(edata.height)
+	, data(edata.data)
+	, dmin(edata.dmin)
+	, dmax(edata.dmax)
+{
+}
+
+ElevData &ElevData::operator=(const ElevData &edata)
+{
+	width = edata.width;
+	height = edata.height;
+	data = edata.data;
+	dmin = edata.dmin;
+	dmax = edata.dmax;
+	return *this;
+}
 
 ElevData ElevData::SubTile(const std::pair<DWORD, DWORD> &xrange, const std::pair<DWORD, DWORD> &yrange)
 {
@@ -89,6 +117,8 @@ ElevData elvread(const char *fname)
 		for (i = 0; i < ndat; i++)
 			e[i] += ofs16;
 	}
+	edata.dmin = *std::min_element(edata.data.begin(), edata.data.end());
+	edata.dmax = *std::max_element(edata.data.begin(), edata.data.end());
 	return edata;
 }
 
@@ -136,4 +166,6 @@ void elvmodread(const char *fname, ElevData &edata)
 		break;
 	}
 	fclose(f);
+	edata.dmin = *std::min_element(edata.data.begin(), edata.data.end());
+	edata.dmax = *std::max_element(edata.data.begin(), edata.data.end());
 }

@@ -16,7 +16,12 @@ class TileCanvas: public QWidget
     friend class TileCanvasOverlay;
 
 public:
-    explicit TileCanvas(QWidget *parent = 0);
+	enum GlyphMode {
+		GLYPHMODE_NAVIGATE,
+		GLYPHMODE_CROSSHAIR
+	};
+
+	explicit TileCanvas(QWidget *parent = 0);
     ~TileCanvas();
 
 	const Tile *tile() const{ return m_tile; }
@@ -27,8 +32,10 @@ public:
     void enterEvent(QEvent *event);
     void leaveEvent(QEvent *event);
     void mouseMoveEvent(QMouseEvent *event);
+	void mousePressEvent(QMouseEvent *event);
     void mouseReleaseEvent(QMouseEvent *event);
     void setImage(const Tile *tile);
+	void setGlyphMode(GlyphMode mode);
 
 protected:
     void updateGlyph(int mx, int my);
@@ -42,11 +49,14 @@ private:
     int m_ilng;
     int m_nlat;
     int m_nlng;
+	GlyphMode m_glyphMode;
 
 signals:
     void tileChanged(int lvl, int ilat, int ilng);
 	void tileEntered(TileCanvas *canvas);
 	void mouseMovedInCanvas(int canvasIdx, QMouseEvent *event);
+	void mousePressedInCanvas(int canvasIdx, QMouseEvent *event);
+	void mouseReleasedInCanvas(int canvasIdx, QMouseEvent *event);
 };
 
 class TileCanvasOverlay: public QWidget
@@ -73,8 +83,10 @@ public:
     explicit TileCanvasOverlay(QWidget *parent = 0);
     Glyph glyph() const { return m_glyph; }
     void setGlyph(Glyph glyph);
+	void setCrosshair(int x, int y);
     void paintEvent(QPaintEvent *event);
     void mouseMoveEvent(QMouseEvent *event);
+	void mousePressEvent(QMouseEvent *event);
     void mouseReleaseEvent(QMouseEvent *event);
 
 private:

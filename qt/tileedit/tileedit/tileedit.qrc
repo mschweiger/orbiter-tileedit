@@ -1,4 +1,9 @@
 <RCC>
-    <qresource prefix="tileedit">
-    </qresource>
+  <qresource prefix="/tileedit">
+    <file>resources/icon_elevedit_random.png</file>
+    <file>resources/icon_elevedit_erase.png</file>
+    <file>resources/icon_navigate.png</file>
+    <file>resources/icon_elevedit.png</file>
+    <file>resources/icon_elevedit_paint.png</file>
+  </qresource>
 </RCC>

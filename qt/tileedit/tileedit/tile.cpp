@@ -127,10 +127,16 @@ ElevTile::ElevTile(int lvl, int ilat, int ilng)
 	lng_subrange.second = 256;
 }
 
+ElevTile::ElevTile(const ElevTile &etile)
+	: Tile(etile)
+	, m_edata(etile.m_edata)
+{
+}
+
 double ElevTile::nodeElevation(int ndx, int ndy)
 {
-	int idx = (ndy + 1)*edata.width + (ndx + 1);
-	return (double)edata.data[idx];
+	int idx = (ndy + 1)*m_edata.width + (ndx + 1);
+	return (double)m_edata.data[idx];
 }
 
 bool ElevTile::Load(const std::string &root)
@@ -138,22 +144,23 @@ bool ElevTile::Load(const std::string &root)
 	// read tile from Elev layer
 	char path[1024];
 	sprintf(path, "%s/%s/%02d/%06d/%06d.elv", root.c_str(), Layer().c_str(), m_lvl, m_ilat, m_ilng);
-	edata = elvread(path);
+	m_edataBase = elvread(path);
+	m_edata = m_edataBase;
 
-	if (edata.data.size()) {
+	if (m_edata.data.size()) {
 		// read modifications from Elev_mod layer if present
 		sprintf(path, "%s/%s_mod/%02d/%06d/%06d.elv", root.c_str(), Layer().c_str(), m_lvl, m_ilat, m_ilng);
-		elvmodread(path, edata);
+		elvmodread(path, m_edata);
 	} else {
 		// interpolate from ancestor
 		LoadSubset(root, this);
 	}
 
 	// turn elevation data into an image
-	if (edata.data.size())
+	if (m_edata.data.size())
 		ExtractImage();
 
-	return edata.data.size() > 0;
+	return m_edata.data.size() > 0;
 }
 
 void ElevTile::LoadSubset(const std::string &root, ElevTile *tile)
@@ -177,11 +184,11 @@ void ElevTile::LoadSubset(const std::string &root, ElevTile *tile)
 
 		char path[1024];
 		sprintf(path, "%s/%s/%02d/%06d/%06d.elv", root.c_str(), Layer().c_str(), tile->m_sublvl, tile->m_subilat, tile->m_subilng);
-		tile->edata = elvread(path);
-		if (tile->edata.data.size()) {
+		tile->m_edata = elvread(path);
+		if (tile->m_edata.data.size()) {
 			sprintf(path, "%s/%s_mod/%02d/%06d/%06d.elv", root.c_str(), Layer().c_str(), tile->m_sublvl, tile->m_subilat, tile->m_subilng);
-			elvmodread(path, tile->edata);
-			tile->edata = tile->edata.SubTile(tile->lng_subrange, tile->lat_subrange);
+			elvmodread(path, tile->m_edata);
+			tile->m_edata = tile->m_edata.SubTile(tile->lng_subrange, tile->lat_subrange);
 		}
 		else {
 			LoadSubset(root, this);
@@ -196,22 +203,27 @@ ElevTile *ElevTile::Load(const std::string &root, int lvl, int ilat, int ilng)
 	return etile;
 }
 
-void ElevTile::ExtractImage()
+void ElevTile::ExtractImage(int exmin, int exmax, int eymin, int eymax)
 {
-	img.width = (edata.width-2)*2 - 2;
-	img.height = (edata.height-2)*2 - 2;
+	img.width = (m_edata.width-2)*2 - 2;
+	img.height = (m_edata.height-2)*2 - 2;
 	img.data.resize(img.width * img.height);
 
-	int dmin = (int)*std::min_element(edata.data.begin(), edata.data.end());
-	int dmax = (int)*std::max_element(edata.data.begin(), edata.data.end());
+	int dmin = (int)*std::min_element(m_edata.data.begin(), m_edata.data.end());
+	int dmax = (int)*std::max_element(m_edata.data.begin(), m_edata.data.end());
 
 	const Cmap &cm = cmap(CMAP_TOPO);
 
-	for (int j = 0; j < img.height; j++)
-		for (int i = 0; i < img.width; i++) {
+	int imin = (exmin < 0 ? 0 : max(0, (exmin - 1) * 2 - 1));
+	int imax = (exmax < 0 ? img.width : min((int)img.width, exmax * 2));
+	int jmin = (eymax < 0 ? 0 : max(0, (int)img.height - (eymax - 1) * 2));
+	int jmax = (eymin < 0 ? img.height : min((int)img.height, (int)img.height - (eymin - 1) * 2 + 1));
+
+	for (int j = jmin; j < jmax; j++)
+		for (int i = imin; i < imax; i++) {
 			int ex = (i + 1) / 2 + 1;
 			int ey = (img.height - j) / 2 + 1;
-			INT16 d = edata.data[ex + ey * edata.width];
+			INT16 d = m_edata.data[ex + ey * m_edata.width];
 			//INT16 d = edata.data[(img.height - j) * edata.width + i + 1];
 			int v = min((((int)d - dmin) * 256) / (dmax - dmin), 255);
 			if (v < 0 || v > 255)
