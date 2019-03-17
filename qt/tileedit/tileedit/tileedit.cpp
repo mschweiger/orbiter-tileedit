@@ -524,6 +524,10 @@ void tileedit::setToolOptions()
 
 void tileedit::setTile(int lvl, int ilat, int ilng)
 {
+	if (m_etile && m_etile->isModified()) {
+		m_etile->SaveMod(rootDir);
+	}
+
 	m_lvl = lvl;
 	m_ilat = ilat;
 	m_ilng = ilng;

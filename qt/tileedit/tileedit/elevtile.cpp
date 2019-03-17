@@ -3,6 +3,8 @@
 #include "cmap.h"
 #include <iostream>
 #include <algorithm>
+#define _USE_MATH_DEFINES
+#include <math.h>
 
 // ==================================================================================
 
@@ -12,6 +14,7 @@ ElevData::ElevData()
 	height = 0;
 	dmin = 0;
 	dmax = 0;
+	dres = 1.0;
 }
 
 ElevData::ElevData(const ElevData &edata)
@@ -20,6 +23,7 @@ ElevData::ElevData(const ElevData &edata)
 	, data(edata.data)
 	, dmin(edata.dmin)
 	, dmax(edata.dmax)
+	, dres(edata.dres)
 {
 }
 
@@ -30,6 +34,7 @@ ElevData &ElevData::operator=(const ElevData &edata)
 	data = edata.data;
 	dmin = edata.dmin;
 	dmax = edata.dmax;
+	dres = edata.dres;
 	return *this;
 }
 
@@ -63,12 +68,14 @@ ElevTile::ElevTile(int lvl, int ilat, int ilng)
 {
 	lat_subrange.second = 256;
 	lng_subrange.second = 256;
+	m_modified = false;
 }
 
 ElevTile::ElevTile(const ElevTile &etile)
 	: Tile(etile)
 	, m_edata(etile.m_edata)
 {
+	m_modified = false;
 }
 
 double ElevTile::nodeElevation(int ndx, int ndy)
@@ -135,11 +142,57 @@ void ElevTile::LoadSubset(const std::string &root, ElevTile *tile)
 	}
 }
 
+void ElevTile::Save(const std::string &root)
+{
+	if (m_modified) {
+		if (m_lvl == m_sublvl) { // for now, don't support saving ancestor subtiles
+			char path[1024];
+			sprintf(path, "%s/%s/%02d/%06d/%06d.elv", root.c_str(), Layer().c_str(), m_lvl, m_ilat, m_ilng);
+			int nlat = (m_lvl < 4 ? 1 : 1 << (m_lvl - 4));
+			int nlng = (m_lvl < 4 ? 1 : 1 << (m_lvl - 3));
+			double latmax = (1.0 - (double)m_ilat / (double)nlat) * M_PI - 0.5*M_PI;
+			double latmin = latmax - M_PI / nlat;
+			double lngmin = (double)m_ilng / (double)nlng * 2.0*M_PI - M_PI;
+			double lngmax = lngmin + 2.0*M_PI / nlng;
+
+			elvwrite(path, m_edata, latmin, latmax, lngmin, lngmax);
+		}
+		m_modified = false;
+	}
+}
+
+void ElevTile::SaveMod(const std::string &root)
+{
+	if (m_modified) {
+		if (m_lvl == m_sublvl) { // for now, don't support saving ancestor subtiles
+			char path[1024];
+			sprintf(path, "%s_mod", Layer().c_str());
+			ensureLayerDir(root.c_str(), path, m_lvl, m_ilat);
+			sprintf(path, "%s/%s_mod/%02d/%06d/%06d.elv", root.c_str(), Layer().c_str(), m_lvl, m_ilat, m_ilng);
+			int nlat = (m_lvl < 4 ? 1 : 1 << (m_lvl - 4));
+			int nlng = (m_lvl < 4 ? 1 : 1 << (m_lvl - 3));
+			double latmax = (1.0 - (double)m_ilat / (double)nlat) * M_PI - 0.5*M_PI;
+			double latmin = latmax - M_PI / nlat;
+			double lngmin = (double)m_ilng / (double)nlng * 2.0*M_PI - M_PI;
+			double lngmax = lngmin + 2.0*M_PI / nlng;
+
+			elvmodwrite(path, m_edata, m_edataBase, latmin, latmax, lngmin, lngmax);
+		}
+		m_modified = false;
+	}
+}
+
 ElevTile *ElevTile::Load(const std::string &root, int lvl, int ilat, int ilng)
 {
 	ElevTile *etile = new ElevTile(lvl, ilat, ilng);
 	etile->Load(root);
 	return etile;
+}
+
+void ElevTile::dataChanged(int exmin, int exmax, int eymin, int eymax)
+{
+	ExtractImage(exmin, exmax, eymin, eymax);
+	m_modified = true;
 }
 
 void ElevTile::ExtractImage(int exmin, int exmax, int eymin, int eymax)

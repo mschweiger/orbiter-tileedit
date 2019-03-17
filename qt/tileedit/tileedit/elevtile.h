@@ -28,7 +28,10 @@ public:
 	double nodeElevation(int ndx, int ndy);
 	ElevData &getData() { return m_edata; }
 	ElevData &getBaseData() { return m_edataBase; }
-	void dataChanged(int exmin = -1, int exmax = -1, int eymin = -1, int eymax = -1) { ExtractImage(exmin, exmax, eymin, eymax); }
+	bool isModified() const { return m_modified; }
+	void dataChanged(int exmin = -1, int exmax = -1, int eymin = -1, int eymax = -1);
+	void Save(const std::string &root);
+	void SaveMod(const std::string &root);
 
 protected:
 	ElevTile(int lvl, int ilat, int ilng);
@@ -39,6 +42,7 @@ protected:
 private:
 	ElevData m_edata;
 	ElevData m_edataBase;
+	bool m_modified;
 };
 
 #endif // !ELEVTILE_H

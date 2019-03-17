@@ -1,4 +1,5 @@
 #include <windows.h>
+#include <direct.h>
 #include <vector>
 #include <algorithm>
 #include "elv_io.h"
@@ -180,7 +181,7 @@ void elvwrite(const char *fname, const ElevData &edata, double latmin, double la
 	}
 	else {
 		hdr.dtype = -16;
-		if (imin > SHRT_MIN && imax < SHRT_MAX)
+		if (imin >= SHRT_MIN && imax < SHRT_MAX)
 			shift = 0;
 		else
 			shift = (imin + imax) / 2;
@@ -206,7 +207,92 @@ void elvwrite(const char *fname, const ElevData &edata, double latmin, double la
 
 // ==================================================================================
 
-void elvmodwrite(const char *fname, const ElevData &edata, const ElevData &ebasedata)
+void elvmodwrite(const char *fname, const ElevData &edata, const ElevData &ebasedata, double latmin, double latmax, double lngmin, double lngmax)
 {
+	const double EPS = 1e-8;
 
+	ELEVFILEHEADER hdr;
+	strncpy(hdr.id, "ELE\01", 4);
+	hdr.hdrsize = sizeof(ELEVFILEHEADER);
+	hdr.xgrd = TILE_ELEVSTRIDE;
+	hdr.ygrd = TILE_ELEVSTRIDE;
+	hdr.xpad = 1;
+	hdr.ypad = 1;
+	hdr.latmin = latmin;
+	hdr.latmax = latmax;
+	hdr.lngmin = lngmin;
+	hdr.lngmax = lngmax;
+	hdr.emin = edata.dmin;
+	hdr.emax = edata.dmax;
+
+	hdr.emean = 0.0;
+	for (int j = hdr.ypad; j < hdr.ygrd - hdr.ypad; j++) {
+		for (int i = hdr.xpad; i < hdr.xgrd - hdr.xpad; i++) {
+			hdr.emean += edata.data[j*TILE_ELEVSTRIDE + i];
+		}
+	}
+	hdr.emean /= (hdr.xgrd - hdr.xpad * 2) * (hdr.ygrd - hdr.ypad * 2);
+
+	hdr.scale = edata.dres;
+
+	int imin = (int)(hdr.emin / hdr.scale);
+	int imax = (int)(hdr.emax / hdr.scale);
+	int shift;
+
+	while ((imax - imin) > (1 << 16)) { // need to rescale to fit range
+		hdr.scale *= 2.0;
+		imin = (int)(hdr.emin / hdr.scale);
+		imax = (int)(hdr.emax / hdr.scale);
+	}
+
+	if (imin == imax) {
+		hdr.dtype = 0;
+		shift = imin;
+	}
+	else if (imax - imin < 256) {
+		hdr.dtype = 8;
+		if (imin >= 0 && imax < 256)
+			shift = 0;
+		else
+			shift = imin;
+	}
+	else {
+		hdr.dtype = -16;
+		if (imin >= SHRT_MIN && imax < SHRT_MAX)
+			shift = 0;
+		else
+			shift = (imin + imax) / 2;
+	}
+	hdr.offset = shift * hdr.scale;
+
+	FILE *f = fopen(fname, "wb");
+	fwrite(&hdr, sizeof(ELEVFILEHEADER), 1, f);
+	if (hdr.dtype == 8) {
+		for (int i = 0; i < edata.data.size(); i++) {
+			UINT8 v = fabs(edata.data[i] - ebasedata.data[i]) < EPS ? UCHAR_MAX :
+				(UINT8)((int)(edata.data[i] / hdr.scale) - shift);
+			fwrite(&v, sizeof(UINT8), 1, f);
+		}
+	}
+	else if (hdr.dtype == -16) {
+		for (int i = 0; i < edata.data.size(); i++) {
+			INT16 v = fabs(edata.data[i] - ebasedata.data[i]) < EPS ? SHRT_MAX :
+				(INT16)((int)(edata.data[i] / hdr.scale) - shift);
+			fwrite(&v, sizeof(INT16), 1, f);
+		}
+	}
+	fclose(f);
+}
+
+// ==================================================================================
+
+void ensureLayerDir(const char *rootDir, const char *layer, int lvl, int ilat)
+{
+	char path[256];
+	sprintf(path, "%s/%s", rootDir, layer);
+	mkdir(path);
+	sprintf(path, "%s/%s/%02d", rootDir, layer, lvl);
+	mkdir(path);
+	sprintf(path, "%s/%s/%02d/%06d", rootDir, layer, lvl, ilat);
+	mkdir(path);
 }
