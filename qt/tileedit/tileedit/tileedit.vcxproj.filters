@@ -45,10 +45,13 @@
     <ClCompile Include="tilecanvas.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="elvread.cpp">
+    <ClCompile Include="cmap.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="cmap.cpp">
+    <ClCompile Include="elevtile.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="elv_io.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -77,13 +80,16 @@
     <ClInclude Include="tile.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="elvread.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="cmap.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="resource.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="elevtile.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="elv_io.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -196,7 +196,7 @@ void TileCanvas::updateGlyph(int x, int y)
 
 void TileCanvas::setImage(const Tile *tile)
 {
-    m_tile = tile;
+	m_tile = tile;
     if (tile) {
         m_lvl = tile->Level();
         m_ilat = tile->iLat();
@@ -204,9 +204,9 @@ void TileCanvas::setImage(const Tile *tile)
         m_nlat = (m_lvl <= 4 ? 1 : 1 << (m_lvl-4));
         m_nlng = (m_lvl <= 3 ? 1 : 1 << (m_lvl-3));
     }
-    //QPoint pos = mapFromGlobal(cursor().pos());
-    //updateGlyph(pos.x(), pos.y());
-    update();
+	QPoint pos = mapFromGlobal(cursor().pos());
+	updateGlyph(pos.x(), pos.y());
+	update();
 }
 
 void TileCanvas::setGlyphMode(GlyphMode mode)

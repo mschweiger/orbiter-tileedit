@@ -114,7 +114,8 @@
   <ItemGroup>
     <ClCompile Include="cmap.cpp" />
     <ClCompile Include="ddsread.cpp" />
-    <ClCompile Include="elvread.cpp" />
+    <ClCompile Include="elevtile.cpp" />
+    <ClCompile Include="elv_io.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="tile.cpp" />
     <ClCompile Include="tilecanvas.cpp" />
@@ -132,7 +133,8 @@
   <ItemGroup>
     <ClInclude Include="cmap.h" />
     <ClInclude Include="ddsread.h" />
-    <ClInclude Include="elvread.h" />
+    <ClInclude Include="elevtile.h" />
+    <ClInclude Include="elv_io.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="tile.h" />
     <QtMoc Include="tilecanvas.h">

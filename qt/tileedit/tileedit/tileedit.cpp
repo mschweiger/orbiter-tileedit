@@ -1,7 +1,7 @@
 #include "tileedit.h"
 #include "ui_tileedit.h"
 #include "tile.h"
-
+#include "elevtile.h"
 #include <random>
 
 #include "QFileDialog"
