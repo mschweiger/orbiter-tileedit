@@ -182,6 +182,96 @@ void ElevTile::SaveMod(const std::string &root)
 	}
 }
 
+void ElevTile::MatchNeighbourTiles(const std::string &root)
+{
+	int size_3x3 = TILE_FILERES * 3 + 3;
+	std::vector<double> edata_3x3(size_3x3 * size_3x3 * 3);
+
+	std::vector<ElevTile*> tileGrid(3 * 3);
+	for (int i = 0; i < tileGrid.size(); i++)
+		tileGrid[i] = 0;
+
+	int nlat = (m_lvl < 4 ? 1 : 1 << (m_lvl - 4));
+	int nlng = (m_lvl < 4 ? 1 : 1 << (m_lvl - 3));
+
+	int i, j, i0, i1, j0, j1, xblock, yblock, ilat, ilng, block_x0, block_y0;
+	bool isModified;
+
+	// fill the 3x3 tile neighbourhood
+	for (yblock = 0; yblock < 3; yblock++) {
+		ilat = m_ilat - yblock + 1;
+		if (ilat < 0 || ilat >= nlat)
+			continue;
+		block_y0 = yblock*TILE_FILERES;
+		for (xblock = 0; xblock < 3; xblock++) {
+			ilng = m_ilng + xblock - 1;
+			if (ilng < 0) ilng = nlng - 1;
+			else if (ilng >= nlng) ilng = 0;
+			if (ilat == m_ilat && ilng == m_ilng)
+				continue;
+			block_x0 = xblock*TILE_FILERES;
+			ElevTile *etile = ElevTile::Load(root, m_lvl, ilat, ilng);
+			if (etile) {
+				tileGrid[xblock + yblock * 3] = etile;
+				j0 = (yblock == 0 || ilat == nlat - 1 ? 0 : 1);
+				j1 = (yblock == 2 || ilat == 0 ? TILE_ELEVSTRIDE : TILE_ELEVSTRIDE - 1);
+				i0 = (xblock == 0 ? 0 : 1);
+				i1 = (xblock == 2 ? TILE_ELEVSTRIDE : TILE_ELEVSTRIDE - 1);
+				for (j = j0; j < j1; j++) {
+					for (i = i0; i < i1; i++) {
+						edata_3x3[(block_y0 + j) * size_3x3 + (block_x0 + i)] = etile->getData().data[j*TILE_ELEVSTRIDE + i];
+					}
+				}
+			}
+		}
+	}
+
+	// place the modified centre tile, but strip padding
+	block_y0 = TILE_FILERES;
+	block_x0 = TILE_FILERES;
+	j0 = (ilat == nlat - 1 ? 0 : 1);
+	j1 = (ilat == 0 ? TILE_ELEVSTRIDE : TILE_ELEVSTRIDE - 1);
+	i0 = 1;
+	i1 = TILE_ELEVSTRIDE - 1;
+	for (j = j0; j < j1; j++) {
+		for (i = i0; i < i1; i++)
+			edata_3x3[(block_y0+j) * size_3x3 + (block_x0 + i)] = m_edata.data[j*TILE_ELEVSTRIDE + i];
+	}
+
+	// check for modifications in the neighbours
+	for (int yblock = 0; yblock < 3; yblock++) {
+		for (int xblock = 0; xblock < 3; xblock++) {
+			ElevTile *etile = tileGrid[yblock * 3 + xblock];
+			if (etile) {
+				isModified = false;
+				int ilat = m_ilat - yblock + 1;
+				int ilng = m_ilng + xblock - 1;
+				if (ilng < 0) ilng = nlng - 1;
+				else if (ilng >= nlng) ilng = 0;
+				block_y0 = yblock*TILE_FILERES;
+				block_x0 = xblock*TILE_FILERES;
+				for (j = 0; j < TILE_ELEVSTRIDE; j++) {
+					for (i = 0; i < TILE_ELEVSTRIDE; i++) {
+						double v = edata_3x3[(block_y0 + j)*size_3x3 + (block_x0 + i)];
+						double vold = etile->getData().data[j*TILE_ELEVSTRIDE + i];
+						if (fabs(v - vold) > 1e-8) {
+							etile->getData().data[j*TILE_ELEVSTRIDE + i] = v;
+							isModified = true;
+						}
+					}
+				}
+				if (isModified) {
+					if (etile->getData().dres > m_edata.dres)
+						etile->getData().dres = m_edata.dres; // make sure we can represent the overlap with the same resolution
+					etile->dataChanged();
+					etile->SaveMod(root);
+				}
+				delete etile;
+			}
+		}
+	}
+}
+
 ElevTile *ElevTile::Load(const std::string &root, int lvl, int ilat, int ilng)
 {
 	ElevTile *etile = new ElevTile(lvl, ilat, ilng);

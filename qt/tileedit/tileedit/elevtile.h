@@ -32,6 +32,7 @@ public:
 	void dataChanged(int exmin = -1, int exmax = -1, int eymin = -1, int eymax = -1);
 	void Save(const std::string &root);
 	void SaveMod(const std::string &root);
+	void MatchNeighbourTiles(const std::string &root);
 
 protected:
 	ElevTile(int lvl, int ilat, int ilng);

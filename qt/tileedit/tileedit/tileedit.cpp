@@ -525,6 +525,7 @@ void tileedit::setToolOptions()
 void tileedit::setTile(int lvl, int ilat, int ilng)
 {
 	if (m_etile && m_etile->isModified()) {
+		m_etile->MatchNeighbourTiles(rootDir);
 		m_etile->SaveMod(rootDir);
 	}
 
