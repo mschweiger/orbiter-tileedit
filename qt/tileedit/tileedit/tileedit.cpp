@@ -415,8 +415,8 @@ void tileedit::editElevation(int canvasIdx, int x, int y)
 				if (m_elevEditMode == ELEVEDIT_RANDOM)
 					v = (int)(*m_rndn)(generator);
 				int idx = (ny + pady + (*stencil)[i].second)*edata.width + (nx + padx + (*stencil)[i].first);
-				INT16 vold = edata.data[idx];
 				if (idx >= 0 && idx < edata.data.size()) {
+					INT16 vold = edata.data[idx];
 					switch (mode) {
 					case 0:
 						edata.data[idx] = (INT16)v;

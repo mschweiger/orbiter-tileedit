@@ -54,6 +54,9 @@
     <ClCompile Include="elv_io.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="tileblock.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="tileedit.h">
@@ -90,6 +93,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="elv_io.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="tileblock.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

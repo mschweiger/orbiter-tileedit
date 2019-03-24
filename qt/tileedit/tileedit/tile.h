@@ -16,6 +16,9 @@ public:
 	int subLevel() const { return m_sublvl; }
 	int subiLat() const { return m_subilat; }
 	int subiLng() const { return m_subilng; }
+	int nLat() const { return (m_lvl < 4 ? 1 : 1 << (m_lvl - 4)); }
+	int nLng() const { return (m_lvl < 4 ? 1 : 1 << (m_lvl - 3)); }
+
     const Image &getImage() const { return img; }
 	void setImage(const Image &im) { img = im; }
 	DWORD pixelColour(int px, int py) const;

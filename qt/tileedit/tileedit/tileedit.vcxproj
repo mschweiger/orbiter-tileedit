@@ -118,6 +118,7 @@
     <ClCompile Include="elv_io.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="tile.cpp" />
+    <ClCompile Include="tileblock.cpp" />
     <ClCompile Include="tilecanvas.cpp" />
     <ClCompile Include="tileedit.cpp" />
   </ItemGroup>
@@ -137,6 +138,7 @@
     <ClInclude Include="elv_io.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="tile.h" />
+    <ClInclude Include="tileblock.h" />
     <QtMoc Include="tilecanvas.h">
       <IncludePath Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.\GeneratedFiles;.;$(QTDIR)\include;.\GeneratedFiles\$(ConfigurationName);$(QTDIR)\include\QtCore;$(QTDIR)\include\QtGui;$(QTDIR)\include\QtANGLE;$(QTDIR)\include\QtWidgets</IncludePath>
       <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.\GeneratedFiles;.;$(QTDIR)\include;.\GeneratedFiles\$(ConfigurationName);$(QTDIR)\include\QtCore;$(QTDIR)\include\QtGui;$(QTDIR)\include\QtANGLE;$(QTDIR)\include\QtWidgets</IncludePath>

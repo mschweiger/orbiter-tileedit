@@ -19,14 +19,16 @@ struct ElevData {
 };
 
 
-class ElevTile : public Tile
-{
+class ElevTile : public Tile {
+	friend class ElevTileBlock;
+
 public:
 	ElevTile(const ElevTile &etile);
 	static ElevTile *Load(const std::string &root, int lvl, int ilat, int ilng);
 	const std::string Layer() const { return std::string("Elev"); }
 	double nodeElevation(int ndx, int ndy);
 	ElevData &getData() { return m_edata; }
+	const ElevData &getData() const { return m_edata; }
 	ElevData &getBaseData() { return m_edataBase; }
 	bool isModified() const { return m_modified; }
 	void dataChanged(int exmin = -1, int exmax = -1, int eymin = -1, int eymax = -1);
