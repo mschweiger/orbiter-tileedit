@@ -35,6 +35,7 @@ public:
 	void Save(const std::string &root);
 	void SaveMod(const std::string &root);
 	void MatchNeighbourTiles(const std::string &root);
+	bool MatchParentTile(const std::string &root, int minlvl) const;
 
 protected:
 	ElevTile(int lvl, int ilat, int ilng);

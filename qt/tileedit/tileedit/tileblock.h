@@ -17,7 +17,8 @@ public:
 	int nLat() const { return (m_lvl < 4 ? 1 : 1 << (m_lvl - 4)); }
 	int nLng() const { return (m_lvl < 4 ? 1 : 1 << (m_lvl - 3)); }
 
-	virtual bool SetTile(int ilat, int ilng, const Tile *tile) { return false; }
+	virtual bool setTile(int ilat, int ilng, const Tile *tile) { return false; }
+	virtual bool getTile(int ilat, int ilng, Tile *tile) const { return false; }
 
 protected:
 	int m_lvl;
@@ -31,8 +32,9 @@ class ElevTileBlock : public TileBlock
 public:
 	static ElevTileBlock *Load(const std::string &root, int lvl, int ilat0, int ilat1, int ilng0, int ilng1);
 	ElevTileBlock(int lvl, int ilat0, int ilat1, int ilng0, int ilng1);
-	bool SetTile(int ilat, int ilng, const Tile *tile);
-	bool GetTile(int ilat, int ilng, Tile *tile) const;
+	bool setTile(int ilat, int ilng, const Tile *tile);
+	bool getTile(int ilat, int ilng, Tile *tile) const;
+	ElevData &getData() { return m_edata; }
 
 private:
 	ElevData m_edata;

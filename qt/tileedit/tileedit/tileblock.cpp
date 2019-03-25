@@ -36,14 +36,14 @@ ElevTileBlock *ElevTileBlock::Load(const std::string &root, int lvl, int ilat0, 
 			while (ilngn < 0) ilngn += nlng;
 			while (ilngn >= nlng) ilngn -= nlng;
 			ElevTile *tile = ElevTile::Load(root, lvl, ilat, ilngn);
-			tileblock->SetTile(ilat, ilng, tile);
+			tileblock->setTile(ilat, ilng, tile);
 			delete tile;
 		}
 	}
 	return tileblock;
 }
 
-bool ElevTileBlock::SetTile(int ilat, int ilng, const Tile *tile)
+bool ElevTileBlock::setTile(int ilat, int ilng, const Tile *tile)
 {
 	if (ilat < m_ilat0 || ilat >= m_ilat1) return false;
 	if (ilng < m_ilng0 || ilng >= m_ilng1) return false;
@@ -73,7 +73,7 @@ bool ElevTileBlock::SetTile(int ilat, int ilng, const Tile *tile)
 	return true;
 }
 
-bool ElevTileBlock::GetTile(int ilat, int ilng, Tile *tile) const
+bool ElevTileBlock::getTile(int ilat, int ilng, Tile *tile) const
 {
 	ElevTile *etile = static_cast<ElevTile*>(tile);
 

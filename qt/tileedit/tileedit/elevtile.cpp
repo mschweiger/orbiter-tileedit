@@ -212,12 +212,12 @@ void ElevTile::MatchNeighbourTiles(const std::string &root)
 			if (!etile)
 				continue;
 			tileGrid[xblock + yblock * 3] = etile;
-			etile3.SetTile(ilat, ilng, etile);
+			etile3.setTile(ilat, ilng, etile);
 		}
 	}
 
 	// place the modified central tile
-	etile3.SetTile(m_ilat, m_ilng, this);
+	etile3.setTile(m_ilat, m_ilng, this);
 
 	// check for modifications in the neighbours
 	for (yblock = 0; yblock < 3; yblock++) {
@@ -228,7 +228,7 @@ void ElevTile::MatchNeighbourTiles(const std::string &root)
 				ilng = m_ilng + xblock - 1;
 				ilngn = (ilng < 0 ? ilng + nlng : ilng >= nlng ? ilng - nlng : ilng);
 				ElevData edata = etile->getData();
-				etile3.GetTile(ilat, ilng, etile);
+				etile3.getTile(ilat, ilng, etile);
 				for (i = 0; i < edata.data.size(); i++) {
 					if (fabs(edata.data[i] - etile->getData().data[i]) > eps) {
 						etile->dataChanged();
@@ -240,6 +240,56 @@ void ElevTile::MatchNeighbourTiles(const std::string &root)
 			}
 		}
 	}
+}
+
+bool ElevTile::MatchParentTile(const std::string &root, int minlvl) const
+{
+	const double eps = 1e-6;
+
+	if (m_lvl <= 4 || m_lvl <= minlvl)
+		return false;
+
+	int lvl = m_lvl - 1;
+	int ilat = m_ilat / 2;
+	int ilng = m_ilng / 2;
+
+	ElevTile *etile = ElevTile::Load(root, lvl, ilat, ilng);
+	if (!etile)
+		return false;
+
+	ElevData &edata = etile->getData();
+	ElevTileBlock *etile4 = ElevTileBlock::Load(root, m_lvl, ilat * 2 - 1, ilat * 2 + 3, ilng * 2 - 1, ilng * 2 + 3);
+	ElevData &edata4 = etile4->getData();
+
+	int w4 = edata4.width;
+	int h4 = edata4.height;
+	int xofs = TILE_FILERES - 1;
+	int yofs = TILE_FILERES - 1;
+	int ofs = xofs + yofs * w4;
+	bool isModified = false;
+
+	for (int y = 0; y < edata.height; y++) {
+		for (int x = 0; x < edata.width; x++) {
+			int ref = ofs + y * 2 * w4 + x * 2;
+			double v = (edata4.data[ref] * 4.0 +
+				(edata4.data[ref - 1] + edata4.data[ref + 1] + edata4.data[ref - w4] + edata4.data[ref + w4]) * 2.0 +
+				(edata4.data[ref - w4 - 1] + edata4.data[ref - w4 + 1] + edata4.data[ref + w4 - 1] + edata4.data[ref + w4 + 1])) / 16.0;
+			if (fabs(edata.data[x + y*edata.width] - v) > eps) {
+				edata.data[x + y*edata.width] = v;
+				isModified = true;
+			}
+		}
+	}
+	delete etile4;
+
+	if (isModified) {
+		etile->dataChanged();
+		etile->SaveMod(root);
+		etile->MatchParentTile(root, minlvl); // recursively propagate changes down the quadtree
+	}
+	delete etile;
+
+	return isModified;
 }
 
 ElevTile *ElevTile::Load(const std::string &root, int lvl, int ilat, int ilng)

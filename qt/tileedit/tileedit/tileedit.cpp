@@ -527,6 +527,7 @@ void tileedit::setTile(int lvl, int ilat, int ilng)
 	if (m_etile && m_etile->isModified()) {
 		m_etile->MatchNeighbourTiles(rootDir);
 		m_etile->SaveMod(rootDir);
+		m_etile->MatchParentTile(rootDir, m_etile->Level() - 5);
 	}
 
 	m_lvl = lvl;
