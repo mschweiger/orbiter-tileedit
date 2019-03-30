@@ -1,3 +1,8 @@
 *.exe
 *.mat
 *.asv
+*.db
+*.user
+.vs/
+GeneratedFiles/
+x64/

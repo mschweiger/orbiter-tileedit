@@ -1,0 +1,14 @@
+#ifndef ELV_IO_H
+#define ELV_IO_H
+
+#include "elevtile.h"
+
+ElevData elvread(const char *fname);
+void elvmodread(const char *fname, ElevData &edata);
+
+void elvwrite(const char *fname, const ElevData &edata, double latmin, double latmax, double lngmin, double lngmax);
+void elvmodwrite(const char *fname, const ElevData &edata, const ElevData &ebasedata, double latmin, double latmax, double lngmin, double lngmax);
+
+void ensureLayerDir(const char *rootDir, const char *layer, int lvl, int ilat);
+
+#endif // !ELV_IO_H
