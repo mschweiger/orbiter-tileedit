@@ -70,6 +70,7 @@ tileedit::tileedit(QWidget *parent) :
 		m_panel[i].canvas->setIdx(i);
 		connect(m_panel[i].canvas, SIGNAL(tileChanged(int, int, int)), this, SLOT(OnTileChangedFromPanel(int, int, int)));
 		connect(m_panel[i].canvas, SIGNAL(tileEntered(TileCanvas*)), this, SLOT(OnTileEntered(TileCanvas*)));
+		connect(m_panel[i].canvas, SIGNAL(tileLeft(TileCanvas*)), this, SLOT(OnTileLeft(TileCanvas*)));
 		connect(m_panel[i].canvas, SIGNAL(mouseMovedInCanvas(int, QMouseEvent*)), this, SLOT(OnMouseMovedInCanvas(int, QMouseEvent*)));
 		connect(m_panel[i].canvas, SIGNAL(mousePressedInCanvas(int, QMouseEvent*)), this, SLOT(OnMousePressedInCanvas(int, QMouseEvent*)));
 		connect(m_panel[i].canvas, SIGNAL(mouseReleasedInCanvas(int, QMouseEvent*)), this, SLOT(OnMouseReleasedInCanvas(int, QMouseEvent*)));
@@ -267,6 +268,14 @@ void tileedit::OnTileChangedFromPanel(int lvl, int ilat, int ilng)
 
 void tileedit::OnTileEntered(TileCanvas *canvas)
 {
+	for (int i = 0; i < 3; i++) {
+		if (m_actionMode != ACTION_NAVIGATE || m_panel[i].canvas == canvas) {
+			m_panel[i].canvas->blockSignals(true);
+			m_panel[i].canvas->showOverlay(true);
+			m_panel[i].canvas->blockSignals(false);
+		}
+	}
+
 	int idx = -1;
 	const Tile *tile = canvas->tile();
 	if (tile) idx = canvas->idx();
@@ -278,16 +287,28 @@ void tileedit::OnTileEntered(TileCanvas *canvas)
 	ui->labelKey3->setText(idx >= 0 ? ValStr[m_panel[idx].layerType->currentIndex()] : "-");
 }
 
+void tileedit::OnTileLeft(TileCanvas *canvas)
+{
+	for (int i = 0; i < 3; i++) {
+		if (m_actionMode != ACTION_NAVIGATE || m_panel[i].canvas == canvas) {
+			m_panel[i].canvas->blockSignals(true);
+			m_panel[i].canvas->showOverlay(false);
+			m_panel[i].canvas->blockSignals(false);
+		}
+	}
+}
+
 void tileedit::OnMouseMovedInCanvas(int canvasIdx, QMouseEvent *event)
 {
 	const Tile *tile = m_panel[canvasIdx].canvas->tile();
+	int x = event->x();
+	int y = event->y();
+	int cw = m_panel[canvasIdx].canvas->rect().width();
+	int ch = m_panel[canvasIdx].canvas->rect().height();
+
 	if (tile && tile->getImage().data.size()) {
-		int x = event->x();
-		int y = event->y();
 		int iw = tile->getImage().width;
 		int ih = tile->getImage().height;
-		int cw = m_panel[canvasIdx].canvas->rect().width();
-		int ch = m_panel[canvasIdx].canvas->rect().height();
 
 		int nlat = (m_lvl < 4 ? 1 : 1 << (m_lvl - 4));
 		int nlng = (m_lvl < 4 ? 1 : 1 << (m_lvl - 3));
@@ -331,8 +352,14 @@ void tileedit::OnMouseMovedInCanvas(int canvasIdx, QMouseEvent *event)
 		ui->labelData2->setText("-");
 	}
 
-	if (m_mouseDown && m_actionMode == ACTION_ELEVEDIT && m_etile) {
-		editElevation(canvasIdx, event->x(), event->y());
+	if (m_actionMode == ACTION_ELEVEDIT && m_etile) {
+		if (m_mouseDown)
+			editElevation(canvasIdx, event->x(), event->y());
+		for (int i = 0; i < 3; i++) {
+			//if (m_panel[i].layerType->currentIndex() == 3) {
+				m_panel[i].canvas->setCrosshair(((double)x + 0.5) / (double)cw, ((double)y + 0.5) / (double)ch);
+			//}
+		}
 	}
 }
 

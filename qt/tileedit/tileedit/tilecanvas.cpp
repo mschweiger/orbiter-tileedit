@@ -39,14 +39,12 @@ void TileCanvas::paintEvent(QPaintEvent *event)
 
 void TileCanvas::enterEvent(QEvent *event)
 {
-    if (m_tile)
-        overlay->show();
 	emit tileEntered(this);
 }
 
 void TileCanvas::leaveEvent(QEvent *event)
 {
-    overlay->hide();
+	emit tileLeft(this);
 }
 
 void TileCanvas::mouseMoveEvent(QMouseEvent *event)
@@ -190,7 +188,6 @@ void TileCanvas::updateGlyph(int x, int y)
 	}
 	else {
 		overlay->setGlyph(TileCanvasOverlay::GLYPH_NONE);
-		overlay->setCrosshair(x, y);
 	}
 }
 
@@ -212,8 +209,25 @@ void TileCanvas::setImage(const Tile *tile)
 void TileCanvas::setGlyphMode(GlyphMode mode)
 {
 	m_glyphMode = mode;
+	overlay->setCursor(mode == GLYPHMODE_NAVIGATE ? Qt::ArrowCursor : Qt::BlankCursor);
 }
 
+void TileCanvas::setCrosshair(double x, double y)
+{
+	if (m_tile)
+		overlay->setCrosshair(x, y);
+}
+
+void TileCanvas::showOverlay(bool show)
+{
+	if (show) {
+		if (m_tile)
+			overlay->show();
+	}
+	else {
+		overlay->hide();
+	}
+}
 
 
 TileCanvasOverlay::TileCanvasOverlay(QWidget *parent): QWidget(parent)
@@ -222,6 +236,10 @@ TileCanvasOverlay::TileCanvasOverlay(QWidget *parent): QWidget(parent)
     m_penGlyph.setColor(QColor(255,0,0));
     m_penGlyph.setWidth(3);
     m_penGlyph.setStyle(Qt::SolidLine);
+
+	m_penCrosshair.setColor(QColor(255, 0, 0));
+	m_penCrosshair.setWidth(1);
+	m_penCrosshair.setStyle(Qt::SolidLine);
 
     setMouseTracking(true);
 }
@@ -234,9 +252,14 @@ void TileCanvasOverlay::setGlyph(Glyph glyph)
     }
 }
 
-void TileCanvasOverlay::setCrosshair(int x, int y)
+void TileCanvasOverlay::setCrosshair(double x, double y)
 {
-
+	if (m_glyph != GLYPH_CROSSHAIR || m_crosshairX != x || m_crosshairY != y) {
+		m_glyph = GLYPH_CROSSHAIR;
+		m_crosshairX = x;
+		m_crosshairY = y;
+		update();
+	}
 }
 
 void TileCanvasOverlay::paintEvent(QPaintEvent *event)
@@ -245,7 +268,7 @@ void TileCanvasOverlay::paintEvent(QPaintEvent *event)
     painter.fillRect(rect(), QColor(0,0,0,0));
 
     if(m_glyph != GLYPH_NONE) {
-        painter.setPen(m_penGlyph);
+        painter.setPen(m_glyph == GLYPH_CROSSHAIR ? m_penCrosshair : m_penGlyph);
         int w = rect().width();
         int h = rect().height();
         int dw = w/16;
@@ -292,6 +315,16 @@ void TileCanvasOverlay::paintEvent(QPaintEvent *event)
             painter.drawLine(w/2-dw, h/2-dh, w/2+dw, h/2+dh);
             painter.drawLine(w/2-dw, h/2+dh, w/2+dw, h/2-dh);
             break;
+		case GLYPH_CROSSHAIR:
+			{
+			int x = (int)(m_crosshairX * w);
+			int y = (int)(m_crosshairY * h);
+			painter.drawLine(x - dw, y, x - dw / 2, y);
+			painter.drawLine(x + dw, y, x + dw / 2, y);
+			painter.drawLine(x, y - dh, x, y - dh / 2);
+			painter.drawLine(x, y + dh, x, y + dh / 2);
+			}
+			break;
         }
     }
 }

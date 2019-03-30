@@ -52,6 +52,7 @@ private slots:
     void onLayerType2(int);
     void OnTileChangedFromPanel(int lvl, int ilat, int ilng);
 	void OnTileEntered(TileCanvas *canvas);
+	void OnTileLeft(TileCanvas *canvas);
 	void OnMouseMovedInCanvas(int canvasIdx, QMouseEvent *event);
 	void OnMousePressedInCanvas(int canvasIdx, QMouseEvent *event);
 	void OnMouseReleasedInCanvas(int canvasIdx, QMouseEvent *event);
