@@ -2,6 +2,7 @@
 #include "ui_tileedit.h"
 #include "tile.h"
 #include "elevtile.h"
+#include "dlgelevconfig.h"
 #include <random>
 
 #include "QFileDialog"
@@ -16,9 +17,9 @@ static std::vector<std::vector<std::pair<int, int>>*> paintStencil = { &paintSte
 
 std::default_random_engine generator;
 
-tileedit::tileedit(QWidget *parent) :
-    QMainWindow(parent),
-    ui(new Ui::tileedit)
+tileedit::tileedit(QWidget *parent)
+    : QMainWindow(parent)
+    , ui(new Ui::tileedit)
 {
     m_stile = 0;
 	m_mtile = 0;
@@ -26,19 +27,27 @@ tileedit::tileedit(QWidget *parent) :
 	m_etile = 0;
 	m_etileRef = 0;
 
+	m_colourMapIdx = 0;
 	m_mouseDown = false;
 	m_rndn = 0;
+
+	m_dlgElevConfig = 0;
 
     ui->setupUi(this);
 
     m_panel[0].canvas = ui->widgetCanvas0;
-    m_panel[1].canvas = ui->widgetCanvas1;
-    m_panel[2].canvas = ui->widgetCanvas2;
-    m_panel[0].layerType = ui->comboLayerType0;
-    m_panel[1].layerType = ui->comboLayerType1;
-    m_panel[2].layerType = ui->comboLayerType2;
+	m_panel[0].colourscale = ui->widgetColourscale0;
+	m_panel[0].layerType = ui->comboLayerType0;
 	m_panel[0].fileId = ui->labelFileId0;
+
+	m_panel[1].canvas = ui->widgetCanvas1;
+	m_panel[1].colourscale = ui->widgetColourscale1;
+	m_panel[1].layerType = ui->comboLayerType1;
 	m_panel[1].fileId = ui->labelFileId1;
+
+    m_panel[2].canvas = ui->widgetCanvas2;
+	m_panel[2].colourscale = ui->widgetColourscale2;
+    m_panel[2].layerType = ui->comboLayerType2;
 	m_panel[2].fileId = ui->labelFileId2;
 
     createActions();
@@ -74,6 +83,7 @@ tileedit::tileedit(QWidget *parent) :
 		connect(m_panel[i].canvas, SIGNAL(mouseMovedInCanvas(int, QMouseEvent*)), this, SLOT(OnMouseMovedInCanvas(int, QMouseEvent*)));
 		connect(m_panel[i].canvas, SIGNAL(mousePressedInCanvas(int, QMouseEvent*)), this, SLOT(OnMousePressedInCanvas(int, QMouseEvent*)));
 		connect(m_panel[i].canvas, SIGNAL(mouseReleasedInCanvas(int, QMouseEvent*)), this, SLOT(OnMouseReleasedInCanvas(int, QMouseEvent*)));
+		m_panel[i].colourscale->setVisible(false);
 	}
     connect(m_panel[0].layerType, SIGNAL(currentIndexChanged(int)), this, SLOT(onLayerType0(int)));
     connect(m_panel[1].layerType, SIGNAL(currentIndexChanged(int)), this, SLOT(onLayerType1(int)));
@@ -99,12 +109,42 @@ void tileedit::createMenus()
 {
     fileMenu = ui->menuBar->addMenu(tr("&File"));
     fileMenu->addAction(openAct);
+	fileMenu->addSeparator();
+	fileMenu->addAction(actionExit);
+
+	QMenu *menu = ui->menuBar->addMenu(tr("&Elevation"));
+	menu->addAction(actionElevConfig);
 }
 
 void tileedit::createActions()
 {
     openAct = new QAction(tr("&Open"), this);
     connect(openAct, &QAction::triggered, this, &tileedit::openDir);
+
+	actionExit = new QAction(tr("E&xit"), this);
+	connect(actionExit, &QAction::triggered, this, &tileedit::on_actionExit_triggered);
+
+	actionElevConfig = new QAction(tr("&Configure"), this);
+	actionElevConfig->setCheckable(true);
+	connect(actionElevConfig, &QAction::triggered, this, &tileedit::onElevConfig);
+}
+
+void tileedit::setColourmap(int idx)
+{
+	if (idx != m_colourMapIdx) {
+		m_colourMapIdx = idx;
+		if (m_etile) {
+			m_etile->setCmap(&cmap((CmapName)idx));
+		}
+		for (int i = 0; i < 3; i++) {
+			if (m_panel[i].layerType->currentIndex() == 3)
+				m_panel[i].canvas->update();
+			Colorbar *cbar = m_panel[i].colourscale->findChild<Colorbar*>();
+			if (cbar) {
+				cbar->setCmap(&cmap((CmapName)idx));
+			}
+		}
+	}
 }
 
 void tileedit::openDir()
@@ -116,6 +156,32 @@ void tileedit::openDir()
 	char cbuf[256];
 	sprintf(cbuf, "tileedit [%s]", rootDir.c_str());
 	setWindowTitle(cbuf);
+}
+
+void tileedit::on_actionExit_triggered()
+{
+	QApplication::quit();
+}
+
+void tileedit::onElevConfig()
+{
+	if (!m_dlgElevConfig) {
+		m_dlgElevConfig = new DlgElevConfig(this);
+		connect(m_dlgElevConfig, SIGNAL(finished(int)), this, SLOT(onElevConfigDestroyed(int)));
+		m_dlgElevConfig->show();
+		actionElevConfig->setChecked(true);
+	}
+	else
+		onElevConfigDestroyed(0);
+}
+
+void tileedit::onElevConfigDestroyed(int r)
+{
+	if (m_dlgElevConfig) {
+		delete m_dlgElevConfig;
+		m_dlgElevConfig = 0;
+		actionElevConfig->setChecked(false);
+	}
 }
 
 void tileedit::loadTile(int lvl, int ilat, int ilng)
@@ -134,7 +200,7 @@ void tileedit::loadTile(int lvl, int ilat, int ilng)
 
 	if (m_etile)
 		delete m_etile;
-	m_etile = ElevTile::Load(rootDir, lvl, ilat, ilng);
+	m_etile = ElevTile::Load(rootDir, lvl, ilat, ilng, &cmap((CmapName)m_colourMapIdx));
 
     for (int i = 0; i < 3; i++)
         refreshPanel(i);
@@ -181,6 +247,7 @@ void tileedit::refreshPanel(int panelIdx)
         m_panel[panelIdx].canvas->setImage(0);
         break;
     }
+	m_panel[panelIdx].colourscale->setVisible(m_panel[panelIdx].layerType->currentIndex() == 3);
 }
 
 void tileedit::onResolutionChanged(int lvl)

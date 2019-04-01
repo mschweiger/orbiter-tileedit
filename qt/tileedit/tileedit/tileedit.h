@@ -16,14 +16,19 @@ class MaskTile;
 class NightlightTile;
 class ElevTile;
 class TileCanvas;
+class DlgElevConfig;
 
 class tileedit : public QMainWindow
 {
-    Q_OBJECT
+	Q_OBJECT
+
+	friend class DlgElevConfig;
 
 public:
     explicit tileedit(QWidget *parent = 0);
     ~tileedit();
+
+	void setColourmap(int idx);
 
 protected:
     void createActions();
@@ -42,6 +47,9 @@ private:
 
 private slots:
     void openDir();
+	void on_actionExit_triggered();
+	void onElevConfig();
+	void onElevConfigDestroyed(int r);
     void onResolutionChanged(int val);
     void onLatidxChanged(int val);
     void onLngidxChanged(int val);
@@ -61,10 +69,14 @@ private:
     Ui::tileedit *ui;
     QMenu *fileMenu;
     QAction *openAct;
+	QAction *actionExit;
+	QAction *actionElevConfig;
+
     QLabel *status;
 
     struct TilePanel {
         TileCanvas *canvas;
+		QWidget *colourscale;
         QComboBox *layerType;
 		QLabel *fileId;
     } m_panel[3];
@@ -85,6 +97,7 @@ private:
     int m_ilat;
     int m_ilng;
 
+	int m_colourMapIdx;
 	bool m_mouseDown;
 
     SurfTile *m_stile;
@@ -92,6 +105,8 @@ private:
 	NightlightTile *m_ltile;
 	ElevTile *m_etile;
 	ElevTile *m_etileRef;
+
+	DlgElevConfig *m_dlgElevConfig;
 
 	std::normal_distribution<double> *m_rndn;
 };

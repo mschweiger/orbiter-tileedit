@@ -64,8 +64,9 @@ ElevData ElevData::SubTile(const std::pair<DWORD, DWORD> &xrange, const std::pai
 
 // ==================================================================================
 
-ElevTile::ElevTile(int lvl, int ilat, int ilng)
+ElevTile::ElevTile(int lvl, int ilat, int ilng, const Cmap *cmap)
 	: Tile(lvl, ilat, ilng)
+	, m_cmap(cmap)
 {
 	lat_subrange.second = 256;
 	lng_subrange.second = 256;
@@ -74,6 +75,7 @@ ElevTile::ElevTile(int lvl, int ilat, int ilng)
 
 ElevTile::ElevTile(const ElevTile &etile)
 	: Tile(etile)
+	, m_cmap(etile.m_cmap)
 	, m_edata(etile.m_edata)
 {
 	m_modified = false;
@@ -180,6 +182,14 @@ void ElevTile::SaveMod(const std::string &root)
 			elvmodwrite(path, m_edata, m_edataBase, latmin, latmax, lngmin, lngmax);
 		}
 		m_modified = false;
+	}
+}
+
+void ElevTile::setCmap(const Cmap *cmap)
+{
+	if (cmap != m_cmap) {
+		m_cmap = cmap;
+		ExtractImage();
 	}
 }
 
@@ -292,9 +302,9 @@ bool ElevTile::MatchParentTile(const std::string &root, int minlvl) const
 	return isModified;
 }
 
-ElevTile *ElevTile::Load(const std::string &root, int lvl, int ilat, int ilng)
+ElevTile *ElevTile::Load(const std::string &root, int lvl, int ilat, int ilng, const Cmap *cm)
 {
-	ElevTile *etile = new ElevTile(lvl, ilat, ilng);
+	ElevTile *etile = new ElevTile(lvl, ilat, ilng, cm ? cm : &cmap(CMAP_GREY));
 	etile->Load(root);
 	return etile;
 }
@@ -315,8 +325,6 @@ void ElevTile::ExtractImage(int exmin, int exmax, int eymin, int eymax)
 	double dmax = m_edata.dmax;
 	double dscale = (dmax > dmin ? 256.0 / (dmax - dmin) : 1.0);
 
-	const Cmap &cm = cmap(CMAP_GREY);
-
 	int imin = (exmin < 0 ? 0 : max(0, (exmin - 1) * 2 - 1));
 	int imax = (exmax < 0 ? img.width : min((int)img.width, exmax * 2));
 	int jmin = (eymax < 0 ? 0 : max(0, (int)img.height - (eymax - 1) * 2));
@@ -330,6 +338,6 @@ void ElevTile::ExtractImage(int exmin, int exmax, int eymin, int eymax)
 			int v = min((int)((d - dmin) * dscale), 255);
 			if (v < 0 || v > 255)
 				std::cerr << "Problem" << std::endl;
-			img.data[i + j * img.width] = (0xff000000 | cm[v]);
+			img.data[i + j * img.width] = (0xff000000 | (*m_cmap)[v]);
 		}
 }
