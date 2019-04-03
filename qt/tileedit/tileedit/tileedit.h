@@ -6,6 +6,9 @@
 #include <QMainWindow>
 #include <QLabel>
 #include <QComboBox>
+#include <QDoubleSpinBox>
+
+#include "elevtile.h"
 
 namespace Ui {
 class tileedit;
@@ -28,7 +31,7 @@ public:
     explicit tileedit(QWidget *parent = 0);
     ~tileedit();
 
-	void setColourmap(int idx);
+	void elevDisplayParamChanged();
 
 protected:
     void createActions();
@@ -77,6 +80,8 @@ private:
     struct TilePanel {
         TileCanvas *canvas;
 		QWidget *colourscale;
+		QDoubleSpinBox *rangeMin;
+		QDoubleSpinBox *rangeMax;
         QComboBox *layerType;
 		QLabel *fileId;
     } m_panel[3];
@@ -97,7 +102,8 @@ private:
     int m_ilat;
     int m_ilng;
 
-	int m_colourMapIdx;
+	ElevDisplayParam m_elevDisplayParam;
+
 	bool m_mouseDown;
 
     SurfTile *m_stile;

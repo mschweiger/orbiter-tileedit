@@ -19,20 +19,33 @@ struct ElevData {
 	ElevData SubTile(const std::pair<DWORD, DWORD> &xrange, const std::pair<DWORD, DWORD> &yrange);
 };
 
+struct ElevDisplayParam {
+	CmapName cmName;
+	bool autoRange;
+	double rangeMin;
+	double rangeMax;
+
+	ElevDisplayParam() {
+		cmName = CMAP_GREY;
+		autoRange = true;
+		rangeMin = 0.0;
+		rangeMax = 1000.0;
+	}
+};
+
 
 class ElevTile : public Tile {
 	friend class ElevTileBlock;
 
 public:
 	ElevTile(const ElevTile &etile);
-	static ElevTile *Load(const std::string &root, int lvl, int ilat, int ilng, const Cmap *cm = 0);
+	static ElevTile *Load(const std::string &root, int lvl, int ilat, int ilng, ElevDisplayParam &elevDisplayParam, const Cmap *cm = 0);
 	const std::string Layer() const { return std::string("Elev"); }
 	double nodeElevation(int ndx, int ndy);
 	ElevData &getData() { return m_edata; }
 	const ElevData &getData() const { return m_edata; }
 	ElevData &getBaseData() { return m_edataBase; }
-	void setCmap(const Cmap *cmap);
-	const Cmap *getCmap() const { return m_cmap; }
+	void displayParamChanged();
 	bool isModified() const { return m_modified; }
 	void dataChanged(int exmin = -1, int exmax = -1, int eymin = -1, int eymax = -1);
 	void Save(const std::string &root);
@@ -41,7 +54,7 @@ public:
 	bool MatchParentTile(const std::string &root, int minlvl) const;
 
 protected:
-	ElevTile(int lvl, int ilat, int ilng, const Cmap *cmap);
+	ElevTile(int lvl, int ilat, int ilng, ElevDisplayParam &elevDisplayParam);
 	bool Load(const std::string &root);
 	void LoadSubset(const std::string &root, ElevTile *tile);
 	void ExtractImage(int exmin = -1, int exmax = -1, int eymin = -1, int eymax = -1);
@@ -49,8 +62,8 @@ protected:
 private:
 	ElevData m_edata;
 	ElevData m_edataBase;
-	const Cmap *m_cmap;
 	bool m_modified;
+	ElevDisplayParam &m_elevDisplayParam;
 };
 
 #endif // !ELEVTILE_H

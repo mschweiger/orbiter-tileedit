@@ -3,6 +3,7 @@
 
 #include "QWidget"
 #include "cmap.h"
+#include "elevtile.h"
 
 class Colorbar : public QWidget
 {
@@ -10,14 +11,15 @@ class Colorbar : public QWidget
 
 public:
 	explicit Colorbar(QWidget *parent = 0);
-	void setCmap(const Cmap *cmap);
+	void setElevDisplayParam(const ElevDisplayParam &elevDisplayParam);
+	void displayParamChanged();
 
 protected:
 	void paintEvent(QPaintEvent *event);
 
 private:
 	double m_vmin, m_vmax;
-	const Cmap *m_cmap;
+	const ElevDisplayParam *m_elevDisplayParam;
 };
 
 #endif // !COLORBAR_H

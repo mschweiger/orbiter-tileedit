@@ -64,9 +64,9 @@ ElevData ElevData::SubTile(const std::pair<DWORD, DWORD> &xrange, const std::pai
 
 // ==================================================================================
 
-ElevTile::ElevTile(int lvl, int ilat, int ilng, const Cmap *cmap)
+ElevTile::ElevTile(int lvl, int ilat, int ilng, ElevDisplayParam &elevDisplayParam)
 	: Tile(lvl, ilat, ilng)
-	, m_cmap(cmap)
+	, m_elevDisplayParam(elevDisplayParam)
 {
 	lat_subrange.second = 256;
 	lng_subrange.second = 256;
@@ -75,7 +75,7 @@ ElevTile::ElevTile(int lvl, int ilat, int ilng, const Cmap *cmap)
 
 ElevTile::ElevTile(const ElevTile &etile)
 	: Tile(etile)
-	, m_cmap(etile.m_cmap)
+	, m_elevDisplayParam(etile.m_elevDisplayParam)
 	, m_edata(etile.m_edata)
 {
 	m_modified = false;
@@ -185,12 +185,9 @@ void ElevTile::SaveMod(const std::string &root)
 	}
 }
 
-void ElevTile::setCmap(const Cmap *cmap)
+void ElevTile::displayParamChanged()
 {
-	if (cmap != m_cmap) {
-		m_cmap = cmap;
-		ExtractImage();
-	}
+	ExtractImage();
 }
 
 void ElevTile::MatchNeighbourTiles(const std::string &root)
@@ -218,7 +215,7 @@ void ElevTile::MatchNeighbourTiles(const std::string &root)
 			if (ilat == m_ilat && ilng == m_ilng)
 				continue;
 			ilngn = (ilng < 0 ? ilng + nlng : ilng >= nlng ? ilng - nlng : ilng);
-			ElevTile *etile = ElevTile::Load(root, m_lvl, ilat, ilngn);
+			ElevTile *etile = ElevTile::Load(root, m_lvl, ilat, ilngn, m_elevDisplayParam);
 			if (!etile)
 				continue;
 			tileGrid[xblock + yblock * 3] = etile;
@@ -263,12 +260,12 @@ bool ElevTile::MatchParentTile(const std::string &root, int minlvl) const
 	int ilat = m_ilat / 2;
 	int ilng = m_ilng / 2;
 
-	ElevTile *etile = ElevTile::Load(root, lvl, ilat, ilng);
+	ElevTile *etile = ElevTile::Load(root, lvl, ilat, ilng, m_elevDisplayParam);
 	if (!etile)
 		return false;
 
 	ElevData &edata = etile->getData();
-	ElevTileBlock *etile4 = ElevTileBlock::Load(root, m_lvl, ilat * 2 - 1, ilat * 2 + 3, ilng * 2 - 1, ilng * 2 + 3);
+	ElevTileBlock *etile4 = ElevTileBlock::Load(root, m_lvl, ilat * 2 - 1, ilat * 2 + 3, ilng * 2 - 1, ilng * 2 + 3, m_elevDisplayParam);
 	ElevData &edata4 = etile4->getData();
 
 	int w4 = edata4.width;
@@ -302,10 +299,13 @@ bool ElevTile::MatchParentTile(const std::string &root, int minlvl) const
 	return isModified;
 }
 
-ElevTile *ElevTile::Load(const std::string &root, int lvl, int ilat, int ilng, const Cmap *cm)
+ElevTile *ElevTile::Load(const std::string &root, int lvl, int ilat, int ilng, ElevDisplayParam &elevDisplayParam, const Cmap *cm)
 {
-	ElevTile *etile = new ElevTile(lvl, ilat, ilng, cm ? cm : &cmap(CMAP_GREY));
-	etile->Load(root);
+	ElevTile *etile = new ElevTile(lvl, ilat, ilng, elevDisplayParam);
+	if (!etile->Load(root)) {
+		delete etile;
+		etile = 0;
+	}
 	return etile;
 }
 
@@ -317,12 +317,20 @@ void ElevTile::dataChanged(int exmin, int exmax, int eymin, int eymax)
 
 void ElevTile::ExtractImage(int exmin, int exmax, int eymin, int eymax)
 {
+	double dmin, dmax;
+
 	img.width = (m_edata.width - 2) * 2 - 2;
 	img.height = (m_edata.height - 2) * 2 - 2;
 	img.data.resize(img.width * img.height);
 
-	double dmin = m_edata.dmin;
-	double dmax = m_edata.dmax;
+	if (m_elevDisplayParam.autoRange) {
+		dmin = m_edata.dmin;
+		dmax = m_edata.dmax;
+	}
+	else {
+		dmin = m_elevDisplayParam.rangeMin;
+		dmax = m_elevDisplayParam.rangeMax;
+	}
 	double dscale = (dmax > dmin ? 256.0 / (dmax - dmin) : 1.0);
 
 	int imin = (exmin < 0 ? 0 : max(0, (exmin - 1) * 2 - 1));
@@ -330,14 +338,15 @@ void ElevTile::ExtractImage(int exmin, int exmax, int eymin, int eymax)
 	int jmin = (eymax < 0 ? 0 : max(0, (int)img.height - (eymax - 1) * 2));
 	int jmax = (eymin < 0 ? img.height : min((int)img.height, (int)img.height - (eymin - 1) * 2 + 1));
 
+	const Cmap &cm = cmap(m_elevDisplayParam.cmName);
 	for (int j = jmin; j < jmax; j++)
 		for (int i = imin; i < imax; i++) {
 			int ex = (i + 1) / 2 + 1;
 			int ey = (img.height - j) / 2 + 1;
 			double d = m_edata.data[ex + ey * m_edata.width];
-			int v = min((int)((d - dmin) * dscale), 255);
+			int v = max(min((int)((d - dmin) * dscale), 255), 0);
 			if (v < 0 || v > 255)
 				std::cerr << "Problem" << std::endl;
-			img.data[i + j * img.width] = (0xff000000 | (*m_cmap)[v]);
+			img.data[i + j * img.width] = (0xff000000 | cm[v]);
 		}
 }

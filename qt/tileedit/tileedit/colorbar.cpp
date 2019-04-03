@@ -1,4 +1,5 @@
 #include "colorbar.h"
+#include "cmap.h"
 #include "QPainter"
 
 Colorbar::Colorbar(QWidget *parent)
@@ -6,12 +7,16 @@ Colorbar::Colorbar(QWidget *parent)
 {
 	m_vmin = 0.0;
 	m_vmax = 1.0;
-	m_cmap = &cmap(CMAP_GREY);
+	m_elevDisplayParam = 0;
 }
 
-void Colorbar::setCmap(const Cmap *cmap)
+void Colorbar::setElevDisplayParam(const ElevDisplayParam &elevDisplayParam)
 {
-	m_cmap = cmap;
+	m_elevDisplayParam = &elevDisplayParam;
+}
+
+void Colorbar::displayParamChanged()
+{
 	update();
 }
 
@@ -22,9 +27,10 @@ void Colorbar::paintEvent(QPaintEvent *event)
 	painter.setBrush(brush);
 	painter.drawRect(rect());
 
-	if (m_cmap) {
+	if (m_elevDisplayParam) {
+		const Cmap &cm = cmap(m_elevDisplayParam->cmName);
 		DWORD data[256];
-		memcpy(data, m_cmap, 256 * sizeof(DWORD));
+		memcpy(data, cm, 256 * sizeof(DWORD));
 		for (int i = 0; i < 256; i++)
 			data[i] |= 0xff000000;
 		QImage qimg((BYTE*)data, 256, 1, QImage::Format_ARGB32);

@@ -1106,7 +1106,7 @@
                <number>0</number>
               </property>
               <item>
-               <widget class="QDoubleSpinBox" name="doubleSpinBox_5">
+               <widget class="QDoubleSpinBox" name="dspinRangeMin2">
                 <property name="layoutDirection">
                  <enum>Qt::RightToLeft</enum>
                 </property>
@@ -1119,7 +1119,7 @@
                </widget>
               </item>
               <item>
-               <widget class="QDoubleSpinBox" name="doubleSpinBox_6">
+               <widget class="QDoubleSpinBox" name="dspinRangeMax2">
                 <property name="alignment">
                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                 </property>
@@ -1200,7 +1200,7 @@
                <number>0</number>
               </property>
               <item>
-               <widget class="QDoubleSpinBox" name="doubleSpinBox_3">
+               <widget class="QDoubleSpinBox" name="dspinRangeMin0">
                 <property name="layoutDirection">
                  <enum>Qt::RightToLeft</enum>
                 </property>
@@ -1213,7 +1213,7 @@
                </widget>
               </item>
               <item>
-               <widget class="QDoubleSpinBox" name="doubleSpinBox_4">
+               <widget class="QDoubleSpinBox" name="dspinRangeMax0">
                 <property name="alignment">
                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                 </property>
@@ -1294,7 +1294,7 @@
                <number>0</number>
               </property>
               <item>
-               <widget class="QDoubleSpinBox" name="doubleSpinBox">
+               <widget class="QDoubleSpinBox" name="dspinRangeMin1">
                 <property name="layoutDirection">
                  <enum>Qt::RightToLeft</enum>
                 </property>
@@ -1307,7 +1307,7 @@
                </widget>
               </item>
               <item>
-               <widget class="QDoubleSpinBox" name="doubleSpinBox_2">
+               <widget class="QDoubleSpinBox" name="dspinRangeMax1">
                 <property name="alignment">
                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                 </property>
@@ -1366,7 +1366,7 @@
  </resources>
  <connections/>
  <buttongroups>
-  <buttongroup name="bgrpAction"/>
   <buttongroup name="bgrpEdit"/>
+  <buttongroup name="bgrpAction"/>
  </buttongroups>
 </ui>
