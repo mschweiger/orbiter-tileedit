@@ -5,6 +5,7 @@
 
 enum CmapName {
 	CMAP_GREY,
+	CMAP_JET,
 	CMAP_TOPO
 };
 

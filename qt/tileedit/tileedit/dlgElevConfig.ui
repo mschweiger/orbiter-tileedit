@@ -85,6 +85,11 @@
       </item>
       <item>
        <property name="text">
+        <string>Jet</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
         <string>Topographic</string>
        </property>
       </item>
