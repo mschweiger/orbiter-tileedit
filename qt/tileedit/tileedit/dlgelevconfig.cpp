@@ -10,6 +10,7 @@ DlgElevConfig::DlgElevConfig(tileedit *parent, ElevDisplayParam &elevDisplayPara
 {
 	ui->setupUi(this);
 	ui->comboColourmap->setCurrentIndex((int)m_tileedit->m_elevDisplayParam.cmName);
+	ui->checkWaterMask->setChecked(m_elevDisplayParam.useWaterMask);
 	ui->spinRangeMin->setValue(m_elevDisplayParam.rangeMin);
 	ui->spinRangeMax->setValue(m_elevDisplayParam.rangeMax);
 	ui->radioRangeAuto->setChecked(m_elevDisplayParam.autoRange);
@@ -17,6 +18,7 @@ DlgElevConfig::DlgElevConfig(tileedit *parent, ElevDisplayParam &elevDisplayPara
 	ui->widgetFixedRange->setEnabled(!m_elevDisplayParam.autoRange);
 
 	connect(ui->comboColourmap, SIGNAL(currentIndexChanged(int)), this, SLOT(onColourmapChanged(int)));
+	connect(ui->checkWaterMask, SIGNAL(clicked()), this, SLOT(onWaterMask()));
 	connect(ui->radioRangeAuto, SIGNAL(clicked()), this, SLOT(onRangeAuto()));
 	connect(ui->radioRangeFixed, SIGNAL(clicked()), this, SLOT(onRangeFixed()));
 	connect(ui->spinRangeMin, SIGNAL(valueChanged(int)), this, SLOT(onRangeMin(int)));
@@ -32,6 +34,15 @@ void DlgElevConfig::onColourmapChanged(int idx)
 {
 	if (idx != (int)m_elevDisplayParam.cmName) {
 		m_elevDisplayParam.cmName = (CmapName)idx;
+		m_tileedit->elevDisplayParamChanged();
+	}
+}
+
+void DlgElevConfig::onWaterMask()
+{
+	bool checked = ui->checkWaterMask->isChecked();
+	if (checked != m_elevDisplayParam.useWaterMask) {
+		m_elevDisplayParam.useWaterMask = checked;
 		m_tileedit->elevDisplayParamChanged();
 	}
 }

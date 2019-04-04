@@ -137,13 +137,14 @@ void tileedit::createActions()
 
 void tileedit::elevDisplayParamChanged()
 {
-	if (m_elevDisplayParam.autoRange) {
-		m_elevDisplayParam.rangeMin = m_etile->getData().dmin;
-		m_elevDisplayParam.rangeMax = m_etile->getData().dmax;
-	}
+	if (m_etile) {
+		if (m_elevDisplayParam.autoRange) {
+			m_elevDisplayParam.rangeMin = m_etile->getData().dmin;
+			m_elevDisplayParam.rangeMax = m_etile->getData().dmax;
+		}
 
-	if (m_etile)
 		m_etile->displayParamChanged();
+	}
 
 	for (int i = 0; i < 3; i++) {
 		if (m_panel[i].layerType->currentIndex() == 3)
@@ -219,6 +220,8 @@ void tileedit::loadTile(int lvl, int ilat, int ilng)
 	if (m_etile)
 		delete m_etile;
 	m_etile = ElevTile::Load(rootDir, lvl, ilat, ilng, m_elevDisplayParam, &cmap(m_elevDisplayParam.cmName));
+	if (m_etile && m_mtile)
+		m_etile->setWaterMask(m_mtile);
 
     for (int i = 0; i < 3; i++)
         refreshPanel(i);

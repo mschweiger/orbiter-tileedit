@@ -21,12 +21,14 @@ struct ElevData {
 
 struct ElevDisplayParam {
 	CmapName cmName;
+	bool useWaterMask;
 	bool autoRange;
 	double rangeMin;
 	double rangeMax;
 
 	ElevDisplayParam() {
 		cmName = CMAP_GREY;
+		useWaterMask = false;
 		autoRange = true;
 		rangeMin = 0.0;
 		rangeMax = 1000.0;
@@ -52,6 +54,7 @@ public:
 	void SaveMod(const std::string &root);
 	void MatchNeighbourTiles(const std::string &root);
 	bool MatchParentTile(const std::string &root, int minlvl) const;
+	void setWaterMask(const MaskTile *mtile);
 
 protected:
 	ElevTile(int lvl, int ilat, int ilng, ElevDisplayParam &elevDisplayParam);
@@ -64,6 +67,7 @@ private:
 	ElevData m_edataBase;
 	bool m_modified;
 	ElevDisplayParam &m_elevDisplayParam;
+	std::vector<bool> m_waterMask;
 };
 
 #endif // !ELEVTILE_H

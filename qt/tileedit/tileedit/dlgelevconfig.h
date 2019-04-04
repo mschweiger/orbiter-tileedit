@@ -20,6 +20,7 @@ public:
 public slots:
 	void done(int r);
 	void onColourmapChanged(int idx);
+	void onWaterMask();
 	void onRangeAuto();
 	void onRangeFixed();
 	void onRangeMin(int val);

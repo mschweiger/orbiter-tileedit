@@ -299,6 +299,22 @@ bool ElevTile::MatchParentTile(const std::string &root, int minlvl) const
 	return isModified;
 }
 
+void ElevTile::setWaterMask(const MaskTile *mtile)
+{
+	int w = (m_edata.width - 2) * 2 - 2;
+	int h = (m_edata.height - 2) * 2 - 2;
+
+	const Image &mask = mtile->getImage();
+	if (mask.width == w && mask.height == h) {
+		m_waterMask.resize(w*h);
+		for (int i = 0; i < h; i++) {
+			for (int j = 0; j < w; j++) {
+				m_waterMask[i*w + j] = ((mask.data[i*w + j] & 0xFF000000) == 0);
+			}
+		}
+	}
+}
+
 ElevTile *ElevTile::Load(const std::string &root, int lvl, int ilat, int ilng, ElevDisplayParam &elevDisplayParam, const Cmap *cm)
 {
 	ElevTile *etile = new ElevTile(lvl, ilat, ilng, elevDisplayParam);
@@ -339,6 +355,8 @@ void ElevTile::ExtractImage(int exmin, int exmax, int eymin, int eymax)
 	int jmax = (eymin < 0 ? img.height : min((int)img.height, (int)img.height - (eymin - 1) * 2 + 1));
 
 	const Cmap &cm = cmap(m_elevDisplayParam.cmName);
+	bool useMask = m_elevDisplayParam.useWaterMask && m_waterMask.size();
+
 	for (int j = jmin; j < jmax; j++)
 		for (int i = imin; i < imax; i++) {
 			int ex = (i + 1) / 2 + 1;
@@ -348,5 +366,8 @@ void ElevTile::ExtractImage(int exmin, int exmax, int eymin, int eymax)
 			if (v < 0 || v > 255)
 				std::cerr << "Problem" << std::endl;
 			img.data[i + j * img.width] = (0xff000000 | cm[v]);
+
+			if (useMask && m_waterMask[i + j * img.width])
+				img.data[i + j * img.width] = 0xffB9E3FF;
 		}
 }
