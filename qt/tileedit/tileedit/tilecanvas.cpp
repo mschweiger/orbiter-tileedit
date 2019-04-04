@@ -15,6 +15,7 @@ TileCanvas::TileCanvas(QWidget *parent)
 
 TileCanvas::~TileCanvas()
 {
+	delete overlay;
 }
 
 void TileCanvas::resizeEvent(QResizeEvent *event)
@@ -230,7 +231,8 @@ void TileCanvas::showOverlay(bool show)
 }
 
 
-TileCanvasOverlay::TileCanvasOverlay(QWidget *parent): QWidget(parent)
+TileCanvasOverlay::TileCanvasOverlay(QWidget *parent)
+	: QWidget(parent)
 {
     m_glyph = GLYPH_NONE;
     m_penGlyph.setColor(QColor(255,0,0));

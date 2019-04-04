@@ -137,6 +137,11 @@ void tileedit::createActions()
 
 void tileedit::elevDisplayParamChanged()
 {
+	if (m_elevDisplayParam.autoRange) {
+		m_elevDisplayParam.rangeMin = m_etile->getData().dmin;
+		m_elevDisplayParam.rangeMax = m_etile->getData().dmax;
+	}
+
 	if (m_etile)
 		m_etile->displayParamChanged();
 
@@ -144,8 +149,9 @@ void tileedit::elevDisplayParamChanged()
 		if (m_panel[i].layerType->currentIndex() == 3)
 			m_panel[i].canvas->update();
 		Colorbar *cbar = m_panel[i].colourscale->findChild<Colorbar*>();
-		if (cbar)
+		if (cbar) {
 			cbar->displayParamChanged();
+		}
 		if (m_elevDisplayParam.autoRange) {
 			if (m_etile) {
 				m_panel[i].rangeMin->setValue(m_etile->getData().dmin);
@@ -414,6 +420,7 @@ void tileedit::OnMouseMovedInCanvas(int canvasIdx, QMouseEvent *event)
 			double elev = ((ElevTile*)tile)->nodeElevation(mx, my);
 			sprintf(cbuf, "%+0.1lfm", elev);
 			ui->labelData3->setText(cbuf);
+			m_panel[canvasIdx].colourscale->findChild<Colorbar*>()->setValue(elev);
 		}
 		else {
 			sprintf(cbuf, "X=%d/%d, Y=%d/%d", mx, iw, my, ih);
