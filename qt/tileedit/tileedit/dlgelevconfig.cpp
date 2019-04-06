@@ -61,6 +61,8 @@ void DlgElevConfig::onRangeFixed()
 	ui->widgetFixedRange->setEnabled(true);
 	if (m_elevDisplayParam.autoRange) {
 		m_elevDisplayParam.autoRange = false;
+		m_elevDisplayParam.rangeMin = ui->spinRangeMin->value();
+		m_elevDisplayParam.rangeMax = ui->spinRangeMax->value();
 		m_tileedit->elevDisplayParamChanged();
 	}
 }

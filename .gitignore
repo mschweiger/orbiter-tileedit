@@ -3,6 +3,7 @@
 *.asv
 *.db
 *.user
+*.opendb
 .vs/
 GeneratedFiles/
 x64/
