@@ -19,7 +19,7 @@
      <x>20</x>
      <y>212</y>
      <width>221</width>
-     <height>31</height>
+     <height>33</height>
     </rect>
    </property>
    <layout class="QHBoxLayout">
@@ -90,7 +90,12 @@
       </item>
       <item>
        <property name="text">
-        <string>Topographic</string>
+        <string>Topographic 1</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>Topographic 2</string>
        </property>
       </item>
      </widget>

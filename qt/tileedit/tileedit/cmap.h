@@ -6,7 +6,8 @@
 enum CmapName {
 	CMAP_GREY,
 	CMAP_JET,
-	CMAP_TOPO
+	CMAP_TOPO1,
+	CMAP_TOPO2
 };
 
 typedef DWORD Cmap[256];
