@@ -64,8 +64,9 @@ ElevData ElevData::SubTile(const std::pair<DWORD, DWORD> &xrange, const std::pai
 
 // ==================================================================================
 
-ElevTile::ElevTile(int lvl, int ilat, int ilng)
+ElevTile::ElevTile(int lvl, int ilat, int ilng, ElevDisplayParam &elevDisplayParam)
 	: Tile(lvl, ilat, ilng)
+	, m_elevDisplayParam(elevDisplayParam)
 {
 	lat_subrange.second = 256;
 	lng_subrange.second = 256;
@@ -74,6 +75,7 @@ ElevTile::ElevTile(int lvl, int ilat, int ilng)
 
 ElevTile::ElevTile(const ElevTile &etile)
 	: Tile(etile)
+	, m_elevDisplayParam(etile.m_elevDisplayParam)
 	, m_edata(etile.m_edata)
 {
 	m_modified = false;
@@ -183,6 +185,11 @@ void ElevTile::SaveMod(const std::string &root)
 	}
 }
 
+void ElevTile::displayParamChanged()
+{
+	ExtractImage();
+}
+
 void ElevTile::MatchNeighbourTiles(const std::string &root)
 {
 	const double eps = 1e-6;
@@ -208,7 +215,7 @@ void ElevTile::MatchNeighbourTiles(const std::string &root)
 			if (ilat == m_ilat && ilng == m_ilng)
 				continue;
 			ilngn = (ilng < 0 ? ilng + nlng : ilng >= nlng ? ilng - nlng : ilng);
-			ElevTile *etile = ElevTile::Load(root, m_lvl, ilat, ilngn);
+			ElevTile *etile = ElevTile::Load(root, m_lvl, ilat, ilngn, m_elevDisplayParam);
 			if (!etile)
 				continue;
 			tileGrid[xblock + yblock * 3] = etile;
@@ -253,12 +260,12 @@ bool ElevTile::MatchParentTile(const std::string &root, int minlvl) const
 	int ilat = m_ilat / 2;
 	int ilng = m_ilng / 2;
 
-	ElevTile *etile = ElevTile::Load(root, lvl, ilat, ilng);
+	ElevTile *etile = ElevTile::Load(root, lvl, ilat, ilng, m_elevDisplayParam);
 	if (!etile)
 		return false;
 
 	ElevData &edata = etile->getData();
-	ElevTileBlock *etile4 = ElevTileBlock::Load(root, m_lvl, ilat * 2 - 1, ilat * 2 + 3, ilng * 2 - 1, ilng * 2 + 3);
+	ElevTileBlock *etile4 = ElevTileBlock::Load(root, m_lvl, ilat * 2 - 1, ilat * 2 + 3, ilng * 2 - 1, ilng * 2 + 3, m_elevDisplayParam);
 	ElevData &edata4 = etile4->getData();
 
 	int w4 = edata4.width;
@@ -292,10 +299,29 @@ bool ElevTile::MatchParentTile(const std::string &root, int minlvl) const
 	return isModified;
 }
 
-ElevTile *ElevTile::Load(const std::string &root, int lvl, int ilat, int ilng)
+void ElevTile::setWaterMask(const MaskTile *mtile)
 {
-	ElevTile *etile = new ElevTile(lvl, ilat, ilng);
-	etile->Load(root);
+	int w = (m_edata.width - 2) * 2 - 2;
+	int h = (m_edata.height - 2) * 2 - 2;
+
+	const Image &mask = mtile->getImage();
+	if (mask.width == w && mask.height == h) {
+		m_waterMask.resize(w*h);
+		for (int i = 0; i < h; i++) {
+			for (int j = 0; j < w; j++) {
+				m_waterMask[i*w + j] = ((mask.data[i*w + j] & 0xFF000000) == 0);
+			}
+		}
+	}
+}
+
+ElevTile *ElevTile::Load(const std::string &root, int lvl, int ilat, int ilng, ElevDisplayParam &elevDisplayParam, const Cmap *cm)
+{
+	ElevTile *etile = new ElevTile(lvl, ilat, ilng, elevDisplayParam);
+	if (!etile->Load(root)) {
+		delete etile;
+		etile = 0;
+	}
 	return etile;
 }
 
@@ -307,29 +333,41 @@ void ElevTile::dataChanged(int exmin, int exmax, int eymin, int eymax)
 
 void ElevTile::ExtractImage(int exmin, int exmax, int eymin, int eymax)
 {
+	double dmin, dmax;
+
 	img.width = (m_edata.width - 2) * 2 - 2;
 	img.height = (m_edata.height - 2) * 2 - 2;
 	img.data.resize(img.width * img.height);
 
-	double dmin = m_edata.dmin;
-	double dmax = m_edata.dmax;
+	if (m_elevDisplayParam.autoRange) {
+		dmin = m_edata.dmin;
+		dmax = m_edata.dmax;
+	}
+	else {
+		dmin = m_elevDisplayParam.rangeMin;
+		dmax = m_elevDisplayParam.rangeMax;
+	}
 	double dscale = (dmax > dmin ? 256.0 / (dmax - dmin) : 1.0);
-
-	const Cmap &cm = cmap(CMAP_GREY);
 
 	int imin = (exmin < 0 ? 0 : max(0, (exmin - 1) * 2 - 1));
 	int imax = (exmax < 0 ? img.width : min((int)img.width, exmax * 2));
 	int jmin = (eymax < 0 ? 0 : max(0, (int)img.height - (eymax - 1) * 2));
 	int jmax = (eymin < 0 ? img.height : min((int)img.height, (int)img.height - (eymin - 1) * 2 + 1));
 
+	const Cmap &cm = cmap(m_elevDisplayParam.cmName);
+	bool useMask = m_elevDisplayParam.useWaterMask && m_waterMask.size();
+
 	for (int j = jmin; j < jmax; j++)
 		for (int i = imin; i < imax; i++) {
 			int ex = (i + 1) / 2 + 1;
 			int ey = (img.height - j) / 2 + 1;
 			double d = m_edata.data[ex + ey * m_edata.width];
-			int v = min((int)((d - dmin) * dscale), 255);
+			int v = max(min((int)((d - dmin) * dscale), 255), 0);
 			if (v < 0 || v > 255)
 				std::cerr << "Problem" << std::endl;
 			img.data[i + j * img.width] = (0xff000000 | cm[v]);
+
+			if (useMask && m_waterMask[i + j * img.width])
+				img.data[i + j * img.width] = 0xffB9E3FF;
 		}
 }

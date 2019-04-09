@@ -15,6 +15,7 @@ TileCanvas::TileCanvas(QWidget *parent)
 
 TileCanvas::~TileCanvas()
 {
+	delete overlay;
 }
 
 void TileCanvas::resizeEvent(QResizeEvent *event)
@@ -201,8 +202,10 @@ void TileCanvas::setImage(const Tile *tile)
         m_nlat = (m_lvl <= 4 ? 1 : 1 << (m_lvl-4));
         m_nlng = (m_lvl <= 3 ? 1 : 1 << (m_lvl-3));
     }
-	QPoint pos = mapFromGlobal(cursor().pos());
-	updateGlyph(pos.x(), pos.y());
+	if (m_glyphMode == GLYPHMODE_NAVIGATE) {
+		QPoint pos = mapFromGlobal(cursor().pos());
+		updateGlyph(pos.x(), pos.y());
+	}
 	update();
 }
 
@@ -230,7 +233,8 @@ void TileCanvas::showOverlay(bool show)
 }
 
 
-TileCanvasOverlay::TileCanvasOverlay(QWidget *parent): QWidget(parent)
+TileCanvasOverlay::TileCanvasOverlay(QWidget *parent)
+	: QWidget(parent)
 {
     m_glyph = GLYPH_NONE;
     m_penGlyph.setColor(QColor(255,0,0));

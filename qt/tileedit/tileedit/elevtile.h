@@ -2,6 +2,7 @@
 #define ELEVTILE_H
 
 #include "tile.h"
+#include "cmap.h"
 
 #define TILE_FILERES 256
 #define TILE_ELEVSTRIDE (TILE_FILERES+3)
@@ -18,27 +19,45 @@ struct ElevData {
 	ElevData SubTile(const std::pair<DWORD, DWORD> &xrange, const std::pair<DWORD, DWORD> &yrange);
 };
 
+struct ElevDisplayParam {
+	CmapName cmName;
+	bool useWaterMask;
+	bool autoRange;
+	double rangeMin;
+	double rangeMax;
+
+	ElevDisplayParam() {
+		cmName = CMAP_GREY;
+		useWaterMask = false;
+		autoRange = true;
+		rangeMin = 0.0;
+		rangeMax = 1000.0;
+	}
+};
+
 
 class ElevTile : public Tile {
 	friend class ElevTileBlock;
 
 public:
 	ElevTile(const ElevTile &etile);
-	static ElevTile *Load(const std::string &root, int lvl, int ilat, int ilng);
+	static ElevTile *Load(const std::string &root, int lvl, int ilat, int ilng, ElevDisplayParam &elevDisplayParam, const Cmap *cm = 0);
 	const std::string Layer() const { return std::string("Elev"); }
 	double nodeElevation(int ndx, int ndy);
 	ElevData &getData() { return m_edata; }
 	const ElevData &getData() const { return m_edata; }
 	ElevData &getBaseData() { return m_edataBase; }
+	void displayParamChanged();
 	bool isModified() const { return m_modified; }
 	void dataChanged(int exmin = -1, int exmax = -1, int eymin = -1, int eymax = -1);
 	void Save(const std::string &root);
 	void SaveMod(const std::string &root);
 	void MatchNeighbourTiles(const std::string &root);
 	bool MatchParentTile(const std::string &root, int minlvl) const;
+	void setWaterMask(const MaskTile *mtile);
 
 protected:
-	ElevTile(int lvl, int ilat, int ilng);
+	ElevTile(int lvl, int ilat, int ilng, ElevDisplayParam &elevDisplayParam);
 	bool Load(const std::string &root);
 	void LoadSubset(const std::string &root, ElevTile *tile);
 	void ExtractImage(int exmin = -1, int exmax = -1, int eymin = -1, int eymax = -1);
@@ -47,6 +66,8 @@ private:
 	ElevData m_edata;
 	ElevData m_edataBase;
 	bool m_modified;
+	ElevDisplayParam &m_elevDisplayParam;
+	std::vector<bool> m_waterMask;
 };
 
 #endif // !ELEVTILE_H

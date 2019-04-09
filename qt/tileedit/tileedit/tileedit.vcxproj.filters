@@ -57,6 +57,12 @@
     <ClCompile Include="tileblock.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="colorbar.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="dlgelevconfig.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="tileedit.h">
@@ -65,9 +71,18 @@
     <QtMoc Include="tilecanvas.h">
       <Filter>Header Files</Filter>
     </QtMoc>
+    <QtMoc Include="colorbar.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
+    <QtMoc Include="dlgelevconfig.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
   </ItemGroup>
   <ItemGroup>
     <QtUic Include="tileedit.ui">
+      <Filter>Form Files</Filter>
+    </QtUic>
+    <QtUic Include="dlgElevConfig.ui">
       <Filter>Form Files</Filter>
     </QtUic>
   </ItemGroup>
