@@ -36,22 +36,22 @@ tileedit::tileedit(QWidget *parent)
 
     m_panel[0].canvas = ui->widgetCanvas0;
 	m_panel[0].colourscale = ui->widgetColourscale0;
-	m_panel[0].rangeMin = ui->dspinRangeMin0;
-	m_panel[0].rangeMax = ui->dspinRangeMax0;
+	m_panel[0].rangeMin = ui->labelRangeMin0;
+	m_panel[0].rangeMax = ui->labelRangeMax0;
 	m_panel[0].layerType = ui->comboLayerType0;
 	m_panel[0].fileId = ui->labelFileId0;
 
 	m_panel[1].canvas = ui->widgetCanvas1;
 	m_panel[1].colourscale = ui->widgetColourscale1;
-	m_panel[1].rangeMin = ui->dspinRangeMin1;
-	m_panel[1].rangeMax = ui->dspinRangeMax1;
+	m_panel[1].rangeMin = ui->labelRangeMin1;
+	m_panel[1].rangeMax = ui->labelRangeMax1;
 	m_panel[1].layerType = ui->comboLayerType1;
 	m_panel[1].fileId = ui->labelFileId1;
 
     m_panel[2].canvas = ui->widgetCanvas2;
 	m_panel[2].colourscale = ui->widgetColourscale2;
-	m_panel[2].rangeMin = ui->dspinRangeMin2;
-	m_panel[2].rangeMax = ui->dspinRangeMax2;
+	m_panel[2].rangeMin = ui->labelRangeMin2;
+	m_panel[2].rangeMax = ui->labelRangeMax2;
 	m_panel[2].layerType = ui->comboLayerType2;
 	m_panel[2].fileId = ui->labelFileId2;
 
@@ -137,6 +137,8 @@ void tileedit::createActions()
 
 void tileedit::elevDisplayParamChanged()
 {
+	char cbuf[1024];
+
 	if (m_etile) {
 		if (m_elevDisplayParam.autoRange) {
 			m_elevDisplayParam.rangeMin = m_etile->getData().dmin;
@@ -155,13 +157,17 @@ void tileedit::elevDisplayParamChanged()
 		}
 		if (m_elevDisplayParam.autoRange) {
 			if (m_etile) {
-				m_panel[i].rangeMin->setValue(m_etile->getData().dmin);
-				m_panel[i].rangeMax->setValue(m_etile->getData().dmax);
+				sprintf(cbuf, "%+0.1f", m_etile->getData().dmin);
+				m_panel[i].rangeMin->setText(cbuf);
+				sprintf(cbuf, "%+0.1f", m_etile->getData().dmax);
+				m_panel[i].rangeMax->setText(cbuf);
 			}
 		}
 		else {
-			m_panel[i].rangeMin->setValue(m_elevDisplayParam.rangeMin);
-			m_panel[i].rangeMax->setValue(m_elevDisplayParam.rangeMax);
+			sprintf(cbuf, "%+0.1f", m_elevDisplayParam.rangeMin);
+			m_panel[i].rangeMin->setText(cbuf);
+			sprintf(cbuf, "%+0.1f", m_elevDisplayParam.rangeMax);
+			m_panel[i].rangeMax->setText(cbuf);
 		}
 	}
 }
@@ -436,6 +442,14 @@ void tileedit::OnMouseMovedInCanvas(int canvasIdx, QMouseEvent *event)
 				ui->labelData3->setText(cbuf);
 			}
 		}
+		for (int i = 0; i < 3; i++) {
+			if (m_etile && m_panel[i].layerType->currentIndex() == 3) {
+				mx = ((x*iw) / cw + 1) / 2;
+				my = (ih - (y*ih) / ch) / 2;
+				double elev = m_etile->nodeElevation(mx, my);
+				m_panel[i].colourscale->findChild<Colorbar*>()->setValue(elev);
+			}
+		}
 	}
 	else {
 		ui->labelData1->setText("-");
@@ -446,9 +460,7 @@ void tileedit::OnMouseMovedInCanvas(int canvasIdx, QMouseEvent *event)
 		if (m_mouseDown)
 			editElevation(canvasIdx, event->x(), event->y());
 		for (int i = 0; i < 3; i++) {
-			//if (m_panel[i].layerType->currentIndex() == 3) {
-				m_panel[i].canvas->setCrosshair(((double)x + 0.5) / (double)cw, ((double)y + 0.5) / (double)ch);
-			//}
+			m_panel[i].canvas->setCrosshair(((double)x + 0.5) / (double)cw, ((double)y + 0.5) / (double)ch);
 		}
 	}
 }

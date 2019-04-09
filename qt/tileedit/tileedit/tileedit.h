@@ -80,8 +80,8 @@ private:
     struct TilePanel {
         TileCanvas *canvas;
 		QWidget *colourscale;
-		QDoubleSpinBox *rangeMin;
-		QDoubleSpinBox *rangeMax;
+		QLabel *rangeMin;
+		QLabel *rangeMax;
         QComboBox *layerType;
 		QLabel *fileId;
     } m_panel[3];
