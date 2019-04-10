@@ -27,6 +27,14 @@ tileedit::tileedit(QWidget *parent)
 	m_etile = 0;
 	m_etileRef = 0;
 
+	m_mgrSurf = 0;
+	m_mgrMask = 0;
+	m_mgrElev = 0;
+	m_mgrElevMod = 0;
+
+	m_openMode = /*TILESEARCH_CACHE |*/ TILESEARCH_ARCHIVE;
+	Tile::setOpenMode(m_openMode);
+
 	m_mouseDown = false;
 	m_rndn = 0;
 
@@ -109,6 +117,8 @@ tileedit::~tileedit()
 		delete m_ltile;
 	if (m_etile)
 		delete m_etile;
+
+	releaseTreeManagers();
 }
 
 void tileedit::createMenus()
@@ -175,6 +185,10 @@ void tileedit::elevDisplayParamChanged()
 void tileedit::openDir()
 {
     rootDir = QFileDialog::getExistingDirectory(this, tr("Open celestial body")).toStdString();
+
+	if (m_openMode & TILESEARCH_ARCHIVE)
+		setupTreeManagers(rootDir);
+
     setTile(1, 0, 0);
     ensureSquareCanvas(rect().width(), rect().height());
 
@@ -698,4 +712,38 @@ void tileedit::setTile(int lvl, int ilat, int ilng)
 	ui->labelLngmin->setText(cbuf);
 	sprintf(cbuf, "%+0.10lf", lngmax);
 	ui->labelLngmax->setText(cbuf);
+}
+
+void tileedit::setupTreeManagers(std::string &root)
+{
+	releaseTreeManagers();
+
+	m_mgrSurf = ZTreeMgr::CreateFromFile(root.c_str(), ZTreeMgr::LAYER_SURF);
+	SurfTile::setTreeMgr(m_mgrSurf);
+
+	m_mgrMask = ZTreeMgr::CreateFromFile(root.c_str(), ZTreeMgr::LAYER_MASK);
+	MaskTile::setTreeMgr(m_mgrMask);
+
+	m_mgrElev = ZTreeMgr::CreateFromFile(root.c_str(), ZTreeMgr::LAYER_ELEV);
+	m_mgrElevMod = ZTreeMgr::CreateFromFile(root.c_str(), ZTreeMgr::LAYER_ELEVMOD);
+}
+
+void tileedit::releaseTreeManagers()
+{
+	if (m_mgrSurf) {
+		delete m_mgrSurf;
+		m_mgrSurf = 0;
+	}
+	if (m_mgrMask) {
+		delete m_mgrMask;
+		m_mgrMask = 0;
+	}
+	if (m_mgrElev) {
+		delete m_mgrElev;
+		m_mgrElev = 0;
+	}
+	if (m_mgrElevMod) {
+		delete m_mgrElevMod;
+		m_mgrElevMod = 0;
+	}
 }

@@ -145,7 +145,7 @@ bool ZTreeMgr::OpenArchive()
 
 // -----------------------------------------------------------------------
 
-DWORD ZTreeMgr::Idx(int lvl, int ilat, int ilng)
+DWORD ZTreeMgr::Idx(int lvl, int ilat, int ilng) const
 {
 	if (lvl <= 4) {
 		return (lvl == 1 ? rootPos1 : lvl == 2 ? rootPos2 : lvl == 3 ? rootPos3 : rootPos4[ilng]);
@@ -163,7 +163,7 @@ DWORD ZTreeMgr::Idx(int lvl, int ilat, int ilng)
 
 // -----------------------------------------------------------------------
 
-DWORD ZTreeMgr::ReadData(DWORD idx, BYTE **outp)
+DWORD ZTreeMgr::ReadData(DWORD idx, BYTE **outp) const
 {
 	if (idx == (DWORD)-1) return 0; // sanity check
 
@@ -193,7 +193,7 @@ DWORD ZTreeMgr::ReadData(DWORD idx, BYTE **outp)
 
 // -----------------------------------------------------------------------
 
-DWORD ZTreeMgr::Inflate(const BYTE *inp, DWORD ninp, BYTE *outp, DWORD noutp)
+DWORD ZTreeMgr::Inflate(const BYTE *inp, DWORD ninp, BYTE *outp, DWORD noutp) const
 {
 	DWORD ndata = noutp;
 	if (uncompress (outp, &ndata, inp, ninp) != Z_OK)
@@ -203,7 +203,7 @@ DWORD ZTreeMgr::Inflate(const BYTE *inp, DWORD ninp, BYTE *outp, DWORD noutp)
 
 // -----------------------------------------------------------------------
 
-void ZTreeMgr::ReleaseData(BYTE *data)
+void ZTreeMgr::ReleaseData(BYTE *data) const
 {
 	delete []data;
 }

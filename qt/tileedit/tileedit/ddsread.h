@@ -10,5 +10,6 @@ struct Image {
 };
 
 Image ddsread(const char *fname);
+Image ddsscan(const BYTE *data, int ndata);
 
 #endif // DDSREAD_H

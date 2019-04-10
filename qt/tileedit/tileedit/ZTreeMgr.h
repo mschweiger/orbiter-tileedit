@@ -85,22 +85,22 @@ public:
 	~ZTreeMgr();
 	const TreeTOC &TOC() const { return toc; }
 
-	DWORD Idx(int lvl, int ilat, int ilng);
+	DWORD Idx(int lvl, int ilat, int ilng) const;
 	// return the array index of an arbitrary tile ((DWORD)-1: not present)
 
-	DWORD ReadData(DWORD idx, BYTE **outp);
+	DWORD ReadData(DWORD idx, BYTE **outp) const;
 
-	inline DWORD ReadData(int lvl, int ilat, int ilng, BYTE **outp)
+	inline DWORD ReadData(int lvl, int ilat, int ilng, BYTE **outp) const
 	{ return ReadData(Idx(lvl, ilat, ilng), outp); }
 
-	void ReleaseData(BYTE *data);
+	void ReleaseData(BYTE *data) const;
 
 	inline DWORD NodeSizeDeflated(DWORD idx) const { return toc.NodeSizeDeflated(idx); }
 	inline DWORD NodeSizeInflated(DWORD idx) const { return toc.NodeSizeInflated(idx); }
 
 protected:
 	bool OpenArchive();
-	DWORD Inflate(const BYTE *inp, DWORD ninp, BYTE *outp, DWORD noutp);
+	DWORD Inflate(const BYTE *inp, DWORD ninp, BYTE *outp, DWORD noutp) const;
 
 private:
 	char *path;

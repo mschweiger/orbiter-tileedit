@@ -9,6 +9,10 @@
 #include <QDoubleSpinBox>
 
 #include "elevtile.h"
+#include "ZTreeMgr.h"
+
+#define TILESEARCH_CACHE 0x1
+#define TILESEARCH_ARCHIVE 0x2
 
 namespace Ui {
 class tileedit;
@@ -47,6 +51,8 @@ private:
 	QString ModeString() const;
 	std::pair<int, int> ElevNodeFromPixCoord(int canvasIdx, int x, int y);
 	void editElevation(int canvasIdx, int x, int y);
+	void setupTreeManagers(std::string &root);
+	void releaseTreeManagers();
 
 private slots:
     void openDir();
@@ -102,6 +108,8 @@ private:
     int m_ilat;
     int m_ilng;
 
+	int m_openMode;
+
 	ElevDisplayParam m_elevDisplayParam;
 
 	bool m_mouseDown;
@@ -111,6 +119,12 @@ private:
 	NightlightTile *m_ltile;
 	ElevTile *m_etile;
 	ElevTile *m_etileRef;
+
+	// The tree archive accessors
+	ZTreeMgr *m_mgrSurf;
+	ZTreeMgr *m_mgrMask;
+	ZTreeMgr *m_mgrElev;
+	ZTreeMgr *m_mgrElevMod;
 
 	DlgElevConfig *m_dlgElevConfig;
 
