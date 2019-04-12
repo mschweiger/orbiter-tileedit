@@ -29,6 +29,7 @@ class tileedit : public QMainWindow
 {
 	Q_OBJECT
 
+	friend class DlgConfig;
 	friend class DlgElevConfig;
 
 public:
@@ -36,6 +37,7 @@ public:
     ~tileedit();
 
 	void elevDisplayParamChanged();
+	void setLoadMode(DWORD mode);
 
 protected:
     void createActions();
@@ -57,6 +59,7 @@ private:
 private slots:
     void openDir();
 	void on_actionExit_triggered();
+	void on_actionConfig_triggered();
 	void onElevConfig();
 	void onElevConfigDestroyed(int r);
     void onResolutionChanged(int val);
@@ -78,6 +81,7 @@ private:
     Ui::tileedit *ui;
     QMenu *fileMenu;
     QAction *openAct;
+	QAction *actionConfig;
 	QAction *actionExit;
 	QAction *actionElevConfig;
 
@@ -108,7 +112,7 @@ private:
     int m_ilat;
     int m_ilng;
 
-	int m_openMode;
+	DWORD m_openMode;
 
 	ElevDisplayParam m_elevDisplayParam;
 

@@ -2,6 +2,7 @@
 #include "ui_tileedit.h"
 #include "tile.h"
 #include "elevtile.h"
+#include "dlgconfig.h"
 #include "dlgelevconfig.h"
 #include <random>
 
@@ -32,7 +33,7 @@ tileedit::tileedit(QWidget *parent)
 	m_mgrElev = 0;
 	m_mgrElevMod = 0;
 
-	m_openMode = /*TILESEARCH_CACHE |*/ TILESEARCH_ARCHIVE;
+	m_openMode = TILESEARCH_CACHE | TILESEARCH_ARCHIVE;
 	Tile::setOpenMode(m_openMode);
 
 	m_mouseDown = false;
@@ -126,6 +127,8 @@ void tileedit::createMenus()
     fileMenu = ui->menuBar->addMenu(tr("&File"));
     fileMenu->addAction(openAct);
 	fileMenu->addSeparator();
+	fileMenu->addAction(actionConfig);
+	fileMenu->addSeparator();
 	fileMenu->addAction(actionExit);
 
 	QMenu *menu = ui->menuBar->addMenu(tr("&Elevation"));
@@ -136,6 +139,9 @@ void tileedit::createActions()
 {
     openAct = new QAction(tr("&Open"), this);
     connect(openAct, &QAction::triggered, this, &tileedit::openDir);
+
+	actionConfig = new QAction(tr("&Configure"), this);
+	connect(actionConfig, &QAction::triggered, this, &tileedit::on_actionConfig_triggered);
 
 	actionExit = new QAction(tr("E&xit"), this);
 	connect(actionExit, &QAction::triggered, this, &tileedit::on_actionExit_triggered);
@@ -182,6 +188,17 @@ void tileedit::elevDisplayParamChanged()
 	}
 }
 
+void tileedit::setLoadMode(DWORD mode)
+{
+	if (mode != m_openMode) {
+		m_openMode = mode;
+		Tile::setOpenMode(m_openMode);
+
+		// reload current tile
+		setTile(m_lvl, m_ilat, m_ilng);
+	}
+}
+
 void tileedit::openDir()
 {
     rootDir = QFileDialog::getExistingDirectory(this, tr("Open celestial body")).toStdString();
@@ -195,6 +212,12 @@ void tileedit::openDir()
 	char cbuf[256];
 	sprintf(cbuf, "tileedit [%s]", rootDir.c_str());
 	setWindowTitle(cbuf);
+}
+
+void tileedit::on_actionConfig_triggered()
+{
+	DlgConfig dlg(this);
+	dlg.exec();
 }
 
 void tileedit::on_actionExit_triggered()

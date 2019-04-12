@@ -66,6 +66,9 @@
     <ClCompile Include="ZTreeMgr.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="dlgconfig.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="tileedit.h">
@@ -80,12 +83,18 @@
     <QtMoc Include="dlgelevconfig.h">
       <Filter>Header Files</Filter>
     </QtMoc>
+    <QtMoc Include="dlgconfig.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
   </ItemGroup>
   <ItemGroup>
     <QtUic Include="tileedit.ui">
       <Filter>Form Files</Filter>
     </QtUic>
     <QtUic Include="dlgElevConfig.ui">
+      <Filter>Form Files</Filter>
+    </QtUic>
+    <QtUic Include="dlgConfig.ui">
       <Filter>Form Files</Filter>
     </QtUic>
   </ItemGroup>
