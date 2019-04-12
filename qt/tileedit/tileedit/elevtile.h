@@ -42,6 +42,7 @@ class ElevTile : public Tile {
 public:
 	ElevTile(const ElevTile &etile);
 	static ElevTile *Load(const std::string &root, int lvl, int ilat, int ilng, ElevDisplayParam &elevDisplayParam, const Cmap *cm = 0);
+	static void setTreeMgr(const ZTreeMgr *mgr, const ZTreeMgr *modMgr = 0);
 	const std::string Layer() const { return std::string("Elev"); }
 	double nodeElevation(int ndx, int ndy);
 	ElevData &getData() { return m_edata; }
@@ -59,7 +60,9 @@ public:
 protected:
 	ElevTile(int lvl, int ilat, int ilng, ElevDisplayParam &elevDisplayParam);
 	bool Load(const std::string &root);
-	void LoadSubset(const std::string &root, ElevTile *tile);
+	void LoadSubset(const std::string &root);
+	void LoadData(ElevData &edata, const std::string &root, int lvl, int ilat, int ilng);
+	void LoadModData(ElevData &edata, const std::string &root, int lvl, int ilat, int ilng);
 	void ExtractImage(int exmin = -1, int exmax = -1, int eymin = -1, int eymax = -1);
 
 private:
@@ -68,6 +71,8 @@ private:
 	bool m_modified;
 	ElevDisplayParam &m_elevDisplayParam;
 	std::vector<bool> m_waterMask;
+	static const ZTreeMgr *s_treeMgr;
+	static const ZTreeMgr *s_treeModMgr;
 };
 
 #endif // !ELEVTILE_H

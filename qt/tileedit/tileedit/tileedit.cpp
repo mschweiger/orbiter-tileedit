@@ -458,6 +458,8 @@ void tileedit::OnMouseMovedInCanvas(int canvasIdx, QMouseEvent *event)
 		}
 		for (int i = 0; i < 3; i++) {
 			if (m_etile && m_panel[i].layerType->currentIndex() == 3) {
+				iw = m_etile->getImage().width;
+				ih = m_etile->getImage().height;
 				mx = ((x*iw) / cw + 1) / 2;
 				my = (ih - (y*ih) / ch) / 2;
 				double elev = m_etile->nodeElevation(mx, my);
@@ -726,6 +728,7 @@ void tileedit::setupTreeManagers(std::string &root)
 
 	m_mgrElev = ZTreeMgr::CreateFromFile(root.c_str(), ZTreeMgr::LAYER_ELEV);
 	m_mgrElevMod = ZTreeMgr::CreateFromFile(root.c_str(), ZTreeMgr::LAYER_ELEVMOD);
+	ElevTile::setTreeMgr(m_mgrElev, m_mgrElevMod);
 }
 
 void tileedit::releaseTreeManagers()
