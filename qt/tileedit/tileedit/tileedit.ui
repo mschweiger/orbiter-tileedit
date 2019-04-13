@@ -13,6 +13,10 @@
   <property name="windowTitle">
    <string>Orbiter tileedit</string>
   </property>
+  <property name="windowIcon">
+   <iconset resource="tileedit.qrc">
+    <normaloff>:/tileedit/resources/appicon32.png</normaloff>:/tileedit/resources/appicon32.png</iconset>
+  </property>
   <widget class="QWidget" name="centralWidget">
    <property name="sizePolicy">
     <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
