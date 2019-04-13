@@ -96,6 +96,45 @@ Image ddsread(const char *fname)
 }
 
 
+Image ddsscan(const BYTE *data, int ndata)
+{
+	Image img;
+
+	if (ndata < 4 || strncmp((char*)data, "DDS ", 4)) {
+		std::cerr << "ddsread: Invalid file format" << std::endl;
+		exit(1);
+	}
+	data += 4;
+	ndata -= 4;
+
+	DDSHEADER ddsh;
+	memcpy(&ddsh, data, sizeof(DDSHEADER));
+	data += sizeof(DDSHEADER);
+	ndata -= sizeof(DDSHEADER);
+	if (ddsh.dwSize != sizeof(DDSHEADER)) {
+		std::cerr << "ddsread: Invalid header size" << std::endl;
+		exit(1);
+	}
+
+	if (strncmp((char*)&ddsh.ddspf.dwFourCC, "DXT1", 4)) {
+		std::cerr << "ddsread: Only implemented for DXT1 format" << std::endl;
+		exit(1);
+	}
+
+	if (ndata < ddsh.dwLinearSize) {
+		std::cerr << "ddsread: Unexpected end of file" << std::endl;
+		exit(1);
+	}
+	ndata = ddsh.dwLinearSize / 2;
+
+	img.data = ExtractDXT1((WORD*)data, ndata, ddsh.dwHeight, ddsh.dwWidth);
+	img.width = ddsh.dwWidth;
+	img.height = ddsh.dwHeight;
+
+	return img;
+}
+
+
 std::vector<DWORD> ExtractDXT1 (WORD *data, DWORD ndata, DWORD h, DWORD w)
 {
     int i;

@@ -1,5 +1,6 @@
 <RCC>
   <qresource prefix="/tileedit">
+    <file>resources/appicon32.png</file>
     <file>resources/icon_elevedit_random.png</file>
     <file>resources/icon_elevedit_erase.png</file>
     <file>resources/icon_navigate.png</file>

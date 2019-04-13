@@ -9,6 +9,10 @@
 #include <QDoubleSpinBox>
 
 #include "elevtile.h"
+#include "ZTreeMgr.h"
+
+#define TILESEARCH_CACHE 0x1
+#define TILESEARCH_ARCHIVE 0x2
 
 namespace Ui {
 class tileedit;
@@ -25,6 +29,7 @@ class tileedit : public QMainWindow
 {
 	Q_OBJECT
 
+	friend class DlgConfig;
 	friend class DlgElevConfig;
 
 public:
@@ -32,6 +37,7 @@ public:
     ~tileedit();
 
 	void elevDisplayParamChanged();
+	void setLoadMode(DWORD mode);
 
 protected:
     void createActions();
@@ -47,10 +53,13 @@ private:
 	QString ModeString() const;
 	std::pair<int, int> ElevNodeFromPixCoord(int canvasIdx, int x, int y);
 	void editElevation(int canvasIdx, int x, int y);
+	void setupTreeManagers(std::string &root);
+	void releaseTreeManagers();
 
 private slots:
     void openDir();
 	void on_actionExit_triggered();
+	void on_actionConfig_triggered();
 	void onElevConfig();
 	void onElevConfigDestroyed(int r);
     void onResolutionChanged(int val);
@@ -72,6 +81,7 @@ private:
     Ui::tileedit *ui;
     QMenu *fileMenu;
     QAction *openAct;
+	QAction *actionConfig;
 	QAction *actionExit;
 	QAction *actionElevConfig;
 
@@ -102,6 +112,8 @@ private:
     int m_ilat;
     int m_ilng;
 
+	DWORD m_openMode;
+
 	ElevDisplayParam m_elevDisplayParam;
 
 	bool m_mouseDown;
@@ -111,6 +123,12 @@ private:
 	NightlightTile *m_ltile;
 	ElevTile *m_etile;
 	ElevTile *m_etileRef;
+
+	// The tree archive accessors
+	ZTreeMgr *m_mgrSurf;
+	ZTreeMgr *m_mgrMask;
+	ZTreeMgr *m_mgrElev;
+	ZTreeMgr *m_mgrElevMod;
 
 	DlgElevConfig *m_dlgElevConfig;
 

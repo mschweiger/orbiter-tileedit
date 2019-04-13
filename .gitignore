@@ -1,6 +1,7 @@
 *.exe
 *.mat
 *.asv
+*.aps
 *.db
 *.user
 *.opendb

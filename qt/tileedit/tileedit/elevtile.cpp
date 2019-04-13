@@ -64,6 +64,9 @@ ElevData ElevData::SubTile(const std::pair<DWORD, DWORD> &xrange, const std::pai
 
 // ==================================================================================
 
+const ZTreeMgr *ElevTile::s_treeMgr = 0;
+const ZTreeMgr *ElevTile::s_treeModMgr = 0;
+
 ElevTile::ElevTile(int lvl, int ilat, int ilng, ElevDisplayParam &elevDisplayParam)
 	: Tile(lvl, ilat, ilng)
 	, m_elevDisplayParam(elevDisplayParam)
@@ -89,20 +92,15 @@ double ElevTile::nodeElevation(int ndx, int ndy)
 
 bool ElevTile::Load(const std::string &root)
 {
-	// read tile from Elev layer
-	char path[1024];
-	sprintf(path, "%s/%s/%02d/%06d/%06d.elv", root.c_str(), Layer().c_str(), m_lvl, m_ilat, m_ilng);
-	m_edataBase = elvread(path);
+	LoadData(m_edataBase, root, m_lvl, m_ilat, m_ilng);
 	m_edata = m_edataBase;
 
 	if (m_edata.data.size()) {
-		// read modifications from Elev_mod layer if present
-		sprintf(path, "%s/%s_mod/%02d/%06d/%06d.elv", root.c_str(), Layer().c_str(), m_lvl, m_ilat, m_ilng);
-		elvmodread(path, m_edata);
+		LoadModData(m_edata, root, m_lvl, m_ilat, m_ilng);
 	}
 	else {
 		// interpolate from ancestor
-		LoadSubset(root, this);
+		LoadSubset(root);
 	}
 
 	// turn elevation data into an image
@@ -112,35 +110,67 @@ bool ElevTile::Load(const std::string &root)
 	return m_edata.data.size() > 0;
 }
 
-void ElevTile::LoadSubset(const std::string &root, ElevTile *tile)
+void ElevTile::LoadData(ElevData &edata, const std::string &root, int lvl, int ilat, int ilng)
 {
-	if (tile->m_sublvl > 1) {
-		tile->lat_subrange.first /= 2;
-		tile->lat_subrange.second /= 2;
-		tile->lng_subrange.first /= 2;
-		tile->lng_subrange.second /= 2;
-		if (tile->m_subilat & 1) {
-			tile->lat_subrange.first += 128;
-			tile->lat_subrange.second += 128;
-		}
-		if (tile->m_subilng & 1) {
-			tile->lng_subrange.first += 128;
-			tile->lng_subrange.second += 128;
-		}
-		tile->m_sublvl -= 1;
-		tile->m_subilat /= 2;
-		tile->m_subilng /= 2;
-
+	if (s_openMode & 0x1) { // try cache
 		char path[1024];
-		sprintf(path, "%s/%s/%02d/%06d/%06d.elv", root.c_str(), Layer().c_str(), tile->m_sublvl, tile->m_subilat, tile->m_subilng);
-		tile->m_edata = elvread(path);
-		if (tile->m_edata.data.size()) {
-			sprintf(path, "%s/%s_mod/%02d/%06d/%06d.elv", root.c_str(), Layer().c_str(), tile->m_sublvl, tile->m_subilat, tile->m_subilng);
-			elvmodread(path, tile->m_edata);
-			tile->m_edata = tile->m_edata.SubTile(tile->lng_subrange, tile->lat_subrange);
+		sprintf(path, "%s/%s/%02d/%06d/%06d.elv", root.c_str(), Layer().c_str(), m_lvl, m_ilat, m_ilng);
+		edata = elvread(path);
+	}
+	if (edata.data.size() == 0 && s_openMode & 0x2 && s_treeMgr) { // try archive
+		BYTE *buf;
+		DWORD ndata = s_treeMgr->ReadData(lvl, ilat, ilng, &buf);
+		if (ndata) {
+			edata = elvscan(buf, ndata);
+			s_treeMgr->ReleaseData(buf);
+		}
+	}
+}
+
+void ElevTile::LoadModData(ElevData &edata, const std::string &root, int lvl, int ilat, int ilng)
+{
+	bool found = false;
+	if (s_openMode & 0x1) { // try cache
+		char path[1024];
+		sprintf(path, "%s/%s_mod/%02d/%06d/%06d.elv", root.c_str(), Layer().c_str(), m_lvl, m_ilat, m_ilng);
+		found = elvmodread(path, edata);
+	}
+	if (!found && s_openMode & 0x2 && s_treeModMgr) { // try archive
+		BYTE *buf;
+		DWORD ndata = s_treeModMgr->ReadData(lvl, ilat, ilng, &buf);
+		if (ndata) {
+			elvmodscan(buf, ndata, edata);
+			s_treeModMgr->ReleaseData(buf);
+		}
+	}
+}
+
+void ElevTile::LoadSubset(const std::string &root)
+{
+	if (m_sublvl > 1) {
+		lat_subrange.first /= 2;
+		lat_subrange.second /= 2;
+		lng_subrange.first /= 2;
+		lng_subrange.second /= 2;
+		if (m_subilat & 1) {
+			lat_subrange.first += 128;
+			lat_subrange.second += 128;
+		}
+		if (m_subilng & 1) {
+			lng_subrange.first += 128;
+			lng_subrange.second += 128;
+		}
+		m_sublvl -= 1;
+		m_subilat /= 2;
+		m_subilng /= 2;
+
+		LoadData(m_edata, root, m_sublvl, m_subilat, m_subilng);
+		if (m_edata.data.size()) {
+			LoadModData(m_edata, root, m_sublvl, m_subilat, m_subilng);
+			m_edata = m_edata.SubTile(lng_subrange, lat_subrange);
 		}
 		else {
-			LoadSubset(root, this);
+			LoadSubset(root);
 		}
 	}
 }
@@ -323,6 +353,12 @@ ElevTile *ElevTile::Load(const std::string &root, int lvl, int ilat, int ilng, E
 		etile = 0;
 	}
 	return etile;
+}
+
+void ElevTile::setTreeMgr(const ZTreeMgr *treeMgr, const ZTreeMgr *treeModMgr)
+{
+	s_treeMgr = treeMgr;
+	s_treeModMgr = treeModMgr;
 }
 
 void ElevTile::dataChanged(int exmin, int exmax, int eymin, int eymax)

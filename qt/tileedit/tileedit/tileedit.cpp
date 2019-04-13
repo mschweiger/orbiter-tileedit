@@ -2,6 +2,7 @@
 #include "ui_tileedit.h"
 #include "tile.h"
 #include "elevtile.h"
+#include "dlgconfig.h"
 #include "dlgelevconfig.h"
 #include <random>
 
@@ -26,6 +27,14 @@ tileedit::tileedit(QWidget *parent)
 	m_ltile = 0;
 	m_etile = 0;
 	m_etileRef = 0;
+
+	m_mgrSurf = 0;
+	m_mgrMask = 0;
+	m_mgrElev = 0;
+	m_mgrElevMod = 0;
+
+	m_openMode = TILESEARCH_CACHE | TILESEARCH_ARCHIVE;
+	Tile::setOpenMode(m_openMode);
 
 	m_mouseDown = false;
 	m_rndn = 0;
@@ -109,12 +118,16 @@ tileedit::~tileedit()
 		delete m_ltile;
 	if (m_etile)
 		delete m_etile;
+
+	releaseTreeManagers();
 }
 
 void tileedit::createMenus()
 {
     fileMenu = ui->menuBar->addMenu(tr("&File"));
     fileMenu->addAction(openAct);
+	fileMenu->addSeparator();
+	fileMenu->addAction(actionConfig);
 	fileMenu->addSeparator();
 	fileMenu->addAction(actionExit);
 
@@ -126,6 +139,9 @@ void tileedit::createActions()
 {
     openAct = new QAction(tr("&Open"), this);
     connect(openAct, &QAction::triggered, this, &tileedit::openDir);
+
+	actionConfig = new QAction(tr("&Configure"), this);
+	connect(actionConfig, &QAction::triggered, this, &tileedit::on_actionConfig_triggered);
 
 	actionExit = new QAction(tr("E&xit"), this);
 	connect(actionExit, &QAction::triggered, this, &tileedit::on_actionExit_triggered);
@@ -172,15 +188,36 @@ void tileedit::elevDisplayParamChanged()
 	}
 }
 
+void tileedit::setLoadMode(DWORD mode)
+{
+	if (mode != m_openMode) {
+		m_openMode = mode;
+		Tile::setOpenMode(m_openMode);
+
+		// reload current tile
+		setTile(m_lvl, m_ilat, m_ilng);
+	}
+}
+
 void tileedit::openDir()
 {
     rootDir = QFileDialog::getExistingDirectory(this, tr("Open celestial body")).toStdString();
+
+	if (m_openMode & TILESEARCH_ARCHIVE)
+		setupTreeManagers(rootDir);
+
     setTile(1, 0, 0);
     ensureSquareCanvas(rect().width(), rect().height());
 
 	char cbuf[256];
 	sprintf(cbuf, "tileedit [%s]", rootDir.c_str());
 	setWindowTitle(cbuf);
+}
+
+void tileedit::on_actionConfig_triggered()
+{
+	DlgConfig dlg(this);
+	dlg.exec();
 }
 
 void tileedit::on_actionExit_triggered()
@@ -444,6 +481,8 @@ void tileedit::OnMouseMovedInCanvas(int canvasIdx, QMouseEvent *event)
 		}
 		for (int i = 0; i < 3; i++) {
 			if (m_etile && m_panel[i].layerType->currentIndex() == 3) {
+				iw = m_etile->getImage().width;
+				ih = m_etile->getImage().height;
 				mx = ((x*iw) / cw + 1) / 2;
 				my = (ih - (y*ih) / ch) / 2;
 				double elev = m_etile->nodeElevation(mx, my);
@@ -698,4 +737,39 @@ void tileedit::setTile(int lvl, int ilat, int ilng)
 	ui->labelLngmin->setText(cbuf);
 	sprintf(cbuf, "%+0.10lf", lngmax);
 	ui->labelLngmax->setText(cbuf);
+}
+
+void tileedit::setupTreeManagers(std::string &root)
+{
+	releaseTreeManagers();
+
+	m_mgrSurf = ZTreeMgr::CreateFromFile(root.c_str(), ZTreeMgr::LAYER_SURF);
+	SurfTile::setTreeMgr(m_mgrSurf);
+
+	m_mgrMask = ZTreeMgr::CreateFromFile(root.c_str(), ZTreeMgr::LAYER_MASK);
+	MaskTile::setTreeMgr(m_mgrMask);
+
+	m_mgrElev = ZTreeMgr::CreateFromFile(root.c_str(), ZTreeMgr::LAYER_ELEV);
+	m_mgrElevMod = ZTreeMgr::CreateFromFile(root.c_str(), ZTreeMgr::LAYER_ELEVMOD);
+	ElevTile::setTreeMgr(m_mgrElev, m_mgrElevMod);
+}
+
+void tileedit::releaseTreeManagers()
+{
+	if (m_mgrSurf) {
+		delete m_mgrSurf;
+		m_mgrSurf = 0;
+	}
+	if (m_mgrMask) {
+		delete m_mgrMask;
+		m_mgrMask = 0;
+	}
+	if (m_mgrElev) {
+		delete m_mgrElev;
+		m_mgrElev = 0;
+	}
+	if (m_mgrElevMod) {
+		delete m_mgrElevMod;
+		m_mgrElevMod = 0;
+	}
 }

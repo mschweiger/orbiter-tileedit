@@ -4,6 +4,7 @@
 #include <windows.h>
 #include <vector>
 #include "ddsread.h"
+#include "ZTreeMgr.h"
 
 class Tile
 {
@@ -24,6 +25,8 @@ public:
 	DWORD pixelColour(int px, int py) const;
 	virtual const std::string Layer() const = 0;
 
+	static void setOpenMode(int mode);
+
 protected:
     int m_lvl;
     int m_ilat;
@@ -34,6 +37,8 @@ protected:
     std::pair<DWORD, DWORD> lat_subrange;
     std::pair<DWORD, DWORD> lng_subrange;
     Image img;
+
+	static int s_openMode;
 };
 
 class DXT1Tile: public Tile
@@ -42,18 +47,21 @@ public:
 	DXT1Tile(int lvl, int ilat, int ilng);
 
 protected:
-	virtual void LoadDXT1(const std::string &root);
-	static void LoadSubset(const std::string &root, DXT1Tile *tile);
+	virtual void LoadDXT1(const std::string &root, const ZTreeMgr *mgr = 0);
+	void LoadSubset(const std::string &root, DXT1Tile *tile, const ZTreeMgr *mgr = 0);
+	void LoadImage(Image &im, const std::string &root, int lvl, int ilat, int ilng, const ZTreeMgr *mgr);
 };
 
 class SurfTile: public DXT1Tile
 {
 public:
     static SurfTile *Load(const std::string &root, int lvl, int ilat, int ilng);
+	static void setTreeMgr(const ZTreeMgr *mgr);
 	const std::string Layer() const { return std::string("Surf"); }
 
 protected:
     SurfTile(int lvl, int ilat, int ilng);
+	static const ZTreeMgr *s_treeMgr;
 };
 
 class NightlightTile : public Tile
@@ -71,10 +79,12 @@ class MaskTile : public DXT1Tile
 {
 public:
 	static std::pair<MaskTile*, NightlightTile*> Load(const std::string &root, int lvl, int ilat, int ilng);
+	static void setTreeMgr(const ZTreeMgr *mgr);
 	const std::string Layer() const { return std::string("Mask"); }
 
 protected:
 	MaskTile(int lvl, int ilat, int ilng);
+	static const ZTreeMgr *s_treeMgr;
 };
 
 #endif // TILE_H

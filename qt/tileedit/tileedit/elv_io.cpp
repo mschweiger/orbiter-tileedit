@@ -80,7 +80,7 @@ ElevData elvread(const char *fname)
 
 // ==================================================================================
 
-void elvmodread(const char *fname, ElevData &edata)
+bool elvmodread(const char *fname, ElevData &edata)
 {
 	const int ndat = TILE_ELEVSTRIDE*TILE_ELEVSTRIDE;
 	ELEVFILEHEADER hdr;
@@ -88,11 +88,11 @@ void elvmodread(const char *fname, ElevData &edata)
 
 	FILE *f = fopen(fname, "rb");
 	if (!f)
-		return;
+		return false;
 
 	int res = fread(&hdr, sizeof(ELEVFILEHEADER), 1, f);
 	if (res != 1 || strncmp(hdr.id, "ELE\01", 4))
-		return;
+		return false;
 
 	if (hdr.hdrsize != sizeof(ELEVFILEHEADER)) {
 		fseek(f, hdr.hdrsize, SEEK_SET);
@@ -128,6 +128,112 @@ void elvmodread(const char *fname, ElevData &edata)
 	edata.dmax = *std::max_element(edata.data.begin(), edata.data.end());
 	if (scale < edata.dres)
 		edata.dres = scale;
+
+	return true;
+}
+
+// ==================================================================================
+
+ElevData elvscan(const BYTE *data, int ndata)
+{
+	const int ndat = TILE_ELEVSTRIDE*TILE_ELEVSTRIDE;
+	ElevData edata;
+	ELEVFILEHEADER hdr;
+	double scale, offset;
+	int i;
+
+	if (ndata < sizeof(ELEVFILEHEADER))
+		return edata;
+
+	memcpy(&hdr, data, sizeof(ELEVFILEHEADER));
+	data += sizeof(ELEVFILEHEADER);
+	ndata -= sizeof(ELEVFILEHEADER);
+
+	if (strncmp(hdr.id, "ELE\01", 4) || hdr.hdrsize != sizeof(ELEVFILEHEADER))
+		return edata;
+
+	scale = hdr.scale;
+	offset = hdr.offset;
+	edata.data.resize(ndat);
+	edata.width = TILE_ELEVSTRIDE;
+	edata.height = TILE_ELEVSTRIDE;
+	double *e = edata.data.data();
+
+	switch (hdr.dtype) {
+	case 0:
+		for (i = 0; i < ndat; i++)
+			e[i] = offset;
+		break;
+	case 8: {
+		UINT8 *data_uint8 = (UINT8*)data;
+		for (i = 0; i < ndat; i++)
+			e[i] = (double)data_uint8[i] * scale + offset;
+		} break;
+	case -16: {
+		INT16 *data_int16 = (INT16*)data;
+		for (i = 0; i < ndat; i++)
+			e[i] = (double)data_int16[i] * scale + offset;
+		} break;
+	}
+
+	edata.dmin = *std::min_element(edata.data.begin(), edata.data.end());
+	edata.dmax = *std::max_element(edata.data.begin(), edata.data.end());
+	edata.dres = scale;
+
+	return edata;
+}
+
+// ==================================================================================
+
+bool elvmodscan(const BYTE*data, int ndata, ElevData &edata)
+{
+	const int ndat = TILE_ELEVSTRIDE*TILE_ELEVSTRIDE;
+	ELEVFILEHEADER hdr;
+	int i;
+
+	if (ndata < sizeof(ELEVFILEHEADER))
+		return false;
+
+	memcpy(&hdr, data, sizeof(ELEVFILEHEADER));
+	data += sizeof(ELEVFILEHEADER);
+	ndata -= sizeof(ELEVFILEHEADER);
+
+	if (strncmp(hdr.id, "ELE\01", 4) || hdr.hdrsize != sizeof(ELEVFILEHEADER))
+		return false;
+
+	double *e = edata.data.data();
+	double offset = hdr.offset;
+	double scale = hdr.scale;
+
+	switch (hdr.dtype) {
+	case 0:
+		for (i = 0; i < ndat; i++)
+			e[i] = offset;
+		break;
+	case 8: {
+		UINT8 *data_uint8 = (UINT8*)data;
+		for (i = 0; i < ndat; i++) {
+			UINT8 v = data_uint8[i];
+			if (v != UCHAR_MAX)
+				e[i] = (double)v * scale + offset;
+		}
+		} break;
+	case -16: {
+		INT16 *data_int16 = (INT16*)data;
+		for (i = 0; i < ndat; i++) {
+			INT16 v = data_int16[i];
+			if (v != SHRT_MAX)
+				e[i] = (double)v * scale + offset;
+		}
+		} break;
+	}
+
+	edata.dmin = *std::min_element(edata.data.begin(), edata.data.end());
+	edata.dmax = *std::max_element(edata.data.begin(), edata.data.end());
+	if (scale < edata.dres)
+		edata.dres = scale;
+
+	return true;
 }
 
 // ==================================================================================
