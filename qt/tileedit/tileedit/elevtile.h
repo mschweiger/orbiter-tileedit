@@ -16,6 +16,8 @@ struct ElevData {
 	ElevData();
 	ElevData(const ElevData &edata);
 	ElevData &operator=(const ElevData &edata);
+	double nodeValue(int ix, int iy) const;
+	void setNodeValue(int ix, int iy, double v);
 	ElevData SubTile(const std::pair<DWORD, DWORD> &xrange, const std::pair<DWORD, DWORD> &yrange);
 };
 
@@ -41,7 +43,7 @@ class ElevTile : public Tile {
 
 public:
 	ElevTile(const ElevTile &etile);
-	static ElevTile *Load(const std::string &root, int lvl, int ilat, int ilng, ElevDisplayParam &elevDisplayParam, const Cmap *cm = 0);
+	static ElevTile *Load(int lvl, int ilat, int ilng, ElevDisplayParam &elevDisplayParam, const Cmap *cm = 0);
 	static void setTreeMgr(const ZTreeMgr *mgr, const ZTreeMgr *modMgr = 0);
 	const std::string Layer() const { return std::string("Elev"); }
 	double nodeElevation(int ndx, int ndy);
@@ -51,18 +53,24 @@ public:
 	void displayParamChanged();
 	bool isModified() const { return m_modified; }
 	void dataChanged(int exmin = -1, int exmax = -1, int eymin = -1, int eymax = -1);
-	void Save(const std::string &root);
-	void SaveMod(const std::string &root);
-	void MatchNeighbourTiles(const std::string &root);
-	bool MatchParentTile(const std::string &root, int minlvl) const;
+	void Save();
+	void SaveMod();
+	void MatchNeighbourTiles();
+	bool MatchParentTile(int minlvl) const;
+
+	/**
+	 * \brief Interpolate the tile to the next resolution level
+	 */
+	ElevTileBlock Prolong();
+
 	void setWaterMask(const MaskTile *mtile);
 
 protected:
 	ElevTile(int lvl, int ilat, int ilng, ElevDisplayParam &elevDisplayParam);
 	bool Load(const std::string &root);
-	void LoadSubset(const std::string &root);
-	void LoadData(ElevData &edata, const std::string &root, int lvl, int ilat, int ilng);
-	void LoadModData(ElevData &edata, const std::string &root, int lvl, int ilat, int ilng);
+	void LoadSubset();
+	void LoadData(ElevData &edata, int lvl, int ilat, int ilng);
+	void LoadModData(ElevData &edata, int lvl, int ilat, int ilng);
 	void ExtractImage(int exmin = -1, int exmax = -1, int eymin = -1, int eymax = -1);
 
 private:

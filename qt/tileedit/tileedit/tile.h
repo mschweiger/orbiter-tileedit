@@ -25,6 +25,7 @@ public:
 	DWORD pixelColour(int px, int py) const;
 	virtual const std::string Layer() const = 0;
 
+	static void setRoot(const std::string &root);
 	static void setOpenMode(int mode);
 
 protected:
@@ -38,6 +39,7 @@ protected:
     std::pair<DWORD, DWORD> lng_subrange;
     Image img;
 
+	static std::string s_root;
 	static int s_openMode;
 };
 
@@ -47,15 +49,15 @@ public:
 	DXT1Tile(int lvl, int ilat, int ilng);
 
 protected:
-	virtual void LoadDXT1(const std::string &root, const ZTreeMgr *mgr = 0);
-	void LoadSubset(const std::string &root, DXT1Tile *tile, const ZTreeMgr *mgr = 0);
-	void LoadImage(Image &im, const std::string &root, int lvl, int ilat, int ilng, const ZTreeMgr *mgr);
+	virtual void LoadDXT1(const ZTreeMgr *mgr = 0);
+	void LoadSubset(DXT1Tile *tile, const ZTreeMgr *mgr = 0);
+	void LoadImage(Image &im, int lvl, int ilat, int ilng, const ZTreeMgr *mgr);
 };
 
 class SurfTile: public DXT1Tile
 {
 public:
-    static SurfTile *Load(const std::string &root, int lvl, int ilat, int ilng);
+    static SurfTile *Load(int lvl, int ilat, int ilng);
 	static void setTreeMgr(const ZTreeMgr *mgr);
 	const std::string Layer() const { return std::string("Surf"); }
 
@@ -78,7 +80,7 @@ protected:
 class MaskTile : public DXT1Tile
 {
 public:
-	static std::pair<MaskTile*, NightlightTile*> Load(const std::string &root, int lvl, int ilat, int ilng);
+	static std::pair<MaskTile*, NightlightTile*> Load(int lvl, int ilat, int ilng);
 	static void setTreeMgr(const ZTreeMgr *mgr);
 	const std::string Layer() const { return std::string("Mask"); }
 

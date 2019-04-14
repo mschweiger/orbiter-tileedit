@@ -39,6 +39,16 @@ ElevData &ElevData::operator=(const ElevData &edata)
 	return *this;
 }
 
+double ElevData::nodeValue(int ix, int iy) const
+{
+	return data[ix + iy*width];
+}
+
+void ElevData::setNodeValue(int ix, int iy, double v)
+{
+	data[ix + iy*width] = v;
+}
+
 ElevData ElevData::SubTile(const std::pair<DWORD, DWORD> &xrange, const std::pair<DWORD, DWORD> &yrange)
 {
 	ElevData sub;
@@ -92,15 +102,15 @@ double ElevTile::nodeElevation(int ndx, int ndy)
 
 bool ElevTile::Load(const std::string &root)
 {
-	LoadData(m_edataBase, root, m_lvl, m_ilat, m_ilng);
+	LoadData(m_edataBase, m_lvl, m_ilat, m_ilng);
 	m_edata = m_edataBase;
 
 	if (m_edata.data.size()) {
-		LoadModData(m_edata, root, m_lvl, m_ilat, m_ilng);
+		LoadModData(m_edata, m_lvl, m_ilat, m_ilng);
 	}
 	else {
 		// interpolate from ancestor
-		LoadSubset(root);
+		LoadSubset();
 	}
 
 	// turn elevation data into an image
@@ -110,11 +120,11 @@ bool ElevTile::Load(const std::string &root)
 	return m_edata.data.size() > 0;
 }
 
-void ElevTile::LoadData(ElevData &edata, const std::string &root, int lvl, int ilat, int ilng)
+void ElevTile::LoadData(ElevData &edata, int lvl, int ilat, int ilng)
 {
 	if (s_openMode & 0x1) { // try cache
 		char path[1024];
-		sprintf(path, "%s/%s/%02d/%06d/%06d.elv", root.c_str(), Layer().c_str(), m_lvl, m_ilat, m_ilng);
+		sprintf(path, "%s/%s/%02d/%06d/%06d.elv", s_root.c_str(), Layer().c_str(), m_lvl, m_ilat, m_ilng);
 		edata = elvread(path);
 	}
 	if (edata.data.size() == 0 && s_openMode & 0x2 && s_treeMgr) { // try archive
@@ -127,12 +137,12 @@ void ElevTile::LoadData(ElevData &edata, const std::string &root, int lvl, int i
 	}
 }
 
-void ElevTile::LoadModData(ElevData &edata, const std::string &root, int lvl, int ilat, int ilng)
+void ElevTile::LoadModData(ElevData &edata, int lvl, int ilat, int ilng)
 {
 	bool found = false;
 	if (s_openMode & 0x1) { // try cache
 		char path[1024];
-		sprintf(path, "%s/%s_mod/%02d/%06d/%06d.elv", root.c_str(), Layer().c_str(), m_lvl, m_ilat, m_ilng);
+		sprintf(path, "%s/%s_mod/%02d/%06d/%06d.elv", s_root.c_str(), Layer().c_str(), m_lvl, m_ilat, m_ilng);
 		found = elvmodread(path, edata);
 	}
 	if (!found && s_openMode & 0x2 && s_treeModMgr) { // try archive
@@ -145,7 +155,7 @@ void ElevTile::LoadModData(ElevData &edata, const std::string &root, int lvl, in
 	}
 }
 
-void ElevTile::LoadSubset(const std::string &root)
+void ElevTile::LoadSubset()
 {
 	if (m_sublvl > 1) {
 		lat_subrange.first /= 2;
@@ -164,23 +174,23 @@ void ElevTile::LoadSubset(const std::string &root)
 		m_subilat /= 2;
 		m_subilng /= 2;
 
-		LoadData(m_edata, root, m_sublvl, m_subilat, m_subilng);
+		LoadData(m_edata, m_sublvl, m_subilat, m_subilng);
 		if (m_edata.data.size()) {
-			LoadModData(m_edata, root, m_sublvl, m_subilat, m_subilng);
+			LoadModData(m_edata, m_sublvl, m_subilat, m_subilng);
 			m_edata = m_edata.SubTile(lng_subrange, lat_subrange);
 		}
 		else {
-			LoadSubset(root);
+			LoadSubset();
 		}
 	}
 }
 
-void ElevTile::Save(const std::string &root)
+void ElevTile::Save()
 {
 	if (m_modified) {
 		if (m_lvl == m_sublvl) { // for now, don't support saving ancestor subtiles
 			char path[1024];
-			sprintf(path, "%s/%s/%02d/%06d/%06d.elv", root.c_str(), Layer().c_str(), m_lvl, m_ilat, m_ilng);
+			sprintf(path, "%s/%s/%02d/%06d/%06d.elv", s_root.c_str(), Layer().c_str(), m_lvl, m_ilat, m_ilng);
 			int nlat = (m_lvl < 4 ? 1 : 1 << (m_lvl - 4));
 			int nlng = (m_lvl < 4 ? 1 : 1 << (m_lvl - 3));
 			double latmax = (1.0 - (double)m_ilat / (double)nlat) * M_PI - 0.5*M_PI;
@@ -194,14 +204,14 @@ void ElevTile::Save(const std::string &root)
 	}
 }
 
-void ElevTile::SaveMod(const std::string &root)
+void ElevTile::SaveMod()
 {
 	if (m_modified) {
 		if (m_lvl == m_sublvl) { // for now, don't support saving ancestor subtiles
 			char path[1024];
 			sprintf(path, "%s_mod", Layer().c_str());
-			ensureLayerDir(root.c_str(), path, m_lvl, m_ilat);
-			sprintf(path, "%s/%s_mod/%02d/%06d/%06d.elv", root.c_str(), Layer().c_str(), m_lvl, m_ilat, m_ilng);
+			ensureLayerDir(s_root.c_str(), path, m_lvl, m_ilat);
+			sprintf(path, "%s/%s_mod/%02d/%06d/%06d.elv", s_root.c_str(), Layer().c_str(), m_lvl, m_ilat, m_ilng);
 			int nlat = (m_lvl < 4 ? 1 : 1 << (m_lvl - 4));
 			int nlng = (m_lvl < 4 ? 1 : 1 << (m_lvl - 3));
 			double latmax = (1.0 - (double)m_ilat / (double)nlat) * M_PI - 0.5*M_PI;
@@ -220,7 +230,7 @@ void ElevTile::displayParamChanged()
 	ExtractImage();
 }
 
-void ElevTile::MatchNeighbourTiles(const std::string &root)
+void ElevTile::MatchNeighbourTiles()
 {
 	const double eps = 1e-6;
 
@@ -245,7 +255,7 @@ void ElevTile::MatchNeighbourTiles(const std::string &root)
 			if (ilat == m_ilat && ilng == m_ilng)
 				continue;
 			ilngn = (ilng < 0 ? ilng + nlng : ilng >= nlng ? ilng - nlng : ilng);
-			ElevTile *etile = ElevTile::Load(root, m_lvl, ilat, ilngn, m_elevDisplayParam);
+			ElevTile *etile = ElevTile::Load(m_lvl, ilat, ilngn, m_elevDisplayParam);
 			if (!etile)
 				continue;
 			tileGrid[xblock + yblock * 3] = etile;
@@ -269,7 +279,7 @@ void ElevTile::MatchNeighbourTiles(const std::string &root)
 				for (i = 0; i < edata.data.size(); i++) {
 					if (fabs(edata.data[i] - etile->getData().data[i]) > eps) {
 						etile->dataChanged();
-						etile->SaveMod(root);
+						etile->SaveMod();
 						break;
 					}
 				}
@@ -279,7 +289,7 @@ void ElevTile::MatchNeighbourTiles(const std::string &root)
 	}
 }
 
-bool ElevTile::MatchParentTile(const std::string &root, int minlvl) const
+bool ElevTile::MatchParentTile(int minlvl) const
 {
 	const double eps = 1e-6;
 
@@ -290,12 +300,12 @@ bool ElevTile::MatchParentTile(const std::string &root, int minlvl) const
 	int ilat = m_ilat / 2;
 	int ilng = m_ilng / 2;
 
-	ElevTile *etile = ElevTile::Load(root, lvl, ilat, ilng, m_elevDisplayParam);
+	ElevTile *etile = ElevTile::Load(lvl, ilat, ilng, m_elevDisplayParam);
 	if (!etile)
 		return false;
 
 	ElevData &edata = etile->getData();
-	ElevTileBlock *etile4 = ElevTileBlock::Load(root, m_lvl, ilat * 2 - 1, ilat * 2 + 3, ilng * 2 - 1, ilng * 2 + 3, m_elevDisplayParam);
+	ElevTileBlock *etile4 = ElevTileBlock::Load(m_lvl, ilat * 2 - 1, ilat * 2 + 3, ilng * 2 - 1, ilng * 2 + 3, m_elevDisplayParam);
 	ElevData &edata4 = etile4->getData();
 
 	int w4 = edata4.width;
@@ -321,12 +331,55 @@ bool ElevTile::MatchParentTile(const std::string &root, int minlvl) const
 
 	if (isModified) {
 		etile->dataChanged();
-		etile->SaveMod(root);
-		etile->MatchParentTile(root, minlvl); // recursively propagate changes down the quadtree
+		etile->SaveMod();
+		etile->MatchParentTile(minlvl); // recursively propagate changes down the quadtree
 	}
 	delete etile;
 
 	return isModified;
+}
+
+ElevTileBlock ElevTile::Prolong()
+{
+	int i, j, ip, jp, idx;
+	int ilat0 = m_ilat * 2;
+	int ilat1 = ilat0 + 2;
+	int ilng0 = m_ilng * 2;
+	int ilng1 = ilng0 + 1;
+	int lvl = m_lvl + 2;
+	ElevTileBlock tblock(lvl, ilat0, ilat1, ilng0, ilng1);
+	ElevData &edata = tblock.getData();
+
+	for (i = 0; i < edata.height; i++) {
+		ip = i - 1;
+		for (j = 0; j < edata.width; j++) {
+			idx = i*edata.width + j;
+			jp = j - 1;
+			if (!(ip & 1)) {
+				if (!(jp & 1)) {
+					edata.data[idx] = m_edata.nodeValue(jp / 2, ip / 2);
+				}
+				else {
+					edata.data[idx] = (m_edata.nodeValue((jp - 1) / 2, ip / 2) +
+						               m_edata.nodeValue((jp + 1) / 2, ip / 2)) * 0.5;
+				}
+			}
+			else {
+				if (!(jp & 1)) {
+					edata.data[idx] = (m_edata.nodeValue(jp / 2, (ip - 1) / 2) +
+						               m_edata.nodeValue(jp / 2, (ip + 1) / 2)) * 0.5;
+				}
+				else {
+					edata.data[idx] = (m_edata.nodeValue((jp - 1) / 2, (ip - 1) / 2) +
+						               m_edata.nodeValue((jp + 1) / 2, (ip - 1) / 2) +
+						               m_edata.nodeValue((jp - 1) / 2, (ip + 1) / 2) +
+						               m_edata.nodeValue((jp + 1) / 2, (ip + 1) / 2)) * 0.25;
+				}
+			}
+		}
+	}
+	
+	return tblock;
 }
 
 void ElevTile::setWaterMask(const MaskTile *mtile)
@@ -345,10 +398,10 @@ void ElevTile::setWaterMask(const MaskTile *mtile)
 	}
 }
 
-ElevTile *ElevTile::Load(const std::string &root, int lvl, int ilat, int ilng, ElevDisplayParam &elevDisplayParam, const Cmap *cm)
+ElevTile *ElevTile::Load(int lvl, int ilat, int ilng, ElevDisplayParam &elevDisplayParam, const Cmap *cm)
 {
 	ElevTile *etile = new ElevTile(lvl, ilat, ilng, elevDisplayParam);
-	if (!etile->Load(root)) {
+	if (!etile->Load(s_root)) {
 		delete etile;
 		etile = 0;
 	}

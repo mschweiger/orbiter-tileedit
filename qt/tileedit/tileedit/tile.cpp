@@ -4,6 +4,7 @@
 #include <algorithm>
 
 int Tile::s_openMode = 0x3;
+std::string Tile::s_root;
 
 Tile::Tile(int lvl, int ilat, int ilng)
 {
@@ -34,6 +35,11 @@ DWORD Tile::pixelColour(int px, int py) const
 	return img.data[px + py*img.width];
 }
 
+void Tile::setRoot(const std::string &root)
+{
+	s_root.assign(root);
+}
+
 void Tile::setOpenMode(int mode)
 {
 	s_openMode = mode;
@@ -45,16 +51,16 @@ DXT1Tile::DXT1Tile(int lvl, int ilat, int ilng)
 {
 }
 
-void DXT1Tile::LoadDXT1(const std::string &root, const ZTreeMgr *mgr)
+void DXT1Tile::LoadDXT1(const ZTreeMgr *mgr)
 {
-	LoadImage(img, root, m_lvl, m_ilat, m_ilng, mgr);
+	LoadImage(img, m_lvl, m_ilat, m_ilng, mgr);
 
 	if (img.data.size() == 0) {
-		LoadSubset(root, this, mgr);
+		LoadSubset(this, mgr);
 	}
 }
 
-void DXT1Tile::LoadSubset(const std::string &root, DXT1Tile *tile, const ZTreeMgr *mgr)
+void DXT1Tile::LoadSubset(DXT1Tile *tile, const ZTreeMgr *mgr)
 {
 	if (m_sublvl > 1) {
 		lat_subrange.first /= 2;
@@ -73,9 +79,9 @@ void DXT1Tile::LoadSubset(const std::string &root, DXT1Tile *tile, const ZTreeMg
 		m_subilat /= 2;
 		m_subilng /= 2;
 
-		LoadImage(img, root, m_sublvl, m_subilat, m_subilng, mgr);
+		LoadImage(img, m_sublvl, m_subilat, m_subilng, mgr);
 		if (img.data.size() == 0) {
-			LoadSubset(root, tile, mgr);
+			LoadSubset(tile, mgr);
 		}
 		else {
 			img = img.SubImage(lng_subrange, lat_subrange);
@@ -83,11 +89,11 @@ void DXT1Tile::LoadSubset(const std::string &root, DXT1Tile *tile, const ZTreeMg
 	}
 }
 
-void DXT1Tile::LoadImage(Image &im, const std::string &root, int lvl, int ilat, int ilng, const ZTreeMgr *mgr)
+void DXT1Tile::LoadImage(Image &im, int lvl, int ilat, int ilng, const ZTreeMgr *mgr)
 {
 	if (s_openMode & 0x1) { // try cache
 		char path[1024];
-		sprintf(path, "%s/%s/%02d/%06d/%06d.dds", root.c_str(), Layer().c_str(), lvl, ilat, ilng);
+		sprintf(path, "%s/%s/%02d/%06d/%06d.dds", s_root.c_str(), Layer().c_str(), lvl, ilat, ilng);
 		im = ddsread(path);
 	}
 	if (im.data.size() == 0 && s_openMode & 0x2 && mgr) { // try archive
@@ -109,10 +115,10 @@ SurfTile::SurfTile(int lvl, int ilat, int ilng)
 {
 }
 
-SurfTile *SurfTile::Load(const std::string &root, int lvl, int ilat, int ilng)
+SurfTile *SurfTile::Load(int lvl, int ilat, int ilng)
 {
     SurfTile *stile = new SurfTile(lvl, ilat, ilng);
-	stile->LoadDXT1(root, s_treeMgr);
+	stile->LoadDXT1(s_treeMgr);
     return stile;
 }
 
@@ -134,10 +140,10 @@ MaskTile::MaskTile(int lvl, int ilat, int ilng)
 {
 }
 
-std::pair<MaskTile*,NightlightTile*> MaskTile::Load(const std::string &root, int lvl, int ilat, int ilng)
+std::pair<MaskTile*,NightlightTile*> MaskTile::Load(int lvl, int ilat, int ilng)
 {
 	MaskTile *mtile = new MaskTile(lvl, ilat, ilng);
-	mtile->LoadDXT1(root, s_treeMgr);
+	mtile->LoadDXT1(s_treeMgr);
 	NightlightTile *ltile = new NightlightTile(*mtile);
 
 	// separate water mask and night lights

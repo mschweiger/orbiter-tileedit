@@ -8,6 +8,7 @@
 
 #include "QFileDialog"
 #include "QResizeEvent"
+#include "QMessageBox"
 
 static std::vector<std::pair<int, int> > paintStencil1 = { {0,0} };
 static std::vector<std::pair<int, int> > paintStencil2 = { {0,0}, {1,0}, {0,1}, {1,1} };
@@ -201,7 +202,8 @@ void tileedit::setLoadMode(DWORD mode)
 
 void tileedit::openDir()
 {
-    rootDir = QFileDialog::getExistingDirectory(this, tr("Open celestial body")).toStdString();
+    std::string rootDir = QFileDialog::getExistingDirectory(this, tr("Open celestial body")).toStdString();
+	Tile::setRoot(rootDir);
 
 	if (m_openMode & TILESEARCH_ARCHIVE)
 		setupTreeManagers(rootDir);
@@ -250,19 +252,19 @@ void tileedit::loadTile(int lvl, int ilat, int ilng)
 {
     if (m_stile)
         delete m_stile;
-    m_stile = SurfTile::Load(rootDir, lvl, ilat, ilng);
+    m_stile = SurfTile::Load(lvl, ilat, ilng);
 
 	if (m_mtile)
 		delete m_mtile;
 	if (m_ltile)
 		delete m_ltile;
-	std::pair<MaskTile*, NightlightTile*> ml = MaskTile::Load(rootDir, lvl, ilat, ilng);
+	std::pair<MaskTile*, NightlightTile*> ml = MaskTile::Load(lvl, ilat, ilng);
 	m_mtile = ml.first;
 	m_ltile = ml.second;
 
 	if (m_etile)
 		delete m_etile;
-	m_etile = ElevTile::Load(rootDir, lvl, ilat, ilng, m_elevDisplayParam, &cmap(m_elevDisplayParam.cmName));
+	m_etile = ElevTile::Load(lvl, ilat, ilng, m_elevDisplayParam, &cmap(m_elevDisplayParam.cmName));
 	if (m_etile && m_mtile)
 		m_etile->setWaterMask(m_mtile);
 
@@ -342,7 +344,24 @@ void tileedit::onLngidxChanged(int ilng)
 
 void tileedit::onActionButtonClicked(int id)
 {
-	m_actionMode = (ActionMode)id;
+	ActionMode newMode = (ActionMode)id;
+	if (newMode == m_actionMode)
+		return;
+
+	if (newMode == ACTION_ELEVEDIT) {
+		if (!m_etile) {
+			ui->btnActionNavigate->setChecked(true);
+			return;
+		}
+		if (m_etile->subLevel() < m_etile->Level()) {
+			QMessageBox mbox(QMessageBox::Warning, "tileedit", "This elevation tile does not exist - the image you see has been synthesized from a subsection of an ancestor.\n\nBefore this tile can be edited it must be created. Do you want to create it now?", QMessageBox::Yes | QMessageBox::No);
+			mbox.exec();
+			ui->btnActionNavigate->setChecked(true);
+			return; // don't allow editing virtual tiles
+		}
+	}
+
+	m_actionMode = newMode;
 	ui->widgetElevEditTools->setVisible(id == 1);
 	ui->gboxToolOptions->setTitle(ModeString());
 	setToolOptions();
@@ -693,9 +712,9 @@ void tileedit::setToolOptions()
 void tileedit::setTile(int lvl, int ilat, int ilng)
 {
 	if (m_etile && m_etile->isModified()) {
-		m_etile->MatchNeighbourTiles(rootDir);
-		m_etile->SaveMod(rootDir);
-		m_etile->MatchParentTile(rootDir, m_etile->Level() - 5);
+		m_etile->MatchNeighbourTiles();
+		m_etile->SaveMod();
+		m_etile->MatchParentTile(m_etile->Level() - 5);
 	}
 
 	m_lvl = lvl;
