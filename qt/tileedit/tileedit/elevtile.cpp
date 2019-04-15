@@ -41,12 +41,12 @@ ElevData &ElevData::operator=(const ElevData &edata)
 
 double ElevData::nodeValue(int ix, int iy) const
 {
-	return data[ix + iy*width];
+	return data[(ix+1) + (iy+1)*width];
 }
 
 void ElevData::setNodeValue(int ix, int iy, double v)
 {
-	data[ix + iy*width] = v;
+	data[(ix+1) + (iy+1)*width] = v;
 }
 
 ElevData ElevData::SubTile(const std::pair<DWORD, DWORD> &xrange, const std::pair<DWORD, DWORD> &yrange)
@@ -100,7 +100,7 @@ double ElevTile::nodeElevation(int ndx, int ndy)
 	return (double)m_edata.data[idx];
 }
 
-bool ElevTile::Load(const std::string &root)
+bool ElevTile::Load(bool allowAncestorSubset)
 {
 	LoadData(m_edataBase, m_lvl, m_ilat, m_ilng);
 	m_edata = m_edataBase;
@@ -108,7 +108,7 @@ bool ElevTile::Load(const std::string &root)
 	if (m_edata.data.size()) {
 		LoadModData(m_edata, m_lvl, m_ilat, m_ilng);
 	}
-	else {
+	else if (allowAncestorSubset) {
 		// interpolate from ancestor
 		LoadSubset();
 	}
@@ -118,6 +118,25 @@ bool ElevTile::Load(const std::string &root)
 		ExtractImage();
 
 	return m_edata.data.size() > 0;
+}
+
+bool ElevTile::InterpolateFromAncestor()
+{
+	if (m_lvl <= 4) return false;
+	int parent_lvl = m_lvl - 1;
+	int parent_ilat = m_ilat / 2;
+	int parent_ilng = m_ilng / 2;
+	ElevTile parent(parent_lvl, parent_ilat, parent_ilng, m_elevDisplayParam);
+
+	if (!parent.Load(false))
+		if (!parent.InterpolateFromAncestor())
+			return false;
+
+	ElevTileBlock tblock = parent.Prolong();
+	m_edata.width = TILE_ELEVSTRIDE;
+	m_edata.height = TILE_ELEVSTRIDE;
+	m_edata.data.resize(m_edata.width * m_edata.height);
+	return tblock.getTile(m_ilat, m_ilng, this);
 }
 
 void ElevTile::LoadData(ElevData &edata, int lvl, int ilat, int ilng)
@@ -198,6 +217,7 @@ void ElevTile::Save()
 			double lngmin = (double)m_ilng / (double)nlng * 2.0*M_PI - M_PI;
 			double lngmax = lngmin + 2.0*M_PI / nlng;
 
+			ensureLayerDir(s_root.c_str(), Layer().c_str(), m_lvl, m_ilat);
 			elvwrite(path, m_edata, latmin, latmax, lngmin, lngmax);
 		}
 		m_modified = false;
@@ -345,7 +365,7 @@ ElevTileBlock ElevTile::Prolong()
 	int ilat0 = m_ilat * 2;
 	int ilat1 = ilat0 + 2;
 	int ilng0 = m_ilng * 2;
-	int ilng1 = ilng0 + 1;
+	int ilng1 = ilng0 + 2;
 	int lvl = m_lvl + 2;
 	ElevTileBlock tblock(lvl, ilat0, ilat1, ilng0, ilng1);
 	ElevData &edata = tblock.getData();
@@ -401,7 +421,17 @@ void ElevTile::setWaterMask(const MaskTile *mtile)
 ElevTile *ElevTile::Load(int lvl, int ilat, int ilng, ElevDisplayParam &elevDisplayParam, const Cmap *cm)
 {
 	ElevTile *etile = new ElevTile(lvl, ilat, ilng, elevDisplayParam);
-	if (!etile->Load(s_root)) {
+	if (!etile->Load()) {
+		delete etile;
+		etile = 0;
+	}
+	return etile;
+}
+
+ElevTile *ElevTile::InterpolateFromAncestor(int lvl, int ilat, int ilng, ElevDisplayParam &elevDisplayParam, const Cmap *cm)
+{
+	ElevTile *etile = new ElevTile(lvl, ilat, ilng, elevDisplayParam);
+	if (!etile->InterpolateFromAncestor()) {
 		delete etile;
 		etile = 0;
 	}

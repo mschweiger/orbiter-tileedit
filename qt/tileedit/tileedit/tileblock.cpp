@@ -1,4 +1,5 @@
 #include "tileblock.h"
+#include <algorithm>
 
 TileBlock::TileBlock(int lvl, int ilat0, int ilat1, int ilng0, int ilng1)
 {
@@ -98,5 +99,10 @@ bool ElevTileBlock::getTile(int ilat, int ilng, Tile *tile) const
 				m_edata.data[(block_y0 + y) * m_edata.width + (block_x0 + x)];
 		}
 	}
+
+	edata.dmin = *std::min_element(edata.data.begin(), edata.data.end());
+	edata.dmax = *std::max_element(edata.data.begin(), edata.data.end());
+	etile->dataChanged();
+
 	return true;
 }

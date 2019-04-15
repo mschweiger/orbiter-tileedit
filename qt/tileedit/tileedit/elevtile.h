@@ -44,6 +44,7 @@ class ElevTile : public Tile {
 public:
 	ElevTile(const ElevTile &etile);
 	static ElevTile *Load(int lvl, int ilat, int ilng, ElevDisplayParam &elevDisplayParam, const Cmap *cm = 0);
+	static ElevTile *InterpolateFromAncestor(int lvl, int ilat, int ilng, ElevDisplayParam &elevDisplayParam, const Cmap *cm = 0);
 	static void setTreeMgr(const ZTreeMgr *mgr, const ZTreeMgr *modMgr = 0);
 	const std::string Layer() const { return std::string("Elev"); }
 	double nodeElevation(int ndx, int ndy);
@@ -67,7 +68,8 @@ public:
 
 protected:
 	ElevTile(int lvl, int ilat, int ilng, ElevDisplayParam &elevDisplayParam);
-	bool Load(const std::string &root);
+	bool Load(bool allowAncestorSubset = true);
+	bool InterpolateFromAncestor();
 	void LoadSubset();
 	void LoadData(ElevData &edata, int lvl, int ilat, int ilng);
 	void LoadModData(ElevData &edata, int lvl, int ilat, int ilng);

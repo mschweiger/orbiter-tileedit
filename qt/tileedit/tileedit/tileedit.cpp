@@ -355,9 +355,20 @@ void tileedit::onActionButtonClicked(int id)
 		}
 		if (m_etile->subLevel() < m_etile->Level()) {
 			QMessageBox mbox(QMessageBox::Warning, "tileedit", "This elevation tile does not exist - the image you see has been synthesized from a subsection of an ancestor.\n\nBefore this tile can be edited it must be created. Do you want to create it now?", QMessageBox::Yes | QMessageBox::No);
-			mbox.exec();
-			ui->btnActionNavigate->setChecked(true);
-			return; // don't allow editing virtual tiles
+			int res = mbox.exec();
+			if (res == QMessageBox::Yes) {
+				ElevTile *tile = ElevTile::InterpolateFromAncestor(m_lvl, m_ilat, m_ilng, m_elevDisplayParam);
+				if (tile) {
+					tile->dataChanged();
+					tile->Save();
+					delete tile;
+					loadTile(m_lvl, m_ilat, m_ilng);
+				}
+			}
+			else {
+				ui->btnActionNavigate->setChecked(true);
+				return; // don't allow editing virtual tiles
+			}
 		}
 	}
 
