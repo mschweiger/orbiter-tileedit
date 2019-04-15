@@ -7,4 +7,5 @@
 *.opendb
 .vs/
 GeneratedFiles/
+qt/tileedit/resources/
 x64/

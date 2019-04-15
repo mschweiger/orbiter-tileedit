@@ -30,7 +30,7 @@ protected:
 class ElevTileBlock : public TileBlock
 {
 public:
-	static ElevTileBlock *Load(const std::string &root, int lvl, int ilat0, int ilat1, int ilng0, int ilng1, ElevDisplayParam &elevDisplayParam);
+	static ElevTileBlock *Load(int lvl, int ilat0, int ilat1, int ilng0, int ilng1, ElevDisplayParam &elevDisplayParam);
 	ElevTileBlock(int lvl, int ilat0, int ilat1, int ilng0, int ilng1);
 	bool setTile(int ilat, int ilng, const Tile *tile);
 	bool getTile(int ilat, int ilng, Tile *tile) const;

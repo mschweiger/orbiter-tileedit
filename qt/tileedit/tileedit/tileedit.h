@@ -107,7 +107,7 @@ private:
 		ELEVEDIT_ERASE
 	} m_elevEditMode;
 
-    std::string rootDir;
+    //std::string rootDir;
     int m_lvl;
     int m_ilat;
     int m_ilng;

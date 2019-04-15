@@ -1,4 +1,5 @@
 #include "tileblock.h"
+#include <algorithm>
 
 TileBlock::TileBlock(int lvl, int ilat0, int ilat1, int ilng0, int ilng1)
 {
@@ -24,7 +25,7 @@ ElevTileBlock::ElevTileBlock(int lvl, int ilat0, int ilat1, int ilng0, int ilng1
 	m_edata.data.resize(m_edata.width * m_edata.height);
 }
 
-ElevTileBlock *ElevTileBlock::Load(const std::string &root, int lvl, int ilat0, int ilat1, int ilng0, int ilng1, ElevDisplayParam &elevDisplayParam)
+ElevTileBlock *ElevTileBlock::Load(int lvl, int ilat0, int ilat1, int ilng0, int ilng1, ElevDisplayParam &elevDisplayParam)
 {
 	ElevTileBlock *tileblock = new ElevTileBlock(lvl, ilat0, ilat1, ilng0, ilng1);
 	int nlat = tileblock->nLat();
@@ -35,7 +36,7 @@ ElevTileBlock *ElevTileBlock::Load(const std::string &root, int lvl, int ilat0, 
 			int ilngn = ilng;
 			while (ilngn < 0) ilngn += nlng;
 			while (ilngn >= nlng) ilngn -= nlng;
-			ElevTile *tile = ElevTile::Load(root, lvl, ilat, ilngn, elevDisplayParam);
+			ElevTile *tile = ElevTile::Load(lvl, ilat, ilngn, elevDisplayParam);
 			tileblock->setTile(ilat, ilng, tile);
 			delete tile;
 		}
@@ -98,5 +99,10 @@ bool ElevTileBlock::getTile(int ilat, int ilng, Tile *tile) const
 				m_edata.data[(block_y0 + y) * m_edata.width + (block_x0 + x)];
 		}
 	}
+
+	edata.dmin = *std::min_element(edata.data.begin(), edata.data.end());
+	edata.dmax = *std::max_element(edata.data.begin(), edata.data.end());
+	etile->dataChanged();
+
 	return true;
 }
