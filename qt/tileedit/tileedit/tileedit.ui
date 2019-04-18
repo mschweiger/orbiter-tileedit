@@ -305,7 +305,14 @@
              </property>
              <property name="icon">
               <iconset resource="tileedit.qrc">
-               <normaloff>:/tileedit/resources/icon_navigate.png</normaloff>:/tileedit/resources/icon_navigate.png</iconset>
+               <normaloff>:/tileedit/resources/icon_navigate_inactive.png</normaloff>
+               <normalon>:/tileedit/resources/icon_navigate.png</normalon>
+               <disabledoff>:/tileedit/resources/icon_navigate.png</disabledoff>
+               <disabledon>:/tileedit/resources/icon_navigate.png</disabledon>
+               <activeoff>:/tileedit/resources/icon_navigate.png</activeoff>
+               <activeon>:/tileedit/resources/icon_navigate.png</activeon>
+               <selectedoff>:/tileedit/resources/icon_navigate.png</selectedoff>
+               <selectedon>:/tileedit/resources/icon_navigate.png</selectedon>:/tileedit/resources/icon_navigate_inactive.png</iconset>
              </property>
              <property name="iconSize">
               <size>
@@ -337,7 +344,9 @@
              </property>
              <property name="icon">
               <iconset resource="tileedit.qrc">
-               <normaloff>:/tileedit/resources/icon_elevedit.png</normaloff>:/tileedit/resources/icon_elevedit.png</iconset>
+               <normaloff>:/tileedit/resources/icon_elevedit_inactive.png</normaloff>
+               <normalon>:/tileedit/resources/icon_elevedit.png</normalon>
+               <disabledon>:/tileedit/resources/icon_elevedit.png</disabledon>:/tileedit/resources/icon_elevedit_inactive.png</iconset>
              </property>
              <property name="iconSize">
               <size>
@@ -441,7 +450,8 @@
                  </property>
                  <property name="icon">
                   <iconset resource="tileedit.qrc">
-                   <normaloff>:/tileedit/resources/icon_elevedit_paint.png</normaloff>:/tileedit/resources/icon_elevedit_paint.png</iconset>
+                   <normaloff>:/tileedit/resources/icon_elevedit_paint_inactive.png</normaloff>
+                   <normalon>:/tileedit/resources/icon_elevedit_paint.png</normalon>:/tileedit/resources/icon_elevedit_paint_inactive.png</iconset>
                  </property>
                  <property name="iconSize">
                   <size>
@@ -473,7 +483,8 @@
                  </property>
                  <property name="icon">
                   <iconset resource="tileedit.qrc">
-                   <normaloff>:/tileedit/resources/icon_elevedit_random.png</normaloff>:/tileedit/resources/icon_elevedit_random.png</iconset>
+                   <normaloff>:/tileedit/resources/icon_elevedit_random_inactive.png</normaloff>
+                   <normalon>:/tileedit/resources/icon_elevedit_random.png</normalon>:/tileedit/resources/icon_elevedit_random_inactive.png</iconset>
                  </property>
                  <property name="iconSize">
                   <size>
@@ -502,7 +513,8 @@
                  </property>
                  <property name="icon">
                   <iconset resource="tileedit.qrc">
-                   <normaloff>:/tileedit/resources/icon_elevedit_erase.png</normaloff>:/tileedit/resources/icon_elevedit_erase.png</iconset>
+                   <normaloff>:/tileedit/resources/icon_elevedit_erase_inactive.png</normaloff>
+                   <normalon>:/tileedit/resources/icon_elevedit_erase.png</normalon>:/tileedit/resources/icon_elevedit_erase_inactive.png</iconset>
                  </property>
                  <property name="iconSize">
                   <size>
@@ -1343,7 +1355,7 @@
  </resources>
  <connections/>
  <buttongroups>
-  <buttongroup name="bgrpAction"/>
   <buttongroup name="bgrpEdit"/>
+  <buttongroup name="bgrpAction"/>
  </buttongroups>
 </ui>
