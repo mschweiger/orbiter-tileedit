@@ -1,5 +1,10 @@
 #include "tileedit.h"
 #include <QtWidgets/QApplication>
+#include <QtPlugin>
+
+#ifdef STATIC
+Q_IMPORT_PLUGIN(QWindowsIntegrationPlugin);
+#endif
 
 int main(int argc, char *argv[])
 {
