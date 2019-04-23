@@ -48,6 +48,9 @@ public:
 	static void setTreeMgr(const ZTreeMgr *mgr, const ZTreeMgr *modMgr = 0);
 	const std::string Layer() const { return std::string("Elev"); }
 	double nodeElevation(int ndx, int ndy);
+
+	virtual void set(const Tile *tile);
+
 	ElevData &getData() { return m_edata; }
 	const ElevData &getData() const { return m_edata; }
 	ElevData &getBaseData() { return m_edataBase; }
@@ -81,6 +84,7 @@ private:
 	bool m_modified;
 	ElevDisplayParam &m_elevDisplayParam;
 	std::vector<bool> m_waterMask;
+
 	static const ZTreeMgr *s_treeMgr;
 	static const ZTreeMgr *s_treeModMgr;
 };

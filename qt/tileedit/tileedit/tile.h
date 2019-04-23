@@ -20,6 +20,8 @@ public:
 	int nLat() const { return (m_lvl < 4 ? 1 : 1 << (m_lvl - 4)); }
 	int nLng() const { return (m_lvl < 4 ? 1 : 1 << (m_lvl - 3)); }
 
+	virtual void set(const Tile *tile);
+
     const Image &getImage() const { return img; }
 	void setImage(const Image &im) { img = im; }
 	DWORD pixelColour(int px, int py) const;

@@ -94,6 +94,18 @@ ElevTile::ElevTile(const ElevTile &etile)
 	m_modified = false;
 }
 
+void ElevTile::set(const Tile *tile)
+{
+	Tile::set(tile);
+
+	const ElevTile *etile = static_cast<const ElevTile*>(tile);
+	if (etile) {
+		m_edata = etile->m_edata;
+		m_edataBase = etile->m_edataBase;
+		m_waterMask = etile->m_waterMask;
+	}
+}
+
 double ElevTile::nodeElevation(int ndx, int ndy)
 {
 	int idx = (ndy + 1)*m_edata.width + (ndx + 1);
@@ -136,7 +148,7 @@ bool ElevTile::InterpolateFromAncestor()
 	m_edata.width = TILE_ELEVSTRIDE;
 	m_edata.height = TILE_ELEVSTRIDE;
 	m_edata.data.resize(m_edata.width * m_edata.height);
-	return tblock.getTile(m_ilat, m_ilng, this);
+	return tblock.copyTile(m_ilat, m_ilng, this);
 }
 
 void ElevTile::LoadData(ElevData &edata, int lvl, int ilat, int ilng)
@@ -295,7 +307,7 @@ void ElevTile::MatchNeighbourTiles()
 				ilng = m_ilng + xblock - 1;
 				ilngn = (ilng < 0 ? ilng + nlng : ilng >= nlng ? ilng - nlng : ilng);
 				ElevData edata = etile->getData();
-				etile3.getTile(ilat, ilng, etile);
+				etile3.copyTile(ilat, ilng, etile);
 				for (i = 0; i < edata.data.size(); i++) {
 					if (fabs(edata.data[i] - etile->getData().data[i]) > eps) {
 						etile->dataChanged();

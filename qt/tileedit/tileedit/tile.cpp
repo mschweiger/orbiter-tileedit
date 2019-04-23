@@ -30,6 +30,19 @@ Tile::Tile(const Tile &tile)
 	img = tile.img;
 }
 
+void Tile::set(const Tile *tile)
+{
+	m_lvl = tile->m_lvl;
+	m_ilat = tile->m_ilat;
+	m_ilng = tile->m_ilng;
+	m_sublvl = tile->m_sublvl;
+	m_subilat = tile->m_subilat;
+	m_subilng = tile->m_subilng;
+	lat_subrange = tile->lat_subrange;
+	lng_subrange = tile->lng_subrange;
+	img = tile->img;
+}
+
 DWORD Tile::pixelColour(int px, int py) const
 {
 	return img.data[px + py*img.width];

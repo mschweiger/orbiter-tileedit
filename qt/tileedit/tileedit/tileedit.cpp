@@ -2,6 +2,7 @@
 #include "ui_tileedit.h"
 #include "tile.h"
 #include "elevtile.h"
+#include "tileblock.h"
 #include "dlgconfig.h"
 #include "dlgelevconfig.h"
 #include <random>
