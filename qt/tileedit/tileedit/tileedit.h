@@ -18,10 +18,10 @@ namespace Ui {
 class tileedit;
 }
 
-class SurfTile;
-class MaskTile;
-class NightlightTile;
-class ElevTile;
+class SurfTileBlock;
+class MaskTileBlock;
+class NightlightTileBlock;
+class ElevTileBlock;
 class TileCanvas;
 class DlgElevConfig;
 
@@ -118,11 +118,11 @@ private:
 
 	bool m_mouseDown;
 
-    SurfTile *m_stile;
-	MaskTile *m_mtile;
-	NightlightTile *m_ltile;
-	ElevTile *m_etile;
-	ElevTile *m_etileRef;
+    SurfTileBlock *m_sTileBlock;
+	MaskTileBlock *m_mTileBlock;
+	NightlightTileBlock *m_lTileBlock;
+	ElevTileBlock *m_eTileBlock;
+	ElevTileBlock *m_eTileBlockRef;
 
 	// The tree archive accessors
 	ZTreeMgr *m_mgrSurf;
