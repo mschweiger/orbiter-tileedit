@@ -90,6 +90,7 @@ ElevTile::ElevTile(const ElevTile &etile)
 	: Tile(etile)
 	, m_elevDisplayParam(etile.m_elevDisplayParam)
 	, m_edata(etile.m_edata)
+	, m_edataBase(etile.m_edataBase)
 {
 	m_modified = false;
 }
@@ -148,6 +149,10 @@ bool ElevTile::InterpolateFromAncestor()
 	m_edata.width = TILE_ELEVSTRIDE;
 	m_edata.height = TILE_ELEVSTRIDE;
 	m_edata.data.resize(m_edata.width * m_edata.height);
+	m_edataBase.width = TILE_ELEVSTRIDE;
+	m_edataBase.height = TILE_ELEVSTRIDE;
+	m_edataBase.data.resize(m_edataBase.width * m_edataBase.height);
+
 	return tblock.copyTile(m_ilat, m_ilng, this);
 }
 
@@ -205,9 +210,11 @@ void ElevTile::LoadSubset()
 		m_subilat /= 2;
 		m_subilng /= 2;
 
-		LoadData(m_edata, m_sublvl, m_subilat, m_subilng);
-		if (m_edata.data.size()) {
+		LoadData(m_edataBase, m_sublvl, m_subilat, m_subilng);
+		if (m_edataBase.data.size()) {
+			m_edata = m_edataBase;
 			LoadModData(m_edata, m_sublvl, m_subilat, m_subilng);
+			m_edataBase = m_edataBase.SubTile(lng_subrange, lat_subrange);
 			m_edata = m_edata.SubTile(lng_subrange, lat_subrange);
 		}
 		else {
@@ -381,6 +388,7 @@ ElevTileBlock ElevTile::Prolong()
 	int lvl = m_lvl + 2;
 	ElevTileBlock tblock(lvl, ilat0, ilat1, ilng0, ilng1);
 	ElevData &edata = tblock.getData();
+	ElevData &edataBase = tblock.getBaseData();
 
 	for (i = 0; i < edata.height; i++) {
 		ip = i - 1;
@@ -390,27 +398,36 @@ ElevTileBlock ElevTile::Prolong()
 			if (!(ip & 1)) {
 				if (!(jp & 1)) {
 					edata.data[idx] = m_edata.nodeValue(jp / 2, ip / 2);
+					edataBase.data[idx] = m_edataBase.nodeValue(jp / 2, ip / 2);
 				}
 				else {
 					edata.data[idx] = (m_edata.nodeValue((jp - 1) / 2, ip / 2) +
 						               m_edata.nodeValue((jp + 1) / 2, ip / 2)) * 0.5;
+					edataBase.data[idx] = (m_edataBase.nodeValue((jp - 1) / 2, ip / 2) +
+						                   m_edataBase.nodeValue((jp + 1) / 2, ip / 2)) * 0.5;
 				}
 			}
 			else {
 				if (!(jp & 1)) {
 					edata.data[idx] = (m_edata.nodeValue(jp / 2, (ip - 1) / 2) +
 						               m_edata.nodeValue(jp / 2, (ip + 1) / 2)) * 0.5;
+					edataBase.data[idx] = (m_edataBase.nodeValue(jp / 2, (ip - 1) / 2) +
+						                   m_edataBase.nodeValue(jp / 2, (ip + 1) / 2)) * 0.5;
 				}
 				else {
 					edata.data[idx] = (m_edata.nodeValue((jp - 1) / 2, (ip - 1) / 2) +
 						               m_edata.nodeValue((jp + 1) / 2, (ip - 1) / 2) +
 						               m_edata.nodeValue((jp - 1) / 2, (ip + 1) / 2) +
 						               m_edata.nodeValue((jp + 1) / 2, (ip + 1) / 2)) * 0.25;
+					edataBase.data[idx] = (m_edataBase.nodeValue((jp - 1) / 2, (ip - 1) / 2) +
+						                   m_edataBase.nodeValue((jp + 1) / 2, (ip - 1) / 2) +
+						                   m_edataBase.nodeValue((jp - 1) / 2, (ip + 1) / 2) +
+						                   m_edataBase.nodeValue((jp + 1) / 2, (ip + 1) / 2)) * 0.25;
 				}
 			}
 		}
 	}
-	
+	tblock.SyncTiles();
 	return tblock;
 }
 

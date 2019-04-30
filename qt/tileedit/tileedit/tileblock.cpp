@@ -271,6 +271,8 @@ ElevTileBlock *ElevTileBlock::Load(int lvl, int ilat0, int ilat1, int ilng0, int
 			while (ilngn < 0) ilngn += nlng;
 			while (ilngn >= nlng) ilngn -= nlng;
 			ElevTile *tile = ElevTile::Load(lvl, ilat, ilngn, *s_elevDisplayParam);
+			if (tile->m_edata.width < TILE_ELEVSTRIDE)
+				tile->InterpolateFromAncestor();
 			tileblock->setTile(ilat, ilng, tile);
 			delete tile;
 		}
@@ -339,7 +341,7 @@ bool ElevTileBlock::setTile(int ilat, int ilng, const Tile *tile)
 		for (int x = x0; x < x1; x++) {
 			m_edata.data[(block_y0 + y) * m_edata.width + (block_x0 + x)] =
 				etile->getData().data[y*TILE_ELEVSTRIDE + x];
-			m_edataBase.data[(block_y0 + y) * m_edata.width + (block_x0 + x)] =
+			m_edataBase.data[(block_y0 + y) * m_edataBase.width + (block_x0 + x)] =
 				etile->getBaseData().data[y*TILE_ELEVSTRIDE + x];
 		}
 	}
@@ -386,6 +388,21 @@ void ElevTileBlock::SyncTile(int ilat, int ilng)
 	if (ilng < m_ilng0 || ilng >= m_ilng1) return;
 
 	ElevTile *etile = (ElevTile*)_getTile(ilat, ilng);
+	if (!etile) {
+		etile = new ElevTile(m_lvl, ilat, ilng, *s_elevDisplayParam);
+		int idx = (ilat - m_ilat0) * m_nblocklng + (ilng - m_ilng0);
+		m_tile[idx] = etile;
+	}
+	ElevData &edata = etile->getData();
+	if (edata.width < TILE_ELEVSTRIDE || edata.height < TILE_ELEVSTRIDE) {
+		edata.width = edata.height = TILE_ELEVSTRIDE;
+		edata.data.resize(edata.width * edata.height);
+	}
+	ElevData &ebdata = etile->getBaseData();
+	if (ebdata.width < TILE_ELEVSTRIDE || ebdata.height < TILE_ELEVSTRIDE) {
+		ebdata.width = ebdata.height = TILE_ELEVSTRIDE;
+		ebdata.data.resize(ebdata.width * ebdata.height);
+	}
 
 	int nlat = nLat();
 	int nlng = nLng();

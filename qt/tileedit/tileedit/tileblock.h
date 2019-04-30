@@ -112,11 +112,11 @@ public:
 	void displayParamChanged();
 	void dataChanged(int exmin = -1, int exmax = -1, int eymin = -1, int eymax = -1);
 	bool isModified() const { return m_isModified; }
+	void SyncTiles();
+	void SyncTile(int ilat, int ilng);
 
 protected:
 	void ExtractImage(int exmin = -1, int exmax = -1, int eymin = -1, int eymax = -1);
-	void SyncTiles();
-	void SyncTile(int ilat, int ilng);
 
 private:
 	ElevData m_edata;
