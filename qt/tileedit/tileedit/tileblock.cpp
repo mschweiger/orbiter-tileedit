@@ -237,6 +237,11 @@ ElevTileBlock::ElevTileBlock(int lvl, int ilat0, int ilat1, int ilng0, int ilng1
 	m_edata.width = (ilng1 - ilng0) * TILE_FILERES + 3;
 	m_edata.height = (ilat1 - ilat0) * TILE_FILERES + 3;
 	m_edata.data.resize(m_edata.width * m_edata.height);
+
+	m_edataBase.width = (ilng1 - ilng0) * TILE_FILERES + 3;
+	m_edataBase.height = (ilat1 - ilat0) * TILE_FILERES + 3;
+	m_edataBase.data.resize(m_edataBase.width * m_edataBase.height);
+
 	m_isModified = false;
 }
 
@@ -270,6 +275,8 @@ ElevTileBlock *ElevTileBlock::Load(int lvl, int ilat0, int ilat1, int ilng0, int
 			delete tile;
 		}
 	}
+	tileblock->m_isModified = false;
+
 	return tileblock;
 }
 
@@ -336,7 +343,7 @@ bool ElevTileBlock::setTile(int ilat, int ilng, const Tile *tile)
 				etile->getBaseData().data[y*TILE_ELEVSTRIDE + x];
 		}
 	}
-	m_isModified = true;
+	dataChanged();
 	return true;
 }
 
@@ -431,9 +438,11 @@ double ElevTileBlock::nodeElevation(int ndx, int ndy) const
 void ElevTileBlock::dataChanged(int exmin, int exmax, int eymin, int eymax)
 {
 	m_isModified = true;
+	auto minmax = std::minmax_element(m_edata.data.begin(), m_edata.data.end());
+	m_edata.dmin = *minmax.first;
+	m_edata.dmax = *minmax.second;
+
 	ExtractImage(exmin, exmax, eymin, eymax);
-	
-	// map data changes back to individual tiles
 }
 
 void ElevTileBlock::ExtractImage(int exmin, int exmax, int eymin, int eymax)
