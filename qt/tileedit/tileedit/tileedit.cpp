@@ -34,6 +34,7 @@ tileedit::tileedit(QWidget *parent)
 	m_mgrMask = 0;
 	m_mgrElev = 0;
 	m_mgrElevMod = 0;
+	m_blocksize = 1;
 
 	m_openMode = TILESEARCH_CACHE | TILESEARCH_ARCHIVE;
 	Tile::setOpenMode(m_openMode);
@@ -252,21 +253,24 @@ void tileedit::onElevConfigDestroyed(int r)
 
 void tileedit::loadTile(int lvl, int ilat, int ilng)
 {
+	int ilat1 = min(nLat(lvl), ilat + m_blocksize);
+	int ilng1 = min(nLng(lvl), ilng + m_blocksize);
+
     if (m_sTileBlock)
         delete m_sTileBlock;
-    m_sTileBlock = SurfTileBlock::Load(lvl, ilat, ilat+1, ilng, ilng+1);
+    m_sTileBlock = SurfTileBlock::Load(lvl, ilat, ilat1, ilng, ilng1);
 
 	if (m_mTileBlock)
 		delete m_mTileBlock;
 	if (m_lTileBlock)
 		delete m_lTileBlock;
-	std::pair<MaskTileBlock*, NightlightTileBlock*> ml = MaskTileBlock::Load(lvl, ilat, ilat+1, ilng, ilng+1);
+	std::pair<MaskTileBlock*, NightlightTileBlock*> ml = MaskTileBlock::Load(lvl, ilat, ilat1, ilng, ilng1);
 	m_mTileBlock = ml.first;
 	m_lTileBlock = ml.second;
 
 	if (m_eTileBlock)
 		delete m_eTileBlock;
-	m_eTileBlock = ElevTileBlock::Load(lvl, ilat, ilat+1, ilng, ilng+1);
+	m_eTileBlock = ElevTileBlock::Load(lvl, ilat, ilat1, ilng, ilng1);
 	if (m_eTileBlock && m_mTileBlock)
 		m_eTileBlock->setWaterMask(m_mTileBlock);
 

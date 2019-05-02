@@ -6,6 +6,9 @@
 #include "ddsread.h"
 #include "ZTreeMgr.h"
 
+inline int nLat(int lvl) { return (lvl < 4 ? 1 : 1 << (lvl - 4)); }
+inline int nLng(int lvl) { return (lvl < 4 ? 1 : 1 << (lvl - 3)); }
+
 class Tile
 {
 public:
@@ -17,8 +20,8 @@ public:
 	int subLevel() const { return m_sublvl; }
 	int subiLat() const { return m_subilat; }
 	int subiLng() const { return m_subilng; }
-	int nLat() const { return (m_lvl < 4 ? 1 : 1 << (m_lvl - 4)); }
-	int nLng() const { return (m_lvl < 4 ? 1 : 1 << (m_lvl - 3)); }
+	int nLat() const { return ::nLat(m_lvl); }
+	int nLng() const { return ::nLng(m_lvl); }
 
 	virtual void set(const Tile *tile);
 

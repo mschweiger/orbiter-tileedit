@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>270</width>
-    <height>143</height>
+    <height>202</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -17,7 +17,7 @@
    <property name="geometry">
     <rect>
      <x>20</x>
-     <y>90</y>
+     <y>150</y>
      <width>231</width>
      <height>33</height>
     </rect>
@@ -95,6 +95,35 @@
       <item>
        <property name="text">
         <string>Cache files only</string>
+       </property>
+      </item>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QGroupBox" name="groupBox_2">
+   <property name="geometry">
+    <rect>
+     <x>19</x>
+     <y>79</y>
+     <width>231</width>
+     <height>53</height>
+    </rect>
+   </property>
+   <property name="title">
+    <string>Display mode</string>
+   </property>
+   <layout class="QVBoxLayout" name="verticalLayout_2">
+    <item>
+     <widget class="QComboBox" name="comboDisplayMode">
+      <item>
+       <property name="text">
+        <string>Single tiles</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>2x2 tile blocks</string>
        </property>
       </item>
      </widget>

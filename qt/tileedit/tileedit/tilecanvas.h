@@ -47,11 +47,6 @@ protected:
 private:
     const TileBlock *m_tileBlock;
 	int m_canvasIdx;
-    //int m_lvl;
-    //int m_ilat;
-    //int m_ilng;
-    //int m_nlat;
-    //int m_nlng;
 	GlyphMode m_glyphMode;
 
 signals:

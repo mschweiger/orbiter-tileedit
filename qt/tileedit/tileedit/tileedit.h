@@ -113,6 +113,7 @@ private:
     int m_ilng;
 
 	DWORD m_openMode;
+	int m_blocksize;
 
 	ElevDisplayParam m_elevDisplayParam;
 
