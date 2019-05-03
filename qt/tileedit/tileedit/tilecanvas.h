@@ -9,6 +9,7 @@
 #include "tileblock.h"
 
 class TileCanvasOverlay;
+class tileedit;
 
 class TileCanvas: public QWidget
 {
@@ -28,6 +29,7 @@ public:
 	const TileBlock *tileBlock() const{ return m_tileBlock; }
 	int idx() const { return m_canvasIdx; }
 	void setIdx(int idx) { m_canvasIdx = idx; }
+	void setTileedit(tileedit *te) { m_tileedit = te; }
     void resizeEvent(QResizeEvent *event);
     void paintEvent(QPaintEvent *event);
     void enterEvent(QEvent *event);
@@ -48,6 +50,7 @@ private:
     const TileBlock *m_tileBlock;
 	int m_canvasIdx;
 	GlyphMode m_glyphMode;
+	tileedit *m_tileedit;
 
 signals:
     void tileChanged(int lvl, int ilat, int ilng);

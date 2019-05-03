@@ -31,6 +31,7 @@ class tileedit : public QMainWindow
 
 	friend class DlgConfig;
 	friend class DlgElevConfig;
+	friend class TileCanvas;
 
 public:
     explicit tileedit(QWidget *parent = 0);

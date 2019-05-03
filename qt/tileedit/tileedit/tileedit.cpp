@@ -94,6 +94,7 @@ tileedit::tileedit(QWidget *parent)
 	ui->widgetElevEditTools->setVisible(false);
 
 	for (int i = 0; i < 3; i++) {
+		m_panel[i].canvas->setTileedit(this);
 		m_panel[i].canvas->setIdx(i);
 		connect(m_panel[i].canvas, SIGNAL(tileChanged(int, int, int)), this, SLOT(OnTileChangedFromPanel(int, int, int)));
 		connect(m_panel[i].canvas, SIGNAL(tileEntered(TileCanvas*)), this, SLOT(OnTileEntered(TileCanvas*)));
@@ -206,17 +207,19 @@ void tileedit::setLoadMode(DWORD mode)
 void tileedit::openDir()
 {
     std::string rootDir = QFileDialog::getExistingDirectory(this, tr("Open celestial body")).toStdString();
-	Tile::setRoot(rootDir);
+	if (rootDir.size()) {
+		Tile::setRoot(rootDir);
 
-	if (m_openMode & TILESEARCH_ARCHIVE)
-		setupTreeManagers(rootDir);
+		if (m_openMode & TILESEARCH_ARCHIVE)
+			setupTreeManagers(rootDir);
 
-    setTile(1, 0, 0);
-    ensureSquareCanvas(rect().width(), rect().height());
+		setTile(1, 0, 0);
+		ensureSquareCanvas(rect().width(), rect().height());
 
-	char cbuf[256];
-	sprintf(cbuf, "tileedit [%s]", rootDir.c_str());
-	setWindowTitle(cbuf);
+		char cbuf[256];
+		sprintf(cbuf, "tileedit [%s]", rootDir.c_str());
+		setWindowTitle(cbuf);
+	}
 }
 
 void tileedit::on_actionConfig_triggered()
