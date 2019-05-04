@@ -211,6 +211,7 @@ void TileCanvas::setTileBlock(const TileBlock *tileBlock)
 		QPoint pos = mapFromGlobal(cursor().pos());
 		updateGlyph(pos.x(), pos.y());
 	}
+	overlay->setTileBlock(tileBlock);
 	update();
 }
 
@@ -238,6 +239,8 @@ void TileCanvas::showOverlay(bool show)
 }
 
 
+QFont TileCanvasOverlay::s_font = QFont("Courier", 10);
+
 TileCanvasOverlay::TileCanvasOverlay(QWidget *parent)
 	: QWidget(parent)
 {
@@ -249,6 +252,8 @@ TileCanvasOverlay::TileCanvasOverlay(QWidget *parent)
 	m_penCrosshair.setColor(QColor(255, 0, 0));
 	m_penCrosshair.setWidth(1);
 	m_penCrosshair.setStyle(Qt::SolidLine);
+
+	m_tileBlock = 0;
 
     setMouseTracking(true);
 }
@@ -282,6 +287,7 @@ void TileCanvasOverlay::paintEvent(QPaintEvent *event)
         int h = rect().height();
         int dw = w/16;
         int dh = h/16;
+		char cbuf[256];
         switch(m_glyph) {
         case GLYPH_RECTFULL:
             painter.drawRect(1, 1, w-3, h-3);
@@ -335,6 +341,24 @@ void TileCanvasOverlay::paintEvent(QPaintEvent *event)
 			}
 			break;
         }
+		if (m_tileBlock) {
+			painter.setFont(s_font);
+			for (int ilat = m_tileBlock->iLat0(); ilat < m_tileBlock->iLat1(); ilat++) {
+				int y = ((ilat - m_tileBlock->iLat0()) * h) / (m_tileBlock->nLatBlock()) + 18;
+				for (int ilng = m_tileBlock->iLng0(); ilng < m_tileBlock->iLng1(); ilng++) {
+					int x = ((ilng - m_tileBlock->iLng0()) * w) / (m_tileBlock->nLngBlock()) + 6;
+					const Tile *tile = m_tileBlock->getTile(ilat, ilng);
+					if (tile) {
+						sprintf(cbuf, " %02d/%06d/%06d", tile->Level(), tile->iLat(), tile->iLng());
+						painter.drawText(x, y, QString(cbuf));
+						if (tile->subLevel() < tile->Level()) {
+							sprintf(cbuf, "[%02d/%06d/%06d]", tile->subLevel(), tile->subiLat(), tile->subiLng());
+							painter.drawText(x, y+16, QString(cbuf));
+						}
+					}
+				}
+			}
+		}
     }
 }
 

@@ -267,6 +267,7 @@ ElevTileBlock *ElevTileBlock::Load(int lvl, int ilat0, int ilat1, int ilng0, int
 	for (int ilat = ilat0; ilat < ilat1; ilat++) {
 		if (ilat < 0 || ilat >= nlat) continue;
 		for (int ilng = ilng0; ilng < ilng1; ilng++) {
+			int idx = (ilat - ilat0)*tileblock->m_nblocklng + (ilng - ilng0);
 			int ilngn = ilng;
 			while (ilngn < 0) ilngn += nlng;
 			while (ilngn >= nlng) ilngn -= nlng;
@@ -274,7 +275,7 @@ ElevTileBlock *ElevTileBlock::Load(int lvl, int ilat0, int ilat1, int ilng0, int
 			if (tile->m_edata.width < TILE_ELEVSTRIDE)
 				tile->InterpolateFromAncestor();
 			tileblock->setTile(ilat, ilng, tile);
-			delete tile;
+			tileblock->m_tile[idx] = tile;
 		}
 	}
 	tileblock->m_isModified = false;

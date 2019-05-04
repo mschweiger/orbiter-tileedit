@@ -385,7 +385,7 @@ ElevTileBlock ElevTile::Prolong()
 	int ilat1 = ilat0 + 2;
 	int ilng0 = m_ilng * 2;
 	int ilng1 = ilng0 + 2;
-	int lvl = m_lvl + 2;
+	int lvl = m_lvl + 1;
 	ElevTileBlock tblock(lvl, ilat0, ilat1, ilng0, ilng1);
 	ElevData &edata = tblock.getData();
 	ElevData &edataBase = tblock.getBaseData();
@@ -428,6 +428,14 @@ ElevTileBlock ElevTile::Prolong()
 		}
 	}
 	tblock.SyncTiles();
+	for (int ilat = ilat0; ilat < ilat1; ilat++) {
+		for (int ilng = ilng0; ilng < ilng1; ilng++) {
+			Tile *tile = tblock._getTile(ilat, ilng);
+			tile->setSubLevel(m_sublvl);
+			tile->setSubiLat(m_subilat);
+			tile->setSubiLng(m_subilng);
+		}
+	}
 	return tblock;
 }
 

@@ -18,7 +18,8 @@ public:
 	int iLng1() const { return m_ilng1; }
 	int nLat() const { return (m_lvl < 4 ? 1 : 1 << (m_lvl - 4)); }
 	int nLng() const { return (m_lvl < 4 ? 1 : 1 << (m_lvl - 3)); }
-
+	int nLatBlock() const { return m_nblocklat; }
+	int nLngBlock() const { return m_nblocklng; }
 	DWORD pixelColour(int px, int py) const;
 
 	const Image &getImage() const { return m_img; }
@@ -29,6 +30,7 @@ public:
 	 * \brief Returns a pointer to one of the constituent
 	 */
 	const Tile *getTile(int ilat, int ilng) const;
+	Tile *_getTile(int ilat, int ilng);
 
 	/**
 	 * \brief Copies one of the constituent tiles and returns a pointer to the copy.
@@ -43,7 +45,6 @@ public:
 	virtual bool copyTile(int ilat, int ilng, Tile *tile) const = 0;
 
 protected:
-	Tile *_getTile(int ilat, int ilng);
 
 	int m_lvl;
 	int m_ilat0, m_ilat1;

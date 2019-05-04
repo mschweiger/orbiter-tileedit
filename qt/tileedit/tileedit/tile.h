@@ -24,6 +24,12 @@ public:
 	int nLng() const { return ::nLng(m_lvl); }
 
 	virtual void set(const Tile *tile);
+	void setLevel(int lvl) { m_lvl = lvl; }
+	void setiLat(int ilat) { m_ilat = ilat; }
+	void setiLng(int ilng) { m_ilng = ilng; }
+	void setSubLevel(int lvl) { m_sublvl = lvl; }
+	void setSubiLat(int ilat) { m_subilat = ilat; }
+	void setSubiLng(int ilng) { m_subilng = ilng; }
 
     const Image &getImage() const { return img; }
 	void setImage(const Image &im) { img = im; }

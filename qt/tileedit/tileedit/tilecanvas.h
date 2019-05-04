@@ -91,12 +91,15 @@ public:
     void mouseMoveEvent(QMouseEvent *event);
 	void mousePressEvent(QMouseEvent *event);
     void mouseReleaseEvent(QMouseEvent *event);
+	void setTileBlock(const TileBlock *tileBlock) { m_tileBlock = tileBlock; }
 
 private:
     Glyph m_glyph;
     QPen m_penGlyph;
 	QPen m_penCrosshair;
 	double m_crosshairX, m_crosshairY;
+	const TileBlock *m_tileBlock;
+	static QFont s_font;
 };
 
 #endif // TILECANVAS_H
