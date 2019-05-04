@@ -43,8 +43,8 @@ class ElevTile : public Tile {
 
 public:
 	ElevTile(const ElevTile &etile);
-	static ElevTile *Load(int lvl, int ilat, int ilng, const ElevDisplayParam &elevDisplayParam);
-	static ElevTile *InterpolateFromAncestor(int lvl, int ilat, int ilng, const ElevDisplayParam &elevDisplayParam, const Cmap *cm = 0);
+	static ElevTile *Load(int lvl, int ilat, int ilng);
+	static ElevTile *InterpolateFromAncestor(int lvl, int ilat, int ilng, const Cmap *cm = 0);
 	static void setTreeMgr(const ZTreeMgr *mgr, const ZTreeMgr *modMgr = 0);
 	const std::string Layer() const { return std::string("Elev"); }
 	double nodeElevation(int ndx, int ndy);
@@ -70,19 +70,17 @@ public:
 	void setWaterMask(const MaskTile *mtile);
 
 protected:
-	ElevTile(int lvl, int ilat, int ilng, const ElevDisplayParam &elevDisplayParam);
+	ElevTile(int lvl, int ilat, int ilng);
 	bool Load(bool allowAncestorSubset = true);
 	bool InterpolateFromAncestor();
 	void LoadSubset();
 	void LoadData(ElevData &edata, int lvl, int ilat, int ilng);
 	void LoadModData(ElevData &edata, int lvl, int ilat, int ilng);
-	//void ExtractImage(int exmin = -1, int exmax = -1, int eymin = -1, int eymax = -1);
 
 private:
 	ElevData m_edata;
 	ElevData m_edataBase;
 	bool m_modified;
-	const ElevDisplayParam &m_elevDisplayParam;
 	std::vector<bool> m_waterMask;
 
 	static const ZTreeMgr *s_treeMgr;

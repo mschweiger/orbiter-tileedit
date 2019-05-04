@@ -369,7 +369,7 @@ void tileedit::onActionButtonClicked(int id)
 				for (int ilat = m_eTileBlock->iLat0(); ilat < m_eTileBlock->iLat1(); ilat++) {
 					for (int ilng = m_eTileBlock->iLng0(); ilng < m_eTileBlock->iLng1(); ilng++) {
 						if (m_eTileBlock->getTile(ilat, ilng)->subLevel() < m_eTileBlock->Level()) {
-							ElevTile *tile = ElevTile::InterpolateFromAncestor(m_lvl, ilat, ilng, m_elevDisplayParam);
+							ElevTile *tile = ElevTile::InterpolateFromAncestor(m_lvl, ilat, ilng);
 							if (tile) {
 								tile->dataChanged();
 								tile->Save();

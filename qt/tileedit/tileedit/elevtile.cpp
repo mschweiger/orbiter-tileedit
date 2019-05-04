@@ -77,9 +77,8 @@ ElevData ElevData::SubTile(const std::pair<DWORD, DWORD> &xrange, const std::pai
 const ZTreeMgr *ElevTile::s_treeMgr = 0;
 const ZTreeMgr *ElevTile::s_treeModMgr = 0;
 
-ElevTile::ElevTile(int lvl, int ilat, int ilng, const ElevDisplayParam &elevDisplayParam)
+ElevTile::ElevTile(int lvl, int ilat, int ilng)
 	: Tile(lvl, ilat, ilng)
-	, m_elevDisplayParam(elevDisplayParam)
 {
 	lat_subrange.second = 256;
 	lng_subrange.second = 256;
@@ -88,7 +87,6 @@ ElevTile::ElevTile(int lvl, int ilat, int ilng, const ElevDisplayParam &elevDisp
 
 ElevTile::ElevTile(const ElevTile &etile)
 	: Tile(etile)
-	, m_elevDisplayParam(etile.m_elevDisplayParam)
 	, m_edata(etile.m_edata)
 	, m_edataBase(etile.m_edataBase)
 {
@@ -135,7 +133,7 @@ bool ElevTile::InterpolateFromAncestor()
 	int parent_lvl = m_lvl - 1;
 	int parent_ilat = m_ilat / 2;
 	int parent_ilng = m_ilng / 2;
-	ElevTile parent(parent_lvl, parent_ilat, parent_ilng, m_elevDisplayParam);
+	ElevTile parent(parent_lvl, parent_ilat, parent_ilng);
 
 	if (!parent.Load(false))
 		if (!parent.InterpolateFromAncestor())
@@ -285,7 +283,7 @@ void ElevTile::MatchNeighbourTiles()
 			if (ilat == m_ilat && ilng == m_ilng)
 				continue;
 			ilngn = (ilng < 0 ? ilng + nlng : ilng >= nlng ? ilng - nlng : ilng);
-			ElevTile *etile = ElevTile::Load(m_lvl, ilat, ilngn, m_elevDisplayParam);
+			ElevTile *etile = ElevTile::Load(m_lvl, ilat, ilngn);
 			if (!etile)
 				continue;
 			tileGrid[xblock + yblock * 3] = etile;
@@ -330,7 +328,7 @@ bool ElevTile::MatchParentTile(int minlvl) const
 	int ilat = m_ilat / 2;
 	int ilng = m_ilng / 2;
 
-	ElevTile *etile = ElevTile::Load(lvl, ilat, ilng, m_elevDisplayParam);
+	ElevTile *etile = ElevTile::Load(lvl, ilat, ilng);
 	if (!etile)
 		return false;
 
@@ -446,9 +444,9 @@ void ElevTile::setWaterMask(const MaskTile *mtile)
 	}
 }
 
-ElevTile *ElevTile::Load(int lvl, int ilat, int ilng, const ElevDisplayParam &elevDisplayParam)
+ElevTile *ElevTile::Load(int lvl, int ilat, int ilng)
 {
-	ElevTile *etile = new ElevTile(lvl, ilat, ilng, elevDisplayParam);
+	ElevTile *etile = new ElevTile(lvl, ilat, ilng);
 	if (!etile->Load()) {
 		delete etile;
 		etile = 0;
@@ -456,9 +454,9 @@ ElevTile *ElevTile::Load(int lvl, int ilat, int ilng, const ElevDisplayParam &el
 	return etile;
 }
 
-ElevTile *ElevTile::InterpolateFromAncestor(int lvl, int ilat, int ilng, const ElevDisplayParam &elevDisplayParam, const Cmap *cm)
+ElevTile *ElevTile::InterpolateFromAncestor(int lvl, int ilat, int ilng, const Cmap *cm)
 {
-	ElevTile *etile = new ElevTile(lvl, ilat, ilng, elevDisplayParam);
+	ElevTile *etile = new ElevTile(lvl, ilat, ilng);
 	if (!etile->InterpolateFromAncestor()) {
 		delete etile;
 		etile = 0;

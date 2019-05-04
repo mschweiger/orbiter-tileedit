@@ -271,7 +271,7 @@ ElevTileBlock *ElevTileBlock::Load(int lvl, int ilat0, int ilat1, int ilng0, int
 			int ilngn = ilng;
 			while (ilngn < 0) ilngn += nlng;
 			while (ilngn >= nlng) ilngn -= nlng;
-			ElevTile *tile = ElevTile::Load(lvl, ilat, ilngn, *s_elevDisplayParam);
+			ElevTile *tile = ElevTile::Load(lvl, ilat, ilngn);
 			if (tile->m_edata.width < TILE_ELEVSTRIDE)
 				tile->InterpolateFromAncestor();
 			tileblock->setTile(ilat, ilng, tile);
@@ -390,7 +390,7 @@ void ElevTileBlock::SyncTile(int ilat, int ilng)
 
 	ElevTile *etile = (ElevTile*)_getTile(ilat, ilng);
 	if (!etile) {
-		etile = new ElevTile(m_lvl, ilat, ilng, *s_elevDisplayParam);
+		etile = new ElevTile(m_lvl, ilat, ilng);
 		int idx = (ilat - m_ilat0) * m_nblocklng + (ilng - m_ilng0);
 		m_tile[idx] = etile;
 	}
