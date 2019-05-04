@@ -506,9 +506,7 @@ void ElevTileBlock::ExtractImage(int exmin, int exmax, int eymin, int eymax)
 
 void ElevTileBlock::displayParamChanged()
 {
-	for (int idx = 0; idx < m_tile.size(); idx++)
-		if (m_tile[idx])
-			static_cast<ElevTile*>(m_tile[idx])->displayParamChanged();
+	ExtractImage();
 }
 
 

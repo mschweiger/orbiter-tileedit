@@ -126,10 +126,6 @@ bool ElevTile::Load(bool allowAncestorSubset)
 		LoadSubset();
 	}
 
-	// turn elevation data into an image
-	if (m_edata.data.size())
-		ExtractImage();
-
 	return m_edata.data.size() > 0;
 }
 
@@ -262,11 +258,6 @@ void ElevTile::SaveMod()
 		}
 		m_modified = false;
 	}
-}
-
-void ElevTile::displayParamChanged()
-{
-	ExtractImage();
 }
 
 void ElevTile::MatchNeighbourTiles()
@@ -483,47 +474,5 @@ void ElevTile::setTreeMgr(const ZTreeMgr *treeMgr, const ZTreeMgr *treeModMgr)
 
 void ElevTile::dataChanged(int exmin, int exmax, int eymin, int eymax)
 {
-	ExtractImage(exmin, exmax, eymin, eymax);
 	m_modified = true;
-}
-
-void ElevTile::ExtractImage(int exmin, int exmax, int eymin, int eymax)
-{
-	double dmin, dmax;
-
-	img.width = (m_edata.width - 2) * 2 - 2;
-	img.height = (m_edata.height - 2) * 2 - 2;
-	img.data.resize(img.width * img.height);
-
-	if (m_elevDisplayParam.autoRange) {
-		dmin = m_edata.dmin;
-		dmax = m_edata.dmax;
-	}
-	else {
-		dmin = m_elevDisplayParam.rangeMin;
-		dmax = m_elevDisplayParam.rangeMax;
-	}
-	double dscale = (dmax > dmin ? 256.0 / (dmax - dmin) : 1.0);
-
-	int imin = (exmin < 0 ? 0 : max(0, (exmin - 1) * 2 - 1));
-	int imax = (exmax < 0 ? img.width : min((int)img.width, exmax * 2));
-	int jmin = (eymax < 0 ? 0 : max(0, (int)img.height - (eymax - 1) * 2));
-	int jmax = (eymin < 0 ? img.height : min((int)img.height, (int)img.height - (eymin - 1) * 2 + 1));
-
-	const Cmap &cm = cmap(m_elevDisplayParam.cmName);
-	bool useMask = m_elevDisplayParam.useWaterMask && m_waterMask.size();
-
-	for (int j = jmin; j < jmax; j++)
-		for (int i = imin; i < imax; i++) {
-			int ex = (i + 1) / 2 + 1;
-			int ey = (img.height - j) / 2 + 1;
-			double d = m_edata.data[ex + ey * m_edata.width];
-			int v = max(min((int)((d - dmin) * dscale), 255), 0);
-			if (v < 0 || v > 255)
-				std::cerr << "Problem" << std::endl;
-			img.data[i + j * img.width] = (0xff000000 | cm[v]);
-
-			if (useMask && m_waterMask[i + j * img.width])
-				img.data[i + j * img.width] = 0xffB9E3FF;
-		}
 }

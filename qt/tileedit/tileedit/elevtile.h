@@ -55,7 +55,6 @@ public:
 	const ElevData &getData() const { return m_edata; }
 	ElevData &getBaseData() { return m_edataBase; }
 	const ElevData &getBaseData() const { return m_edataBase; }
-	void displayParamChanged();
 	bool isModified() const { return m_modified; }
 	void dataChanged(int exmin = -1, int exmax = -1, int eymin = -1, int eymax = -1);
 	void Save();
@@ -77,7 +76,7 @@ protected:
 	void LoadSubset();
 	void LoadData(ElevData &edata, int lvl, int ilat, int ilng);
 	void LoadModData(ElevData &edata, int lvl, int ilat, int ilng);
-	void ExtractImage(int exmin = -1, int exmax = -1, int eymin = -1, int eymax = -1);
+	//void ExtractImage(int exmin = -1, int exmax = -1, int eymin = -1, int eymax = -1);
 
 private:
 	ElevData m_edata;
