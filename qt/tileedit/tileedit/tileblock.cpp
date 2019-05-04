@@ -272,6 +272,10 @@ ElevTileBlock *ElevTileBlock::Load(int lvl, int ilat0, int ilat1, int ilng0, int
 			while (ilngn < 0) ilngn += nlng;
 			while (ilngn >= nlng) ilngn -= nlng;
 			ElevTile *tile = ElevTile::Load(lvl, ilat, ilngn);
+			if (!tile) {
+				delete tileblock;
+				return 0;
+			}
 			if (tile->m_edata.width < TILE_ELEVSTRIDE)
 				tile->InterpolateFromAncestor();
 			tileblock->setTile(ilat, ilng, tile);
