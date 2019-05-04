@@ -24,7 +24,7 @@ void DlgConfig::accept()
 	m_tileedit->setLoadMode(loadFlag);
 
 	idx = ui->comboDisplayMode->currentIndex();
-	m_tileedit->m_blocksize = (idx == 0 ? 1 : 2);
+	m_tileedit->setBlockSize(idx == 0 ? 1 : 2);
 
 	QDialog::accept();
 }

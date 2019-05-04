@@ -39,6 +39,7 @@ public:
 
 	void elevDisplayParamChanged();
 	void setLoadMode(DWORD mode);
+	void setBlockSize(int bsize);
 
 protected:
     void createActions();

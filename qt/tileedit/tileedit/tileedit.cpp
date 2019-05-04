@@ -204,6 +204,16 @@ void tileedit::setLoadMode(DWORD mode)
 	}
 }
 
+void tileedit::setBlockSize(int bsize)
+{
+	if (bsize != m_blocksize) {
+		m_blocksize = bsize;
+
+		// reload current tile
+		setTile(m_lvl, m_ilat, m_ilng);
+	}
+}
+
 void tileedit::openDir()
 {
     std::string rootDir = QFileDialog::getExistingDirectory(this, tr("Open celestial body")).toStdString();
