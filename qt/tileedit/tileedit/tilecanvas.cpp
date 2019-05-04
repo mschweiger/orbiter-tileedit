@@ -342,6 +342,13 @@ void TileCanvasOverlay::paintEvent(QPaintEvent *event)
 			break;
         }
 		if (m_tileBlock) {
+			if (m_tileBlock->nLngBlock() == 2 || m_tileBlock->nLatBlock() == 2) {
+				painter.setPen(m_penCrosshair);
+				if (m_tileBlock->nLngBlock() == 2)
+					painter.drawLine(w / 2, 0, w / 2, h);
+				if (m_tileBlock->nLatBlock() == 2)
+					painter.drawLine(0, h / 2, w, h / 2);
+			}
 			painter.setFont(s_font);
 			for (int ilat = m_tileBlock->iLat0(); ilat < m_tileBlock->iLat1(); ilat++) {
 				int y = ((ilat - m_tileBlock->iLat0()) * h) / (m_tileBlock->nLatBlock()) + 18;
