@@ -214,8 +214,17 @@ bool MaskTileBlock::copyTile(int ilat, int ilng, Tile *tile) const
 
 std::pair<MaskTileBlock*, NightlightTileBlock*> MaskTileBlock::Load(int lvl, int ilat0, int ilat1, int ilng0, int ilng1)
 {
+	const int tilesize = 512;
+
 	MaskTileBlock *mtileblock = new MaskTileBlock(lvl, ilat0, ilat1, ilng0, ilng1);
 	NightlightTileBlock *ltileblock = new NightlightTileBlock(lvl, ilat0, ilat1, ilng0, ilng1);
+
+	mtileblock->m_img.width = tilesize*mtileblock->m_nblocklng;
+	mtileblock->m_img.height = tilesize*mtileblock->m_nblocklat;
+	mtileblock->m_img.data.resize(mtileblock->m_img.width * mtileblock->m_img.height);
+	ltileblock->m_img.width = tilesize*ltileblock->m_nblocklng;
+	ltileblock->m_img.height = tilesize*ltileblock->m_nblocklat;
+	ltileblock->m_img.data.resize(ltileblock->m_img.width * ltileblock->m_img.height);
 
 	for (int ilat = ilat0; ilat < ilat1; ilat++) {
 		for (int ilng = ilng0; ilng < ilng1; ilng++) {
@@ -223,6 +232,25 @@ std::pair<MaskTileBlock*, NightlightTileBlock*> MaskTileBlock::Load(int lvl, int
 			std::pair<MaskTile*, NightlightTile*> mltile = MaskTile::Load(lvl, ilat, ilng);
 			mtileblock->m_tile[idx] = mltile.first;
 			ltileblock->m_tile[idx] = mltile.second;
+			const Image &mim = mtileblock->m_tile[idx]->getImage();
+			const Image &lim = ltileblock->m_tile[idx]->getImage();
+			int yrep = tilesize / mim.height;
+			int xrep = tilesize / mim.width;
+			int yofs = (ilat - ilat0) * tilesize;
+			int xofs = (ilng - ilng0) * tilesize;
+
+			for (int i = 0; i < mim.height; i++) {
+				for (int ii = 0; ii < yrep; ii++) {
+					for (int j = 0; j < mim.width; j++) {
+						for (int jj = 0; jj < xrep; jj++) {
+							int idx = yofs * mtileblock->m_img.width + xofs + j*xrep + jj;
+							mtileblock->m_img.data[idx] = mim.data[i*mim.width + j];
+							ltileblock->m_img.data[idx] = lim.data[i*lim.width + j];
+						}
+					}
+					yofs++;
+				}
+			}
 		}
 	}
 	return std::make_pair(mtileblock, ltileblock);
