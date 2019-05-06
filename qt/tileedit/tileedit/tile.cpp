@@ -157,6 +157,10 @@ std::pair<MaskTile*,NightlightTile*> MaskTile::Load(int lvl, int ilat, int ilng)
 {
 	MaskTile *mtile = new MaskTile(lvl, ilat, ilng);
 	mtile->LoadDXT1(s_treeMgr);
+	if (!mtile->img.data.size()) {
+		delete mtile;
+		return std::make_pair((MaskTile*)0, (NightlightTile*)0);
+	}
 	NightlightTile *ltile = new NightlightTile(*mtile);
 
 	// separate water mask and night lights

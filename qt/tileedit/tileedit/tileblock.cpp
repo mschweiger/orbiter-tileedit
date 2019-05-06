@@ -230,6 +230,11 @@ std::pair<MaskTileBlock*, NightlightTileBlock*> MaskTileBlock::Load(int lvl, int
 		for (int ilng = ilng0; ilng < ilng1; ilng++) {
 			int idx = (ilat - ilat0)*mtileblock->m_nblocklng + (ilng - ilng0);
 			std::pair<MaskTile*, NightlightTile*> mltile = MaskTile::Load(lvl, ilat, ilng);
+			if (!mltile.first) {
+				delete mtileblock;
+				delete ltileblock;
+				return std::make_pair((MaskTileBlock*)0, (NightlightTileBlock*)0);
+			}
 			mtileblock->m_tile[idx] = mltile.first;
 			ltileblock->m_tile[idx] = mltile.second;
 			const Image &mim = mtileblock->m_tile[idx]->getImage();

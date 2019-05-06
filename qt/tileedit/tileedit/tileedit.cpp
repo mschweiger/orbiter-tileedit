@@ -210,6 +210,8 @@ void tileedit::setBlockSize(int bsize)
 		m_blocksize = bsize;
 
 		// reload current tile
+		m_ilat = max(0, min(m_ilat, nLat(m_lvl) - bsize));
+		m_ilng = max(0, min(m_ilng, nLng(m_lvl) - bsize));
 		setTile(m_lvl, m_ilat, m_ilng);
 	}
 }
