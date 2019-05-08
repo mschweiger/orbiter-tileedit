@@ -750,7 +750,8 @@ void tileedit::setToolOptions()
 void tileedit::setTile(int lvl, int ilat, int ilng)
 {
 	if (m_eTileBlock && m_eTileBlock->isModified()) {
-		//m_etile->MatchNeighbourTiles(); // TODO
+		m_eTileBlock->SyncTiles();
+		m_eTileBlock->MatchNeighbourTiles();
 		m_eTileBlock->SaveMod();
 		//m_etile->MatchParentTile(m_etile->Level() - 5); // TODO
 	}

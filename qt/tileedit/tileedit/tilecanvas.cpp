@@ -341,7 +341,7 @@ void TileCanvasOverlay::paintEvent(QPaintEvent *event)
 			}
 			break;
         }
-		if (m_tileBlock) {
+		if (m_tileBlock && m_glyph != GLYPH_CROSSHAIR) {
 			if (m_tileBlock->nLngBlock() == 2 || m_tileBlock->nLatBlock() == 2) {
 				painter.setPen(m_penCrosshair);
 				if (m_tileBlock->nLngBlock() == 2)

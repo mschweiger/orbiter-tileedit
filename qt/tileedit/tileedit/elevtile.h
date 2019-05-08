@@ -76,6 +76,7 @@ protected:
 	void LoadSubset();
 	void LoadData(ElevData &edata, int lvl, int ilat, int ilng);
 	void LoadModData(ElevData &edata, int lvl, int ilat, int ilng);
+	void RescanLimits();
 
 private:
 	ElevData m_edata;

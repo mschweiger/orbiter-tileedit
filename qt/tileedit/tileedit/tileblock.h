@@ -113,8 +113,23 @@ public:
 	void displayParamChanged();
 	void dataChanged(int exmin = -1, int exmax = -1, int eymin = -1, int eymax = -1);
 	bool isModified() const { return m_isModified; }
+
+	/**
+	 * \brief Map edits to the tileblock back to the individual tiles
+	 *
+	 * This must be called before calling Save() or SaveMod() to make sure the tiles are up to date.
+	 */
 	void SyncTiles();
+
+	/**
+	 * \brief Map edits to the tileblock back to one of the individual tiles
+	 */
 	void SyncTile(int ilat, int ilng);
+
+	/**
+	* \brief Propagate edits in the boundary overlap zones to the neighbour tiles
+	*/
+	void MatchNeighbourTiles();
 
 protected:
 	void ExtractImage(int exmin = -1, int exmax = -1, int eymin = -1, int eymax = -1);

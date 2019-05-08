@@ -111,6 +111,13 @@ double ElevTile::nodeElevation(int ndx, int ndy)
 	return (double)m_edata.data[idx];
 }
 
+void ElevTile::RescanLimits()
+{
+	auto minmax = std::minmax_element(m_edata.data.begin(), m_edata.data.end());
+	m_edata.dmin = *minmax.first;
+	m_edata.dmax = *minmax.second;
+}
+
 bool ElevTile::Load(bool allowAncestorSubset)
 {
 	LoadData(m_edataBase, m_lvl, m_ilat, m_ilng);
@@ -229,6 +236,7 @@ void ElevTile::Save()
 			double latmin = latmax - M_PI / nlat;
 			double lngmin = (double)m_ilng / (double)nlng * 2.0*M_PI - M_PI;
 			double lngmax = lngmin + 2.0*M_PI / nlng;
+			RescanLimits();
 
 			ensureLayerDir(s_root.c_str(), Layer().c_str(), m_lvl, m_ilat);
 			elvwrite(path, m_edata, latmin, latmax, lngmin, lngmax);
@@ -251,6 +259,7 @@ void ElevTile::SaveMod()
 			double latmin = latmax - M_PI / nlat;
 			double lngmin = (double)m_ilng / (double)nlng * 2.0*M_PI - M_PI;
 			double lngmax = lngmin + 2.0*M_PI / nlng;
+			RescanLimits();
 
 			elvmodwrite(path, m_edata, m_edataBase, latmin, latmax, lngmin, lngmax);
 		}
@@ -268,7 +277,7 @@ void ElevTile::MatchNeighbourTiles()
 	int nlng = nLng();
 
 	std::vector<ElevTile*> tileGrid(3 * 3);
-	for (int i = 0; i < tileGrid.size(); i++)
+	for (i = 0; i < tileGrid.size(); i++)
 		tileGrid[i] = 0;
 
 	// load the 3x3 tile neighbourhood

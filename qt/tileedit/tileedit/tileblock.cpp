@@ -390,7 +390,6 @@ bool ElevTileBlock::setTile(int ilat, int ilng, const Tile *tile)
 void ElevTileBlock::Save()
 {
 	if (m_isModified) {
-		SyncTiles();
 		for (int ilat = m_ilat0; ilat < m_ilat1; ilat++)
 			for (int ilng = m_ilng0; ilng < m_ilng1; ilng++) {
 				ElevTile *etile = (ElevTile*)_getTile(ilat, ilng);
@@ -403,7 +402,6 @@ void ElevTileBlock::Save()
 void ElevTileBlock::SaveMod()
 {
 	if (m_isModified) {
-		SyncTiles();
 		for (int ilat = m_ilat0; ilat < m_ilat1; ilat++)
 			for (int ilng = m_ilng0; ilng < m_ilng1; ilng++) {
 				ElevTile *etile = (ElevTile*)_getTile(ilat, ilng);
@@ -425,9 +423,15 @@ void ElevTileBlock::SyncTile(int ilat, int ilng)
 	if (ilat < m_ilat0 || ilat >= m_ilat1) return;
 	if (ilng < m_ilng0 || ilng >= m_ilng1) return;
 
+	int nlat = nLat();
+	int nlng = nLng();
+
 	ElevTile *etile = (ElevTile*)_getTile(ilat, ilng);
 	if (!etile) {
-		etile = new ElevTile(m_lvl, ilat, ilng);
+		int ilng_norm = ilng;
+		while (ilng_norm < 0) ilng_norm += nlng;
+		while (ilng_norm >= nlng) ilng_norm -= nlng;
+		etile = new ElevTile(m_lvl, ilat, ilng_norm);
 		int idx = (ilat - m_ilat0) * m_nblocklng + (ilng - m_ilng0);
 		m_tile[idx] = etile;
 	}
@@ -442,19 +446,21 @@ void ElevTileBlock::SyncTile(int ilat, int ilng)
 		ebdata.data.resize(ebdata.width * ebdata.height);
 	}
 
-	int nlat = nLat();
-	int nlng = nLng();
-
 	int xblock = ilng - m_ilng0;
 	int yblock = m_ilat1 - 1 - ilat;
 
 	int block_x0 = xblock * TILE_FILERES;
 	int block_y0 = yblock * TILE_FILERES;
 
-	int x0 = (xblock == 0 ? 0 : 1);
-	int x1 = (xblock == m_ilng1 - m_ilng0 - 1 ? TILE_ELEVSTRIDE : TILE_ELEVSTRIDE - 1);
-	int y0 = (yblock == 0 || ilat == nlat - 1 ? 0 : 1);
-	int y1 = (yblock == m_ilat1 - m_ilat0 - 1 || ilat == 0 ? TILE_ELEVSTRIDE : TILE_ELEVSTRIDE - 1);
+	int x0 = 0;
+	int x1 = TILE_ELEVSTRIDE;
+	int y0 = 0;
+	int y1 = TILE_ELEVSTRIDE;
+
+	//int x0 = (xblock == 0 ? 0 : 1);
+	//int x1 = (xblock == m_ilng1 - m_ilng0 - 1 ? TILE_ELEVSTRIDE : TILE_ELEVSTRIDE - 1);
+	//int y0 = (yblock == 0 || ilat == nlat - 1 ? 0 : 1);
+	//int y1 = (yblock == m_ilat1 - m_ilat0 - 1 || ilat == 0 ? TILE_ELEVSTRIDE : TILE_ELEVSTRIDE - 1);
 
 	for (int y = y0; y < y1; y++) {
 		for (int x = x0; x < x1; x++) {
@@ -463,6 +469,75 @@ void ElevTileBlock::SyncTile(int ilat, int ilng)
 			if (v_old != v_new) {
 				etile->getData().data[y*TILE_ELEVSTRIDE + x] = v_new;
 				etile->m_modified = true;
+			}
+		}
+	}
+}
+
+void ElevTileBlock::MatchNeighbourTiles()
+{
+	const double eps = 1e-6;
+
+	int i, xblock, yblock, ilat, ilng, ilng_norm;
+
+	int npadlat = m_nblocklat + 2;
+	int npadlng = m_nblocklng + 2;
+
+	int nlat = nLat();
+	int nlng = nLng();
+
+	std::vector<ElevTile*> tileGrid(npadlat * npadlng);
+	for (i = 0; i < tileGrid.size(); i++)
+		tileGrid[i] = 0;
+
+	// load the tile neighbourhood;
+	ElevTileBlock etilepad(m_lvl, m_ilat0 - 1, m_ilat1 + 1, m_ilng0 - 1, m_ilng1 + 1);
+
+	for (yblock = 0; yblock < npadlat; yblock++) {
+		ilat = m_ilat1 - yblock;
+		if (ilat < 0 || ilat >= nlat)
+			continue;
+		for (xblock = 0; xblock < npadlng; xblock++) {
+			ilng = m_ilng0 + xblock - 1;
+			if (ilat >= m_ilat0 && ilat < m_ilat1 && ilng >= m_ilng0 && ilng < m_ilng1)
+				continue;
+			ilng_norm = (ilng < 0 ? ilng + nlng : ilng >= nlng ? ilng - nlng : ilng);
+			ElevTile *etile = ElevTile::Load(m_lvl, ilat, ilng_norm);
+			if (!etile)
+				continue;
+			tileGrid[xblock + yblock * npadlng] = etile;
+			etilepad.setTile(ilat, ilng, etile);
+		}
+	}
+
+	// place the modified central tiles - requires tiles to have been synced
+	for (ilat = m_ilat0; ilat < m_ilat1; ilat++)
+		for (ilng = m_ilng0; ilng < m_ilng1; ilng++)
+			etilepad.setTile(ilat, ilng, getTile(ilat, ilng));
+
+	etilepad.SyncTiles();
+
+	// check for modifications in the neighbours
+	for (yblock = 0; yblock < npadlat; yblock++) {
+		for (xblock = 0; xblock < npadlng; xblock++) {
+			int idx = xblock + yblock * npadlng;
+			if (!tileGrid[idx])
+				continue;
+			ElevData &edata_old = tileGrid[idx]->getData();
+			ilat = m_ilat1 - yblock;
+			ilng = m_ilng0 + xblock - 1;
+			ElevTile *etile = (ElevTile*)etilepad.getTile(ilat, ilng);  //tileGrid[xblock + yblock*npadlng];
+			if (etile) {
+				ElevData &edata_new = etile->getData();
+				ilng_norm = (ilng < 0 ? ilng + nlng : ilng >= nlng ? ilng - nlng : ilng);
+				for (i = 0; i < edata_new.data.size(); i++) {
+					if (fabs(edata_new.data[i] - edata_old.data[i]) > eps) {
+						etile->dataChanged();
+						etile->SaveMod();
+						break;
+					}
+				}
+				delete tileGrid[idx];
 			}
 		}
 	}
