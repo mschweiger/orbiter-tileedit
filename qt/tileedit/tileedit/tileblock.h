@@ -131,6 +131,13 @@ public:
 	*/
 	void MatchNeighbourTiles();
 
+	/**
+	 * \brief Recursively map edits to parents down to level minlvl
+	 *
+	 * Requires SyncTiles to have been called.
+	 */
+	bool MatchParentTiles(int minlvl) const;
+
 protected:
 	void ExtractImage(int exmin = -1, int exmax = -1, int eymin = -1, int eymax = -1);
 

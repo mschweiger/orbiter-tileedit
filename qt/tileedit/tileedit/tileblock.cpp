@@ -452,18 +452,8 @@ void ElevTileBlock::SyncTile(int ilat, int ilng)
 	int block_x0 = xblock * TILE_FILERES;
 	int block_y0 = yblock * TILE_FILERES;
 
-	int x0 = 0;
-	int x1 = TILE_ELEVSTRIDE;
-	int y0 = 0;
-	int y1 = TILE_ELEVSTRIDE;
-
-	//int x0 = (xblock == 0 ? 0 : 1);
-	//int x1 = (xblock == m_ilng1 - m_ilng0 - 1 ? TILE_ELEVSTRIDE : TILE_ELEVSTRIDE - 1);
-	//int y0 = (yblock == 0 || ilat == nlat - 1 ? 0 : 1);
-	//int y1 = (yblock == m_ilat1 - m_ilat0 - 1 || ilat == 0 ? TILE_ELEVSTRIDE : TILE_ELEVSTRIDE - 1);
-
-	for (int y = y0; y < y1; y++) {
-		for (int x = x0; x < x1; x++) {
+	for (int y = 0; y < TILE_ELEVSTRIDE; y++) {
+		for (int x = 0; x < TILE_ELEVSTRIDE; x++) {
 			double v_old = etile->getData().data[y*TILE_ELEVSTRIDE + x];
 			double v_new = m_edata.data[(block_y0 + y) * m_edata.width + (block_x0 + x)];
 			if (v_old != v_new) {
@@ -541,6 +531,18 @@ void ElevTileBlock::MatchNeighbourTiles()
 			}
 		}
 	}
+}
+
+bool ElevTileBlock::MatchParentTiles(int minlvl) const
+{
+	bool isModified = false;
+	for (int ilat = m_ilat0; ilat < m_ilat1; ilat++) {
+		for (int ilng = m_ilng0; ilng < m_ilng1; ilng++) {
+			const ElevTile *etile = (const ElevTile*)getTile(ilat, ilng);
+			isModified = isModified || etile->MatchParentTile(minlvl);
+		}
+	}
+	return isModified;
 }
 
 void ElevTileBlock::setWaterMask(const MaskTileBlock *mtileblock)
