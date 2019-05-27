@@ -77,9 +77,8 @@ ElevData ElevData::SubTile(const std::pair<DWORD, DWORD> &xrange, const std::pai
 const ZTreeMgr *ElevTile::s_treeMgr = 0;
 const ZTreeMgr *ElevTile::s_treeModMgr = 0;
 
-ElevTile::ElevTile(int lvl, int ilat, int ilng, ElevDisplayParam &elevDisplayParam)
+ElevTile::ElevTile(int lvl, int ilat, int ilng)
 	: Tile(lvl, ilat, ilng)
-	, m_elevDisplayParam(elevDisplayParam)
 {
 	lat_subrange.second = 256;
 	lng_subrange.second = 256;
@@ -88,16 +87,35 @@ ElevTile::ElevTile(int lvl, int ilat, int ilng, ElevDisplayParam &elevDisplayPar
 
 ElevTile::ElevTile(const ElevTile &etile)
 	: Tile(etile)
-	, m_elevDisplayParam(etile.m_elevDisplayParam)
 	, m_edata(etile.m_edata)
+	, m_edataBase(etile.m_edataBase)
 {
 	m_modified = false;
+}
+
+void ElevTile::set(const Tile *tile)
+{
+	Tile::set(tile);
+
+	const ElevTile *etile = static_cast<const ElevTile*>(tile);
+	if (etile) {
+		m_edata = etile->m_edata;
+		m_edataBase = etile->m_edataBase;
+		m_waterMask = etile->m_waterMask;
+	}
 }
 
 double ElevTile::nodeElevation(int ndx, int ndy)
 {
 	int idx = (ndy + 1)*m_edata.width + (ndx + 1);
 	return (double)m_edata.data[idx];
+}
+
+void ElevTile::RescanLimits()
+{
+	auto minmax = std::minmax_element(m_edata.data.begin(), m_edata.data.end());
+	m_edata.dmin = *minmax.first;
+	m_edata.dmax = *minmax.second;
 }
 
 bool ElevTile::Load(bool allowAncestorSubset)
@@ -113,10 +131,6 @@ bool ElevTile::Load(bool allowAncestorSubset)
 		LoadSubset();
 	}
 
-	// turn elevation data into an image
-	if (m_edata.data.size())
-		ExtractImage();
-
 	return m_edata.data.size() > 0;
 }
 
@@ -126,7 +140,7 @@ bool ElevTile::InterpolateFromAncestor()
 	int parent_lvl = m_lvl - 1;
 	int parent_ilat = m_ilat / 2;
 	int parent_ilng = m_ilng / 2;
-	ElevTile parent(parent_lvl, parent_ilat, parent_ilng, m_elevDisplayParam);
+	ElevTile parent(parent_lvl, parent_ilat, parent_ilng);
 
 	if (!parent.Load(false))
 		if (!parent.InterpolateFromAncestor())
@@ -136,7 +150,11 @@ bool ElevTile::InterpolateFromAncestor()
 	m_edata.width = TILE_ELEVSTRIDE;
 	m_edata.height = TILE_ELEVSTRIDE;
 	m_edata.data.resize(m_edata.width * m_edata.height);
-	return tblock.getTile(m_ilat, m_ilng, this);
+	m_edataBase.width = TILE_ELEVSTRIDE;
+	m_edataBase.height = TILE_ELEVSTRIDE;
+	m_edataBase.data.resize(m_edataBase.width * m_edataBase.height);
+
+	return tblock.copyTile(m_ilat, m_ilng, this);
 }
 
 void ElevTile::LoadData(ElevData &edata, int lvl, int ilat, int ilng)
@@ -193,9 +211,11 @@ void ElevTile::LoadSubset()
 		m_subilat /= 2;
 		m_subilng /= 2;
 
-		LoadData(m_edata, m_sublvl, m_subilat, m_subilng);
-		if (m_edata.data.size()) {
+		LoadData(m_edataBase, m_sublvl, m_subilat, m_subilng);
+		if (m_edataBase.data.size()) {
+			m_edata = m_edataBase;
 			LoadModData(m_edata, m_sublvl, m_subilat, m_subilng);
+			m_edataBase = m_edataBase.SubTile(lng_subrange, lat_subrange);
 			m_edata = m_edata.SubTile(lng_subrange, lat_subrange);
 		}
 		else {
@@ -216,6 +236,7 @@ void ElevTile::Save()
 			double latmin = latmax - M_PI / nlat;
 			double lngmin = (double)m_ilng / (double)nlng * 2.0*M_PI - M_PI;
 			double lngmax = lngmin + 2.0*M_PI / nlng;
+			RescanLimits();
 
 			ensureLayerDir(s_root.c_str(), Layer().c_str(), m_lvl, m_ilat);
 			elvwrite(path, m_edata, latmin, latmax, lngmin, lngmax);
@@ -238,16 +259,12 @@ void ElevTile::SaveMod()
 			double latmin = latmax - M_PI / nlat;
 			double lngmin = (double)m_ilng / (double)nlng * 2.0*M_PI - M_PI;
 			double lngmax = lngmin + 2.0*M_PI / nlng;
+			RescanLimits();
 
 			elvmodwrite(path, m_edata, m_edataBase, latmin, latmax, lngmin, lngmax);
 		}
 		m_modified = false;
 	}
-}
-
-void ElevTile::displayParamChanged()
-{
-	ExtractImage();
 }
 
 void ElevTile::MatchNeighbourTiles()
@@ -260,7 +277,7 @@ void ElevTile::MatchNeighbourTiles()
 	int nlng = nLng();
 
 	std::vector<ElevTile*> tileGrid(3 * 3);
-	for (int i = 0; i < tileGrid.size(); i++)
+	for (i = 0; i < tileGrid.size(); i++)
 		tileGrid[i] = 0;
 
 	// load the 3x3 tile neighbourhood
@@ -275,7 +292,7 @@ void ElevTile::MatchNeighbourTiles()
 			if (ilat == m_ilat && ilng == m_ilng)
 				continue;
 			ilngn = (ilng < 0 ? ilng + nlng : ilng >= nlng ? ilng - nlng : ilng);
-			ElevTile *etile = ElevTile::Load(m_lvl, ilat, ilngn, m_elevDisplayParam);
+			ElevTile *etile = ElevTile::Load(m_lvl, ilat, ilngn);
 			if (!etile)
 				continue;
 			tileGrid[xblock + yblock * 3] = etile;
@@ -295,7 +312,7 @@ void ElevTile::MatchNeighbourTiles()
 				ilng = m_ilng + xblock - 1;
 				ilngn = (ilng < 0 ? ilng + nlng : ilng >= nlng ? ilng - nlng : ilng);
 				ElevData edata = etile->getData();
-				etile3.getTile(ilat, ilng, etile);
+				etile3.copyTile(ilat, ilng, etile);
 				for (i = 0; i < edata.data.size(); i++) {
 					if (fabs(edata.data[i] - etile->getData().data[i]) > eps) {
 						etile->dataChanged();
@@ -320,12 +337,12 @@ bool ElevTile::MatchParentTile(int minlvl) const
 	int ilat = m_ilat / 2;
 	int ilng = m_ilng / 2;
 
-	ElevTile *etile = ElevTile::Load(lvl, ilat, ilng, m_elevDisplayParam);
+	ElevTile *etile = ElevTile::Load(lvl, ilat, ilng);
 	if (!etile)
 		return false;
 
 	ElevData &edata = etile->getData();
-	ElevTileBlock *etile4 = ElevTileBlock::Load(m_lvl, ilat * 2 - 1, ilat * 2 + 3, ilng * 2 - 1, ilng * 2 + 3, m_elevDisplayParam);
+	ElevTileBlock *etile4 = ElevTileBlock::Load(m_lvl, ilat * 2 - 1, ilat * 2 + 3, ilng * 2 - 1, ilng * 2 + 3);
 	ElevData &edata4 = etile4->getData();
 
 	int w4 = edata4.width;
@@ -366,9 +383,10 @@ ElevTileBlock ElevTile::Prolong()
 	int ilat1 = ilat0 + 2;
 	int ilng0 = m_ilng * 2;
 	int ilng1 = ilng0 + 2;
-	int lvl = m_lvl + 2;
+	int lvl = m_lvl + 1;
 	ElevTileBlock tblock(lvl, ilat0, ilat1, ilng0, ilng1);
 	ElevData &edata = tblock.getData();
+	ElevData &edataBase = tblock.getBaseData();
 
 	for (i = 0; i < edata.height; i++) {
 		ip = i - 1;
@@ -378,27 +396,44 @@ ElevTileBlock ElevTile::Prolong()
 			if (!(ip & 1)) {
 				if (!(jp & 1)) {
 					edata.data[idx] = m_edata.nodeValue(jp / 2, ip / 2);
+					edataBase.data[idx] = m_edataBase.nodeValue(jp / 2, ip / 2);
 				}
 				else {
 					edata.data[idx] = (m_edata.nodeValue((jp - 1) / 2, ip / 2) +
 						               m_edata.nodeValue((jp + 1) / 2, ip / 2)) * 0.5;
+					edataBase.data[idx] = (m_edataBase.nodeValue((jp - 1) / 2, ip / 2) +
+						                   m_edataBase.nodeValue((jp + 1) / 2, ip / 2)) * 0.5;
 				}
 			}
 			else {
 				if (!(jp & 1)) {
 					edata.data[idx] = (m_edata.nodeValue(jp / 2, (ip - 1) / 2) +
 						               m_edata.nodeValue(jp / 2, (ip + 1) / 2)) * 0.5;
+					edataBase.data[idx] = (m_edataBase.nodeValue(jp / 2, (ip - 1) / 2) +
+						                   m_edataBase.nodeValue(jp / 2, (ip + 1) / 2)) * 0.5;
 				}
 				else {
 					edata.data[idx] = (m_edata.nodeValue((jp - 1) / 2, (ip - 1) / 2) +
 						               m_edata.nodeValue((jp + 1) / 2, (ip - 1) / 2) +
 						               m_edata.nodeValue((jp - 1) / 2, (ip + 1) / 2) +
 						               m_edata.nodeValue((jp + 1) / 2, (ip + 1) / 2)) * 0.25;
+					edataBase.data[idx] = (m_edataBase.nodeValue((jp - 1) / 2, (ip - 1) / 2) +
+						                   m_edataBase.nodeValue((jp + 1) / 2, (ip - 1) / 2) +
+						                   m_edataBase.nodeValue((jp - 1) / 2, (ip + 1) / 2) +
+						                   m_edataBase.nodeValue((jp + 1) / 2, (ip + 1) / 2)) * 0.25;
 				}
 			}
 		}
 	}
-	
+	tblock.SyncTiles();
+	for (int ilat = ilat0; ilat < ilat1; ilat++) {
+		for (int ilng = ilng0; ilng < ilng1; ilng++) {
+			Tile *tile = tblock._getTile(ilat, ilng);
+			tile->setSubLevel(m_sublvl);
+			tile->setSubiLat(m_subilat);
+			tile->setSubiLng(m_subilng);
+		}
+	}
 	return tblock;
 }
 
@@ -418,9 +453,9 @@ void ElevTile::setWaterMask(const MaskTile *mtile)
 	}
 }
 
-ElevTile *ElevTile::Load(int lvl, int ilat, int ilng, ElevDisplayParam &elevDisplayParam, const Cmap *cm)
+ElevTile *ElevTile::Load(int lvl, int ilat, int ilng)
 {
-	ElevTile *etile = new ElevTile(lvl, ilat, ilng, elevDisplayParam);
+	ElevTile *etile = new ElevTile(lvl, ilat, ilng);
 	if (!etile->Load()) {
 		delete etile;
 		etile = 0;
@@ -428,9 +463,9 @@ ElevTile *ElevTile::Load(int lvl, int ilat, int ilng, ElevDisplayParam &elevDisp
 	return etile;
 }
 
-ElevTile *ElevTile::InterpolateFromAncestor(int lvl, int ilat, int ilng, ElevDisplayParam &elevDisplayParam, const Cmap *cm)
+ElevTile *ElevTile::InterpolateFromAncestor(int lvl, int ilat, int ilng, const Cmap *cm)
 {
-	ElevTile *etile = new ElevTile(lvl, ilat, ilng, elevDisplayParam);
+	ElevTile *etile = new ElevTile(lvl, ilat, ilng);
 	if (!etile->InterpolateFromAncestor()) {
 		delete etile;
 		etile = 0;
@@ -446,47 +481,5 @@ void ElevTile::setTreeMgr(const ZTreeMgr *treeMgr, const ZTreeMgr *treeModMgr)
 
 void ElevTile::dataChanged(int exmin, int exmax, int eymin, int eymax)
 {
-	ExtractImage(exmin, exmax, eymin, eymax);
 	m_modified = true;
-}
-
-void ElevTile::ExtractImage(int exmin, int exmax, int eymin, int eymax)
-{
-	double dmin, dmax;
-
-	img.width = (m_edata.width - 2) * 2 - 2;
-	img.height = (m_edata.height - 2) * 2 - 2;
-	img.data.resize(img.width * img.height);
-
-	if (m_elevDisplayParam.autoRange) {
-		dmin = m_edata.dmin;
-		dmax = m_edata.dmax;
-	}
-	else {
-		dmin = m_elevDisplayParam.rangeMin;
-		dmax = m_elevDisplayParam.rangeMax;
-	}
-	double dscale = (dmax > dmin ? 256.0 / (dmax - dmin) : 1.0);
-
-	int imin = (exmin < 0 ? 0 : max(0, (exmin - 1) * 2 - 1));
-	int imax = (exmax < 0 ? img.width : min((int)img.width, exmax * 2));
-	int jmin = (eymax < 0 ? 0 : max(0, (int)img.height - (eymax - 1) * 2));
-	int jmax = (eymin < 0 ? img.height : min((int)img.height, (int)img.height - (eymin - 1) * 2 + 1));
-
-	const Cmap &cm = cmap(m_elevDisplayParam.cmName);
-	bool useMask = m_elevDisplayParam.useWaterMask && m_waterMask.size();
-
-	for (int j = jmin; j < jmax; j++)
-		for (int i = imin; i < imax; i++) {
-			int ex = (i + 1) / 2 + 1;
-			int ey = (img.height - j) / 2 + 1;
-			double d = m_edata.data[ex + ey * m_edata.width];
-			int v = max(min((int)((d - dmin) * dscale), 255), 0);
-			if (v < 0 || v > 255)
-				std::cerr << "Problem" << std::endl;
-			img.data[i + j * img.width] = (0xff000000 | cm[v]);
-
-			if (useMask && m_waterMask[i + j * img.width])
-				img.data[i + j * img.width] = 0xffB9E3FF;
-		}
 }

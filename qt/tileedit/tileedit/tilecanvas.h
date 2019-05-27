@@ -6,8 +6,10 @@
 #include "QBoxLayout"
 #include "QPen"
 #include "tile.h"
+#include "tileblock.h"
 
 class TileCanvasOverlay;
+class tileedit;
 
 class TileCanvas: public QWidget
 {
@@ -24,9 +26,10 @@ public:
 	explicit TileCanvas(QWidget *parent = 0);
     ~TileCanvas();
 
-	const Tile *tile() const{ return m_tile; }
+	const TileBlock *tileBlock() const{ return m_tileBlock; }
 	int idx() const { return m_canvasIdx; }
 	void setIdx(int idx) { m_canvasIdx = idx; }
+	void setTileedit(tileedit *te) { m_tileedit = te; }
     void resizeEvent(QResizeEvent *event);
     void paintEvent(QPaintEvent *event);
     void enterEvent(QEvent *event);
@@ -34,7 +37,7 @@ public:
     void mouseMoveEvent(QMouseEvent *event);
 	void mousePressEvent(QMouseEvent *event);
     void mouseReleaseEvent(QMouseEvent *event);
-    void setImage(const Tile *tile);
+    void setTileBlock(const TileBlock *tileBlock);
 	void setGlyphMode(GlyphMode mode);
 	void setCrosshair(double x, double y);
 	void showOverlay(bool show);
@@ -44,14 +47,10 @@ protected:
     TileCanvasOverlay *overlay;
 
 private:
-    const Tile *m_tile;
+    const TileBlock *m_tileBlock;
 	int m_canvasIdx;
-    int m_lvl;
-    int m_ilat;
-    int m_ilng;
-    int m_nlat;
-    int m_nlng;
 	GlyphMode m_glyphMode;
+	tileedit *m_tileedit;
 
 signals:
     void tileChanged(int lvl, int ilat, int ilng);
@@ -92,12 +91,15 @@ public:
     void mouseMoveEvent(QMouseEvent *event);
 	void mousePressEvent(QMouseEvent *event);
     void mouseReleaseEvent(QMouseEvent *event);
+	void setTileBlock(const TileBlock *tileBlock) { m_tileBlock = tileBlock; }
 
 private:
     Glyph m_glyph;
     QPen m_penGlyph;
 	QPen m_penCrosshair;
 	double m_crosshairX, m_crosshairY;
+	const TileBlock *m_tileBlock;
+	static QFont s_font;
 };
 
 #endif // TILECANVAS_H

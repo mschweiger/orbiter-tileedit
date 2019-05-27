@@ -11,6 +11,7 @@ DlgConfig::DlgConfig(tileedit *parent)
 
 	DWORD flag = m_tileedit->m_openMode;
 	ui->comboLoadSequence->setCurrentIndex(flag == 1 ? 2 : flag == 2 ? 1 : 0);
+	ui->comboDisplayMode->setCurrentIndex(m_tileedit->m_blocksize == 1 ? 0 : 1);
 }
 
 void DlgConfig::accept()
@@ -21,6 +22,9 @@ void DlgConfig::accept()
 	if (idx != 2) loadFlag |= 0x2;
 
 	m_tileedit->setLoadMode(loadFlag);
+
+	idx = ui->comboDisplayMode->currentIndex();
+	m_tileedit->setBlockSize(idx == 0 ? 1 : 2);
 
 	QDialog::accept();
 }

@@ -18,10 +18,10 @@ namespace Ui {
 class tileedit;
 }
 
-class SurfTile;
-class MaskTile;
-class NightlightTile;
-class ElevTile;
+class SurfTileBlock;
+class MaskTileBlock;
+class NightlightTileBlock;
+class ElevTileBlock;
 class TileCanvas;
 class DlgElevConfig;
 
@@ -31,6 +31,7 @@ class tileedit : public QMainWindow
 
 	friend class DlgConfig;
 	friend class DlgElevConfig;
+	friend class TileCanvas;
 
 public:
     explicit tileedit(QWidget *parent = 0);
@@ -38,6 +39,7 @@ public:
 
 	void elevDisplayParamChanged();
 	void setLoadMode(DWORD mode);
+	void setBlockSize(int bsize);
 
 protected:
     void createActions();
@@ -113,16 +115,17 @@ private:
     int m_ilng;
 
 	DWORD m_openMode;
+	int m_blocksize;
 
 	ElevDisplayParam m_elevDisplayParam;
 
 	bool m_mouseDown;
 
-    SurfTile *m_stile;
-	MaskTile *m_mtile;
-	NightlightTile *m_ltile;
-	ElevTile *m_etile;
-	ElevTile *m_etileRef;
+    SurfTileBlock *m_sTileBlock;
+	MaskTileBlock *m_mTileBlock;
+	NightlightTileBlock *m_lTileBlock;
+	ElevTileBlock *m_eTileBlock;
+	ElevTileBlock *m_eTileBlockRef;
 
 	// The tree archive accessors
 	ZTreeMgr *m_mgrSurf;

@@ -2,6 +2,7 @@
 #include "ui_tileedit.h"
 #include "tile.h"
 #include "elevtile.h"
+#include "tileblock.h"
 #include "dlgconfig.h"
 #include "dlgelevconfig.h"
 #include <random>
@@ -23,19 +24,21 @@ tileedit::tileedit(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::tileedit)
 {
-    m_stile = 0;
-	m_mtile = 0;
-	m_ltile = 0;
-	m_etile = 0;
-	m_etileRef = 0;
+    m_sTileBlock = 0;
+	m_mTileBlock = 0;
+	m_lTileBlock = 0;
+	m_eTileBlock = 0;
+	m_eTileBlockRef = 0;
 
 	m_mgrSurf = 0;
 	m_mgrMask = 0;
 	m_mgrElev = 0;
 	m_mgrElevMod = 0;
+	m_blocksize = 1;
 
 	m_openMode = TILESEARCH_CACHE | TILESEARCH_ARCHIVE;
 	Tile::setOpenMode(m_openMode);
+	ElevTileBlock::setElevDisplayParam(&m_elevDisplayParam);
 
 	m_mouseDown = false;
 	m_rndn = 0;
@@ -91,6 +94,7 @@ tileedit::tileedit(QWidget *parent)
 	ui->widgetElevEditTools->setVisible(false);
 
 	for (int i = 0; i < 3; i++) {
+		m_panel[i].canvas->setTileedit(this);
 		m_panel[i].canvas->setIdx(i);
 		connect(m_panel[i].canvas, SIGNAL(tileChanged(int, int, int)), this, SLOT(OnTileChangedFromPanel(int, int, int)));
 		connect(m_panel[i].canvas, SIGNAL(tileEntered(TileCanvas*)), this, SLOT(OnTileEntered(TileCanvas*)));
@@ -111,14 +115,14 @@ tileedit::tileedit(QWidget *parent)
 tileedit::~tileedit()
 {
     delete ui;
-    if (m_stile)
-        delete m_stile;
-	if (m_mtile)
-		delete m_mtile;
-	if (m_ltile)
-		delete m_ltile;
-	if (m_etile)
-		delete m_etile;
+    if (m_sTileBlock)
+        delete m_sTileBlock;
+	if (m_mTileBlock)
+		delete m_mTileBlock;
+	if (m_lTileBlock)
+		delete m_lTileBlock;
+	if (m_eTileBlock)
+		delete m_eTileBlock;
 
 	releaseTreeManagers();
 }
@@ -156,13 +160,13 @@ void tileedit::elevDisplayParamChanged()
 {
 	char cbuf[1024];
 
-	if (m_etile) {
+	if (m_eTileBlock) {
 		if (m_elevDisplayParam.autoRange) {
-			m_elevDisplayParam.rangeMin = m_etile->getData().dmin;
-			m_elevDisplayParam.rangeMax = m_etile->getData().dmax;
+			m_elevDisplayParam.rangeMin = m_eTileBlock->getData().dmin;
+			m_elevDisplayParam.rangeMax = m_eTileBlock->getData().dmax;
 		}
 
-		m_etile->displayParamChanged();
+		m_eTileBlock->displayParamChanged();
 	}
 
 	for (int i = 0; i < 3; i++) {
@@ -173,10 +177,10 @@ void tileedit::elevDisplayParamChanged()
 			cbar->displayParamChanged();
 		}
 		if (m_elevDisplayParam.autoRange) {
-			if (m_etile) {
-				sprintf(cbuf, "%+0.1f", m_etile->getData().dmin);
+			if (m_eTileBlock) {
+				sprintf(cbuf, "%+0.1f", m_eTileBlock->getData().dmin);
 				m_panel[i].rangeMin->setText(cbuf);
-				sprintf(cbuf, "%+0.1f", m_etile->getData().dmax);
+				sprintf(cbuf, "%+0.1f", m_eTileBlock->getData().dmax);
 				m_panel[i].rangeMax->setText(cbuf);
 			}
 		}
@@ -200,20 +204,34 @@ void tileedit::setLoadMode(DWORD mode)
 	}
 }
 
+void tileedit::setBlockSize(int bsize)
+{
+	if (bsize != m_blocksize) {
+		m_blocksize = bsize;
+
+		// reload current tile
+		m_ilat = max(0, min(m_ilat, nLat(m_lvl) - bsize));
+		m_ilng = max(0, min(m_ilng, nLng(m_lvl) - bsize));
+		setTile(m_lvl, m_ilat, m_ilng);
+	}
+}
+
 void tileedit::openDir()
 {
     std::string rootDir = QFileDialog::getExistingDirectory(this, tr("Open celestial body")).toStdString();
-	Tile::setRoot(rootDir);
+	if (rootDir.size()) {
+		Tile::setRoot(rootDir);
 
-	if (m_openMode & TILESEARCH_ARCHIVE)
-		setupTreeManagers(rootDir);
+		if (m_openMode & TILESEARCH_ARCHIVE)
+			setupTreeManagers(rootDir);
 
-    setTile(1, 0, 0);
-    ensureSquareCanvas(rect().width(), rect().height());
+		setTile(1, 0, 0);
+		ensureSquareCanvas(rect().width(), rect().height());
 
-	char cbuf[256];
-	sprintf(cbuf, "tileedit [%s]", rootDir.c_str());
-	setWindowTitle(cbuf);
+		char cbuf[256];
+		sprintf(cbuf, "tileedit [%s]", rootDir.c_str());
+		setWindowTitle(cbuf);
+	}
 }
 
 void tileedit::on_actionConfig_triggered()
@@ -250,23 +268,26 @@ void tileedit::onElevConfigDestroyed(int r)
 
 void tileedit::loadTile(int lvl, int ilat, int ilng)
 {
-    if (m_stile)
-        delete m_stile;
-    m_stile = SurfTile::Load(lvl, ilat, ilng);
+	int ilat1 = min(nLat(lvl), ilat + m_blocksize);
+	int ilng1 = min(nLng(lvl), ilng + m_blocksize);
 
-	if (m_mtile)
-		delete m_mtile;
-	if (m_ltile)
-		delete m_ltile;
-	std::pair<MaskTile*, NightlightTile*> ml = MaskTile::Load(lvl, ilat, ilng);
-	m_mtile = ml.first;
-	m_ltile = ml.second;
+    if (m_sTileBlock)
+        delete m_sTileBlock;
+    m_sTileBlock = SurfTileBlock::Load(lvl, ilat, ilat1, ilng, ilng1);
 
-	if (m_etile)
-		delete m_etile;
-	m_etile = ElevTile::Load(lvl, ilat, ilng, m_elevDisplayParam, &cmap(m_elevDisplayParam.cmName));
-	if (m_etile && m_mtile)
-		m_etile->setWaterMask(m_mtile);
+	if (m_mTileBlock)
+		delete m_mTileBlock;
+	if (m_lTileBlock)
+		delete m_lTileBlock;
+	std::pair<MaskTileBlock*, NightlightTileBlock*> ml = MaskTileBlock::Load(lvl, ilat, ilat1, ilng, ilng1);
+	m_mTileBlock = ml.first;
+	m_lTileBlock = ml.second;
+
+	if (m_eTileBlock)
+		delete m_eTileBlock;
+	m_eTileBlock = ElevTileBlock::Load(lvl, ilat, ilat1, ilng, ilng1);
+	if (m_eTileBlock && m_mTileBlock)
+		m_eTileBlock->setWaterMask(m_mTileBlock);
 
     for (int i = 0; i < 3; i++)
         refreshPanel(i);
@@ -278,40 +299,40 @@ void tileedit::refreshPanel(int panelIdx)
 
     switch(m_panel[panelIdx].layerType->currentIndex()) {
     case 0:
-        m_panel[panelIdx].canvas->setImage(m_stile);
-		if (m_stile)
-			sprintf(cbuf, "%02d / %06d / %06d", m_stile->subLevel(), m_stile->subiLat(), m_stile->subiLng());
-		else
-			cbuf[0] = '\0';
-		m_panel[panelIdx].fileId->setText(cbuf);
+        m_panel[panelIdx].canvas->setTileBlock(m_sTileBlock);
+		//if (m_sTileBlock)
+		//	sprintf(cbuf, "%02d / %06d / %06d", m_stile->subLevel(), m_stile->subiLat(), m_stile->subiLng());
+		//else
+		//	cbuf[0] = '\0';
+		//m_panel[panelIdx].fileId->setText(cbuf);
         break;
 	case 1:
-		m_panel[panelIdx].canvas->setImage(m_mtile);
-		if (m_mtile)
-			sprintf(cbuf, "%02d / %06d / %06d", m_mtile->subLevel(), m_mtile->subiLat(), m_mtile->subiLng());
-		else
-			cbuf[0] = '\0';
-		m_panel[panelIdx].fileId->setText(cbuf);
+		m_panel[panelIdx].canvas->setTileBlock(m_mTileBlock);
+		//if (m_mTileBlock)
+		//	sprintf(cbuf, "%02d / %06d / %06d", m_mtile->subLevel(), m_mtile->subiLat(), m_mtile->subiLng());
+		//else
+		//	cbuf[0] = '\0';
+		//m_panel[panelIdx].fileId->setText(cbuf);
 		break;
 	case 2:
-		m_panel[panelIdx].canvas->setImage(m_ltile);
-		if (m_ltile)
-			sprintf(cbuf, "%02d / %06d / %06d", m_ltile->subLevel(), m_ltile->subiLat(), m_ltile->subiLng());
-		else
-			cbuf[0] = '\0';
-		m_panel[panelIdx].fileId->setText(cbuf);
+		m_panel[panelIdx].canvas->setTileBlock(m_lTileBlock);
+		//if (m_lTileBlock)
+		//	sprintf(cbuf, "%02d / %06d / %06d", m_ltile->subLevel(), m_ltile->subiLat(), m_ltile->subiLng());
+		//else
+		//	cbuf[0] = '\0';
+		//m_panel[panelIdx].fileId->setText(cbuf);
 		break;
 	case 3:
-		m_panel[panelIdx].canvas->setImage(m_etile);
-		if (m_etile)
-			sprintf(cbuf, "%02d / %06d / %06d", m_etile->subLevel(), m_etile->subiLat(), m_etile->subiLng());
-		else
-			cbuf[0] = '\0';
-		m_panel[panelIdx].fileId->setText(cbuf);
+		m_panel[panelIdx].canvas->setTileBlock(m_eTileBlock);
+		//if (m_eTileBlock)
+		//	sprintf(cbuf, "%02d / %06d / %06d", m_etile->subLevel(), m_etile->subiLat(), m_etile->subiLng());
+		//else
+		//	cbuf[0] = '\0';
+		//m_panel[panelIdx].fileId->setText(cbuf);
 		elevDisplayParamChanged();
 		break;
 	default:
-        m_panel[panelIdx].canvas->setImage(0);
+        m_panel[panelIdx].canvas->setTileBlock(0);
         break;
     }
 	m_panel[panelIdx].colourscale->setVisible(m_panel[panelIdx].layerType->currentIndex() == 3);
@@ -349,21 +370,27 @@ void tileedit::onActionButtonClicked(int id)
 		return;
 
 	if (newMode == ACTION_ELEVEDIT) {
-		if (!m_etile) {
+		if (!m_eTileBlock) {
 			ui->btnActionNavigate->setChecked(true);
 			return;
 		}
-		if (m_etile->subLevel() < m_etile->Level()) {
+		if (m_eTileBlock->minSubLevel() < m_eTileBlock->Level()) {
 			QMessageBox mbox(QMessageBox::Warning, "tileedit", "This elevation tile does not exist - the image you see has been synthesized from a subsection of an ancestor.\n\nBefore this tile can be edited it must be created. Do you want to create it now?", QMessageBox::Yes | QMessageBox::No);
 			int res = mbox.exec();
 			if (res == QMessageBox::Yes) {
-				ElevTile *tile = ElevTile::InterpolateFromAncestor(m_lvl, m_ilat, m_ilng, m_elevDisplayParam);
-				if (tile) {
-					tile->dataChanged();
-					tile->Save();
-					delete tile;
-					loadTile(m_lvl, m_ilat, m_ilng);
+				for (int ilat = m_eTileBlock->iLat0(); ilat < m_eTileBlock->iLat1(); ilat++) {
+					for (int ilng = m_eTileBlock->iLng0(); ilng < m_eTileBlock->iLng1(); ilng++) {
+						if (m_eTileBlock->getTile(ilat, ilng)->subLevel() < m_eTileBlock->Level()) {
+							ElevTile *tile = ElevTile::InterpolateFromAncestor(m_lvl, ilat, ilng);
+							if (tile) {
+								tile->dataChanged();
+								tile->Save();
+								delete tile;
+							}
+						}
+					}
 				}
+				loadTile(m_lvl, m_ilat, m_ilng);
 			}
 			else {
 				ui->btnActionNavigate->setChecked(true);
@@ -439,8 +466,8 @@ void tileedit::OnTileEntered(TileCanvas *canvas)
 	}
 
 	int idx = -1;
-	const Tile *tile = canvas->tile();
-	if (tile) idx = canvas->idx();
+	const TileBlock *tileblock = canvas->tileBlock();
+	if (tileblock) idx = canvas->idx();
 
 	ui->groupTileData->setTitle(idx >= 0 ? m_panel[idx].layerType->currentText() : "Tile");
 	ui->labelKey2->setText(idx >= 0 && m_panel[idx].layerType->currentIndex() == 3 ? "Node:" : "Pixel:");
@@ -462,15 +489,15 @@ void tileedit::OnTileLeft(TileCanvas *canvas)
 
 void tileedit::OnMouseMovedInCanvas(int canvasIdx, QMouseEvent *event)
 {
-	const Tile *tile = m_panel[canvasIdx].canvas->tile();
+	const TileBlock *tileblock = m_panel[canvasIdx].canvas->tileBlock();
 	int x = event->x();
 	int y = event->y();
 	int cw = m_panel[canvasIdx].canvas->rect().width();
 	int ch = m_panel[canvasIdx].canvas->rect().height();
 
-	if (tile && tile->getImage().data.size()) {
-		int iw = tile->getImage().width;
-		int ih = tile->getImage().height;
+	if (tileblock && tileblock->getImage().data.size()) {
+		int iw = tileblock->getImage().width;
+		int ih = tileblock->getImage().height;
 
 		int nlat = (m_lvl < 4 ? 1 : 1 << (m_lvl - 4));
 		int nlng = (m_lvl < 4 ? 1 : 1 << (m_lvl - 3));
@@ -493,7 +520,7 @@ void tileedit::OnMouseMovedInCanvas(int canvasIdx, QMouseEvent *event)
 			my = (ih - my) / 2;
 			sprintf(cbuf, "x=%d/%d, y=%d/%d", mx, (iw / 2) + 1, my, (ih / 2) + 1);
 			ui->labelData2->setText(cbuf);
-			double elev = ((ElevTile*)tile)->nodeElevation(mx, my);
+			double elev = ((ElevTileBlock*)tileblock)->nodeElevation(mx, my);
 			sprintf(cbuf, "%+0.1lfm", elev);
 			ui->labelData3->setText(cbuf);
 			m_panel[canvasIdx].colourscale->findChild<Colorbar*>()->setValue(elev);
@@ -501,7 +528,7 @@ void tileedit::OnMouseMovedInCanvas(int canvasIdx, QMouseEvent *event)
 		else {
 			sprintf(cbuf, "X=%d/%d, Y=%d/%d", mx, iw, my, ih);
 			ui->labelData2->setText(cbuf);
-			DWORD col = tile->pixelColour(mx, my);
+			DWORD col = tileblock->pixelColour(mx, my);
 			if (m_panel[canvasIdx].layerType->currentIndex() == 1) {
 				ui->labelData3->setText(col & 0xFF000000 ? "Diffuse (Land)" : "Specular (Water)");
 			} else {
@@ -510,12 +537,12 @@ void tileedit::OnMouseMovedInCanvas(int canvasIdx, QMouseEvent *event)
 			}
 		}
 		for (int i = 0; i < 3; i++) {
-			if (m_etile && m_panel[i].layerType->currentIndex() == 3) {
-				iw = m_etile->getImage().width;
-				ih = m_etile->getImage().height;
+			if (m_eTileBlock && m_panel[i].layerType->currentIndex() == 3) {
+				iw = m_eTileBlock->getImage().width;
+				ih = m_eTileBlock->getImage().height;
 				mx = ((x*iw) / cw + 1) / 2;
 				my = (ih - (y*ih) / ch) / 2;
-				double elev = m_etile->nodeElevation(mx, my);
+				double elev = m_eTileBlock->nodeElevation(mx, my);
 				m_panel[i].colourscale->findChild<Colorbar*>()->setValue(elev);
 			}
 		}
@@ -525,7 +552,7 @@ void tileedit::OnMouseMovedInCanvas(int canvasIdx, QMouseEvent *event)
 		ui->labelData2->setText("-");
 	}
 
-	if (m_actionMode == ACTION_ELEVEDIT && m_etile) {
+	if (m_actionMode == ACTION_ELEVEDIT && m_eTileBlock) {
 		if (m_mouseDown)
 			editElevation(canvasIdx, event->x(), event->y());
 		for (int i = 0; i < 3; i++) {
@@ -537,10 +564,10 @@ void tileedit::OnMouseMovedInCanvas(int canvasIdx, QMouseEvent *event)
 std::pair<int, int> tileedit::ElevNodeFromPixCoord(int canvasIdx, int x, int y)
 {
 	std::pair<int, int> node;
-	const Tile *tile = m_panel[canvasIdx].canvas->tile();
-	if (tile && tile->getImage().data.size()) {
-		int iw = tile->getImage().width;
-		int ih = tile->getImage().height;
+	const TileBlock *tileblock = m_panel[canvasIdx].canvas->tileBlock();
+	if (tileblock && tileblock->getImage().data.size()) {
+		int iw = tileblock->getImage().width;
+		int ih = tileblock->getImage().height;
 		int cw = m_panel[canvasIdx].canvas->rect().width();
 		int ch = m_panel[canvasIdx].canvas->rect().height();
 		int mx = (x*iw) / cw;
@@ -555,10 +582,10 @@ std::pair<int, int> tileedit::ElevNodeFromPixCoord(int canvasIdx, int x, int y)
 
 void tileedit::OnMousePressedInCanvas(int canvasIdx, QMouseEvent *event)
 {
-	if (m_actionMode == ACTION_ELEVEDIT && m_etile) {
-		if (m_etileRef)
-			delete m_etileRef;
-		m_etileRef = new ElevTile(*m_etile);
+	if (m_actionMode == ACTION_ELEVEDIT && m_eTileBlock) {
+		if (m_eTileBlockRef)
+			delete m_eTileBlockRef;
+		m_eTileBlockRef = new ElevTileBlock(*m_eTileBlock);
 		if (m_elevEditMode == ELEVEDIT_RANDOM) {
 			double mean = (double)ui->spinElevRandomValue->value();
 			double std = ui->dspinElevRandomStd->value();
@@ -572,9 +599,9 @@ void tileedit::OnMousePressedInCanvas(int canvasIdx, QMouseEvent *event)
 void tileedit::OnMouseReleasedInCanvas(int canvasIdx, QMouseEvent *event)
 {
 	m_mouseDown = false;
-	if (m_etileRef) {
-		delete m_etileRef;
-		m_etileRef = 0;
+	if (m_eTileBlockRef) {
+		delete m_eTileBlockRef;
+		m_eTileBlockRef = 0;
 	}
 	if (m_rndn) {
 		delete m_rndn;
@@ -595,7 +622,7 @@ void tileedit::editElevation(int canvasIdx, int x, int y)
 	case ELEVEDIT_RANDOM:
 		{
 			int v = ui->spinElevPaintValue->value();
-			ElevData &edata = m_etile->getData();
+			ElevData &edata = m_eTileBlock->getData();
 			int sz = (m_elevEditMode == ELEVEDIT_PAINT ?
 				ui->spinElevPaintSize->value() :
 				ui->spinElevRandomSize->value()
@@ -620,7 +647,7 @@ void tileedit::editElevation(int canvasIdx, int x, int y)
 						edata.data[idx] = (INT16)v;
 						break;
 					case 1:
-						edata.data[idx] = m_etileRef->getData().data[idx] + (INT16)v;
+						edata.data[idx] = m_eTileBlockRef->getData().data[idx] + (INT16)v;
 						break;
 					case 2:
 						if (edata.data[idx] < (INT16)v)
@@ -657,9 +684,9 @@ void tileedit::editElevation(int canvasIdx, int x, int y)
 					boundsChanged = true;
 				}
 				if (boundsChanged)
-					m_etile->dataChanged();
+					m_eTileBlock->dataChanged();
 				else
-					m_etile->dataChanged(nx + padx - (sz / 2 + 1), nx + padx + (sz / 2 + 1), ny + pady - (sz / 2 + 1), ny + pady + (sz / 2 + 1));
+					m_eTileBlock->dataChanged(nx + padx - (sz / 2 + 1), nx + padx + (sz / 2 + 1), ny + pady - (sz / 2 + 1), ny + pady + (sz / 2 + 1));
 				for (int i = 0; i < 3; i++)
 					if (m_panel[i].layerType->currentIndex() == 3) { // elevation
 						refreshPanel(i);
@@ -672,8 +699,8 @@ void tileedit::editElevation(int canvasIdx, int x, int y)
 			int sz = ui->spinElevEraseSize->value();
 			sz = min(sz, 5);
 			std::vector<std::pair<int, int>> *stencil = paintStencil[sz - 1];
-			ElevData &edata = m_etile->getData();
-			ElevData &edataBase = m_etile->getBaseData();
+			ElevData &edata = m_eTileBlock->getData();
+			ElevData &edataBase = m_eTileBlock->getBaseData();
 			bool ismod = false;
 			bool boundsChanged = false;
 			for (int i = 0; i < stencil->size(); i++) {
@@ -689,9 +716,9 @@ void tileedit::editElevation(int canvasIdx, int x, int y)
 				if (boundsChanged) {
 					edata.dmin = *std::min_element(edata.data.begin(), edata.data.end());
 					edata.dmax = *std::max_element(edata.data.begin(), edata.data.end());
-					m_etile->dataChanged();
+					m_eTileBlock->dataChanged();
 				} else
-					m_etile->dataChanged(nx + padx - (sz / 2 + 1), nx + padx + (sz / 2 + 1), ny + pady - (sz / 2 + 1), ny + pady + (sz / 2 + 1));
+					m_eTileBlock->dataChanged(nx + padx - (sz / 2 + 1), nx + padx + (sz / 2 + 1), ny + pady - (sz / 2 + 1), ny + pady + (sz / 2 + 1));
 				for (int i = 0; i < 3; i++)
 					if (m_panel[i].layerType->currentIndex() == 3) { // elevation
 						refreshPanel(i);
@@ -722,10 +749,11 @@ void tileedit::setToolOptions()
 
 void tileedit::setTile(int lvl, int ilat, int ilng)
 {
-	if (m_etile && m_etile->isModified()) {
-		m_etile->MatchNeighbourTiles();
-		m_etile->SaveMod();
-		m_etile->MatchParentTile(m_etile->Level() - 5);
+	if (m_eTileBlock && m_eTileBlock->isModified()) {
+		m_eTileBlock->SyncTiles();
+		m_eTileBlock->MatchNeighbourTiles();
+		m_eTileBlock->SaveMod();
+		m_eTileBlock->MatchParentTiles(m_eTileBlock->Level() - 5);
 	}
 
 	m_lvl = lvl;
