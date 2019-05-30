@@ -7,6 +7,7 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
 
+
 // ==================================================================================
 
 ElevData::ElevData()
@@ -47,6 +48,13 @@ double ElevData::nodeValue(int ix, int iy) const
 void ElevData::setNodeValue(int ix, int iy, double v)
 {
 	data[(ix+1) + (iy+1)*width] = v;
+}
+
+void ElevData::RescanLimits()
+{
+	auto minmax = std::minmax_element(data.begin(), data.end());
+	dmin = *minmax.first;
+	dmax = *minmax.second;
 }
 
 ElevData ElevData::SubTile(const std::pair<DWORD, DWORD> &xrange, const std::pair<DWORD, DWORD> &yrange)
@@ -113,9 +121,7 @@ double ElevTile::nodeElevation(int ndx, int ndy)
 
 void ElevTile::RescanLimits()
 {
-	auto minmax = std::minmax_element(m_edata.data.begin(), m_edata.data.end());
-	m_edata.dmin = *minmax.first;
-	m_edata.dmax = *minmax.second;
+	m_edata.RescanLimits();
 }
 
 bool ElevTile::Load(bool allowAncestorSubset)

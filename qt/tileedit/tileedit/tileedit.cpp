@@ -138,6 +138,8 @@ void tileedit::createMenus()
 
 	QMenu *menu = ui->menuBar->addMenu(tr("&Elevation"));
 	menu->addAction(actionElevConfig);
+	menu->addSeparator();
+	menu->addAction(actionExportPng);
 }
 
 void tileedit::createActions()
@@ -154,6 +156,9 @@ void tileedit::createActions()
 	actionElevConfig = new QAction(tr("&Configure"), this);
 	actionElevConfig->setCheckable(true);
 	connect(actionElevConfig, &QAction::triggered, this, &tileedit::onElevConfig);
+
+	actionExportPng = new QAction(tr("&Export to PNG"), this);
+	connect(actionExportPng, &QAction::triggered, this, &tileedit::onElevExportPng);
 }
 
 void tileedit::elevDisplayParamChanged()
@@ -255,6 +260,17 @@ void tileedit::onElevConfig()
 	}
 	else
 		onElevConfigDestroyed(0);
+}
+
+void tileedit::onElevExportPng()
+{
+	if (!m_eTileBlock)
+		return;
+
+	std::string path = QFileDialog::getSaveFileName(this, tr("Export elevation tile to PNG"), QString(), tr("Image (*.png)")).toStdString();
+	if (path.size()) {
+		m_eTileBlock->ExportPNG(path);
+	}
 }
 
 void tileedit::onElevConfigDestroyed(int r)

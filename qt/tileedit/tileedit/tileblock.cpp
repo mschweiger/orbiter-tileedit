@@ -1,5 +1,8 @@
 #include "tileblock.h"
+#include "elv_io.h"
 #include <algorithm>
+#define _USE_MATH_DEFINES
+#include <math.h>
 
 TileBlock::TileBlock(int lvl, int ilat0, int ilat1, int ilng0, int ilng1)
 {
@@ -411,6 +414,16 @@ void ElevTileBlock::SaveMod()
 	}
 }
 
+void ElevTileBlock::ExportPNG(const std::string &fname)
+{
+	double latmax = (1.0 - (double)m_ilat1 / (double)nLat()) * M_PI - 0.5*M_PI;
+	double latmin = (1.0 - (double)m_ilat0 / (double)nLat()) * M_PI - 0.5*M_PI;
+	double lngmin = (double)m_ilng0 / (double)nLng() * 2.0*M_PI - M_PI;
+	double lngmax = (double)m_ilng1 / (double)nLng() * 2.0*M_PI - M_PI;
+	RescanLimits();
+	elvwrite_png(fname.c_str(), m_edata, latmin, latmax, lngmin, lngmax);
+}
+
 void ElevTileBlock::SyncTiles()
 {
 	for (int ilat = m_ilat0; ilat < m_ilat1; ilat++)
@@ -575,6 +588,11 @@ void ElevTileBlock::dataChanged(int exmin, int exmax, int eymin, int eymax)
 	m_edata.dmax = *minmax.second;
 
 	ExtractImage(exmin, exmax, eymin, eymax);
+}
+
+void ElevTileBlock::RescanLimits()
+{
+	m_edata.RescanLimits();
 }
 
 void ElevTileBlock::ExtractImage(int exmin, int exmax, int eymin, int eymax)

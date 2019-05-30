@@ -108,11 +108,13 @@ public:
 	virtual bool copyTile(int ilat, int ilng, Tile *tile) const;
 	void Save();
 	void SaveMod();
+	void ExportPNG(const std::string &fname);
 	void setWaterMask(const MaskTileBlock *mtileblock);
 	double nodeElevation(int ndx, int ndy) const;
 	void displayParamChanged();
 	void dataChanged(int exmin = -1, int exmax = -1, int eymin = -1, int eymax = -1);
 	bool isModified() const { return m_isModified; }
+	void RescanLimits();
 
 	/**
 	 * \brief Map edits to the tileblock back to the individual tiles
