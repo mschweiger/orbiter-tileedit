@@ -31,6 +31,7 @@ class tileedit : public QMainWindow
 
 	friend class DlgConfig;
 	friend class DlgElevConfig;
+	friend class DlgElevExport;
 	friend class TileCanvas;
 
 public:

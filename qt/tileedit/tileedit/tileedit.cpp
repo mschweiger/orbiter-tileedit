@@ -5,6 +5,7 @@
 #include "tileblock.h"
 #include "dlgconfig.h"
 #include "dlgelevconfig.h"
+#include "dlgelevexport.h"
 #include <random>
 
 #include "QFileDialog"
@@ -157,7 +158,7 @@ void tileedit::createActions()
 	actionElevConfig->setCheckable(true);
 	connect(actionElevConfig, &QAction::triggered, this, &tileedit::onElevConfig);
 
-	actionExportPng = new QAction(tr("&Export to PNG"), this);
+	actionExportPng = new QAction(tr("&Export to image"), this);
 	connect(actionExportPng, &QAction::triggered, this, &tileedit::onElevExportPng);
 }
 
@@ -264,13 +265,19 @@ void tileedit::onElevConfig()
 
 void tileedit::onElevExportPng()
 {
-	if (!m_eTileBlock)
+	if (!m_eTileBlock) {
+		QMessageBox mbox(QMessageBox::Warning, "tileedit", "No elevation layer loaded.", QMessageBox::Close);
+		mbox.exec();
 		return;
-
-	std::string path = QFileDialog::getSaveFileName(this, tr("Export elevation tile to PNG"), QString(), tr("Image (*.png)")).toStdString();
-	if (path.size()) {
-		m_eTileBlock->ExportPNG(path);
 	}
+
+	DlgElevExport dlg(this);
+	dlg.exec();
+
+	//std::string path = QFileDialog::getSaveFileName(this, tr("Export elevation tile to PNG"), QString(), tr("Image (*.png)")).toStdString();
+	//if (path.size()) {
+	//	m_eTileBlock->ExportPNG(path);
+	//}
 }
 
 void tileedit::onElevConfigDestroyed(int r)

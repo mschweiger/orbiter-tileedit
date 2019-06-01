@@ -2,6 +2,8 @@
 #include <direct.h>
 #include <vector>
 #include <algorithm>
+#define _USE_MATH_DEFINES
+#include <math.h>
 #include <png.h>
 #include "elv_io.h"
 
@@ -393,8 +395,12 @@ void elvmodwrite(const char *fname, const ElevData &edata, const ElevData &ebase
 
 // ==================================================================================
 
-void elvwrite_png(const char *fname, const ElevData &edata, double latmin, double latmax, double lngmin, double lngmax)
+void elvwrite_png(const char *fname, const ElevData &edata,
+	double latmin, double latmax, double lngmin, double lngmax,
+	int lvl, int ilat0, int ilat1, int ilng0, int ilng1)
 {
+	const double DEG = 180.0 / M_PI;
+
 	int w = edata.width;
 	int h = edata.height;
 	int n = w*h;
@@ -434,6 +440,19 @@ void elvwrite_png(const char *fname, const ElevData &edata, double latmin, doubl
 	image.colormap_entries = 0;
 	png_image_write_to_file(&image, fname, 0, buf, 0, 0);
 	delete[]buf;
+
+	// now write out the metadata into a separate file
+	char fname_meta[1024];
+	strcpy(fname_meta, fname);
+	strcat(fname_meta, ".hdr");
+	FILE *f = fopen(fname_meta, "wt");
+	if (f) {
+		fprintf(f, "vmin=%lf vmax=%lf scale=%lf offset=%lf type=%d padding=1x1 colormap=0 smin=0 emin=0 smean=0 emean=0 smax=0 emax=0 latmin=%+0.10lf latmax=%+0.10lf lngmin=%+0.10lf lngmax=%+0.10lf\n",
+			edata.dmin, edata.dmax, scale, offset, -16, latmin*DEG, latmax*DEG, lngmin*DEG, lngmax*DEG);
+		fprintf(f, "lvl=%d ilat0=%d ilat1=%d ilng0=%d ilng1=%d\n",
+			lvl, ilat0, ilat1, ilng0, ilng1);
+		fclose(f);
+	}
 }
 
 // ==================================================================================

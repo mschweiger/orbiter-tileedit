@@ -416,12 +416,13 @@ void ElevTileBlock::SaveMod()
 
 void ElevTileBlock::ExportPNG(const std::string &fname)
 {
-	double latmax = (1.0 - (double)m_ilat1 / (double)nLat()) * M_PI - 0.5*M_PI;
-	double latmin = (1.0 - (double)m_ilat0 / (double)nLat()) * M_PI - 0.5*M_PI;
+	double latmax = (1.0 - (double)m_ilat0 / (double)nLat()) * M_PI - 0.5*M_PI;
+	double latmin = (1.0 - (double)m_ilat1 / (double)nLat()) * M_PI - 0.5*M_PI;
 	double lngmin = (double)m_ilng0 / (double)nLng() * 2.0*M_PI - M_PI;
 	double lngmax = (double)m_ilng1 / (double)nLng() * 2.0*M_PI - M_PI;
 	RescanLimits();
-	elvwrite_png(fname.c_str(), m_edata, latmin, latmax, lngmin, lngmax);
+	elvwrite_png(fname.c_str(), m_edata, latmin, latmax, lngmin, lngmax,
+		m_lvl, m_ilat0, m_ilat1, m_ilng0, m_ilng1);
 }
 
 void ElevTileBlock::SyncTiles()
