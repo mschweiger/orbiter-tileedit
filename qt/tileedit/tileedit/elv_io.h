@@ -12,8 +12,7 @@ bool elvmodscan(const BYTE *data, int ndata, ElevData &edata);
 void elvwrite(const char *fname, const ElevData &edata, double latmin, double latmax, double lngmin, double lngmax);
 void elvmodwrite(const char *fname, const ElevData &edata, const ElevData &ebasedata, double latmin, double latmax, double lngmin, double lngmax);
 
-void elvwrite_png(const char *fname, const ElevData &edata, double latmin, double latmax, double lngmin, double lngmax,
-	int lvl, int ilat0, int ilat1, int ilng0, int ilng1);
+void elvwrite_png(const char *fname, const ElevData &edata, double *data_scale, double *data_offset);
 
 void ensureLayerDir(const char *rootDir, const char *layer, int lvl, int ilat);
 

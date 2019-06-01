@@ -428,13 +428,45 @@ void ElevTileBlock::SaveMod()
 
 void ElevTileBlock::ExportPNG(const std::string &fname)
 {
+	const double DEG = 180.0 / M_PI;
+
+	double scale, offset;
 	double latmax = (1.0 - (double)m_ilat0 / (double)nLat()) * M_PI - 0.5*M_PI;
 	double latmin = (1.0 - (double)m_ilat1 / (double)nLat()) * M_PI - 0.5*M_PI;
 	double lngmin = (double)m_ilng0 / (double)nLng() * 2.0*M_PI - M_PI;
 	double lngmax = (double)m_ilng1 / (double)nLng() * 2.0*M_PI - M_PI;
 	RescanLimits();
-	elvwrite_png(fname.c_str(), m_edata, latmin, latmax, lngmin, lngmax,
-		m_lvl, m_ilat0, m_ilat1, m_ilng0, m_ilng1);
+	elvwrite_png(fname.c_str(), m_edata, &scale, &offset);
+
+	// write out metadata into a separate file
+	char fname_meta[1024];
+	strcpy(fname_meta, fname.c_str());
+	strcat(fname_meta, ".hdr");
+	FILE *f = fopen(fname_meta, "wt");
+	if (f) {
+		fprintf(f, "vmin=%lf vmax=%lf scale=%lf offset=%lf type=%d padding=1x1 colormap=0 smin=0 emin=0 smean=0 emean=0 smax=0 emax=0 latmin=%+0.10lf latmax=%+0.10lf lngmin=%+0.10lf lngmax=%+0.10lf\n",
+			m_edata.dmin, m_edata.dmax, scale, offset, -16, latmin*DEG, latmax*DEG, lngmin*DEG, lngmax*DEG);
+		fprintf(f, "lvl=%d ilat0=%d ilat1=%d ilng0=%d ilng1=%d\n",
+			m_lvl, m_ilat0, m_ilat1, m_ilng0, m_ilng1);
+
+		bool writtenMissing = false;
+		for (int ilat = m_ilat0; ilat < m_ilat1; ilat++)
+			for (int ilng = m_ilng0; ilng < m_ilng1; ilng++) {
+				const Tile *tile = getTile(ilat, ilng);
+				if (tile->Level() != tile->subLevel()) {
+					if (!writtenMissing)
+						fprintf(f, "missing=");
+					else
+						fprintf(f, ",");
+					fprintf(f, "%06d/%06d", ilat, ilng);
+					writtenMissing = true;
+				}
+			}
+		if (writtenMissing)
+			fprintf(f, "\n");
+		fclose(f);
+	}
+
 }
 
 void ElevTileBlock::SyncTiles()
