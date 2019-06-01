@@ -273,11 +273,6 @@ void tileedit::onElevExportPng()
 
 	DlgElevExport dlg(this);
 	dlg.exec();
-
-	//std::string path = QFileDialog::getSaveFileName(this, tr("Export elevation tile to PNG"), QString(), tr("Image (*.png)")).toStdString();
-	//if (path.size()) {
-	//	m_eTileBlock->ExportPNG(path);
-	//}
 }
 
 void tileedit::onElevConfigDestroyed(int r)

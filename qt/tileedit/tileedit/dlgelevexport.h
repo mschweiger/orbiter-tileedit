@@ -17,6 +17,9 @@ class DlgElevExport : public QDialog
 public:
 	DlgElevExport(tileedit *parent);
 
+private:
+	bool saveWithAncestorData() const;
+
 public slots:
 	void onOpenFileDialog();
 	void onSelectCurrentTiles();

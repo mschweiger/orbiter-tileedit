@@ -67,12 +67,24 @@ Tile *TileBlock::_getTile(int ilat, int ilng)
 	return m_tile[idx];
 }
 
+const Tile *TileBlock::getTile(int idx) const
+{
+	if (idx < 0 || idx >= m_tile.size()) return 0;
+	return m_tile[idx];
+}
+
 DWORD TileBlock::pixelColour(int px, int py) const
 {
 	return m_img.data[px + py*m_img.width];
 }
 
-
+bool TileBlock::hasAncestorData() const
+{
+	for (int i = 0; i < m_tile.size(); i++)
+		if (m_tile[i]->Level() != m_tile[i]->subLevel())
+			return true;
+	return false;
+}
 
 SurfTileBlock::SurfTileBlock(int lvl, int ilat0, int ilat1, int ilng0, int ilng1)
 	: TileBlock(lvl, ilat0, ilat1, ilng0, ilng1)
