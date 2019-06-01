@@ -455,10 +455,8 @@ void ElevTileBlock::ExportPNG(const std::string &fname)
 				const Tile *tile = getTile(ilat, ilng);
 				if (tile->Level() != tile->subLevel()) {
 					if (!writtenMissing)
-						fprintf(f, "missing=");
-					else
-						fprintf(f, ",");
-					fprintf(f, "%06d/%06d", ilat, ilng);
+						fprintf(f, "missing");
+					fprintf(f, " %d/%d", ilat, ilng);
 					writtenMissing = true;
 				}
 			}

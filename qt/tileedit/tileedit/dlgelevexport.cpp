@@ -53,11 +53,9 @@ DlgElevExport::DlgElevExport(tileedit *parent)
 
 void DlgElevExport::onOpenFileDialog()
 {
-	std::string path = QFileDialog::getSaveFileName(this, tr("Export elevation tile to PNG"), ui->editPath->text(), tr("Portable network graphics (*.png)")).toStdString();
-	if (path.size()) {
-		ui->editPath->setText(QString::fromStdString(path));
-	}
-
+	QString path = QFileDialog::getSaveFileName(this, tr("Export elevation tiles to image file"), ui->editPath->text(), tr("Portable network graphics (*.png)"));
+	if (path.size())
+		ui->editPath->setText(path);
 }
 
 void DlgElevExport::onSelectCurrentTiles()

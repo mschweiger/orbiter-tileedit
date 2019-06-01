@@ -64,7 +64,8 @@ private slots:
 	void on_actionExit_triggered();
 	void on_actionConfig_triggered();
 	void onElevConfig();
-	void onElevExportPng();
+	void onElevExportImage();
+	void onElevImportImage();
 	void onElevConfigDestroyed(int r);
     void onResolutionChanged(int val);
     void onLatidxChanged(int val);
@@ -88,7 +89,8 @@ private:
 	QAction *actionConfig;
 	QAction *actionExit;
 	QAction *actionElevConfig;
-	QAction *actionExportPng;
+	QAction *actionExportImage;
+	QAction *actionImportImage;
 
     QLabel *status;
 

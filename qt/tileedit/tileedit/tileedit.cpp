@@ -6,6 +6,7 @@
 #include "dlgconfig.h"
 #include "dlgelevconfig.h"
 #include "dlgelevexport.h"
+#include "dlgelevimport.h"
 #include <random>
 
 #include "QFileDialog"
@@ -140,7 +141,8 @@ void tileedit::createMenus()
 	QMenu *menu = ui->menuBar->addMenu(tr("&Elevation"));
 	menu->addAction(actionElevConfig);
 	menu->addSeparator();
-	menu->addAction(actionExportPng);
+	menu->addAction(actionExportImage);
+	menu->addAction(actionImportImage);
 }
 
 void tileedit::createActions()
@@ -158,8 +160,11 @@ void tileedit::createActions()
 	actionElevConfig->setCheckable(true);
 	connect(actionElevConfig, &QAction::triggered, this, &tileedit::onElevConfig);
 
-	actionExportPng = new QAction(tr("&Export to image"), this);
-	connect(actionExportPng, &QAction::triggered, this, &tileedit::onElevExportPng);
+	actionExportImage = new QAction(tr("&Export to image"), this);
+	connect(actionExportImage, &QAction::triggered, this, &tileedit::onElevExportImage);
+
+	actionImportImage = new QAction(tr("&Import from image"), this);
+	connect(actionImportImage, &QAction::triggered, this, &tileedit::onElevImportImage);
 }
 
 void tileedit::elevDisplayParamChanged()
@@ -263,7 +268,7 @@ void tileedit::onElevConfig()
 		onElevConfigDestroyed(0);
 }
 
-void tileedit::onElevExportPng()
+void tileedit::onElevExportImage()
 {
 	if (!m_eTileBlock) {
 		QMessageBox mbox(QMessageBox::Warning, "tileedit", "No elevation layer loaded.", QMessageBox::Close);
@@ -272,6 +277,12 @@ void tileedit::onElevExportPng()
 	}
 
 	DlgElevExport dlg(this);
+	dlg.exec();
+}
+
+void tileedit::onElevImportImage()
+{
+	DlgElevImport dlg(this);
 	dlg.exec();
 }
 

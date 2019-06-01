@@ -1,23 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>DlgElevExport</class>
- <widget class="QDialog" name="DlgElevExport">
+ <class>DlgElevImport</class>
+ <widget class="QDialog" name="DlgElevImport">
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>399</width>
-    <height>270</height>
+    <width>400</width>
+    <height>310</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>tileedit: Export</string>
+   <string>tileedit: Import</string>
   </property>
   <widget class="QWidget" name="layoutWidget">
    <property name="geometry">
     <rect>
      <x>20</x>
-     <y>220</y>
+     <y>260</y>
      <width>361</width>
      <height>33</height>
     </rect>
@@ -73,18 +73,32 @@
      <x>19</x>
      <y>20</y>
      <width>361</width>
-     <height>25</height>
+     <height>54</height>
     </rect>
    </property>
    <layout class="QGridLayout" name="gridLayout">
-    <item row="0" column="3">
-     <widget class="QPushButton" name="pushOpenFileDialog">
-      <property name="sizePolicy">
-       <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-        <horstretch>0</horstretch>
-        <verstretch>0</verstretch>
-       </sizepolicy>
+    <item row="2" column="1">
+     <widget class="QLineEdit" name="editMetaPath"/>
+    </item>
+    <item row="2" column="0">
+     <widget class="QLabel" name="label_2">
+      <property name="text">
+       <string>Meta:</string>
       </property>
+     </widget>
+    </item>
+    <item row="1" column="1">
+     <widget class="QLineEdit" name="editPath"/>
+    </item>
+    <item row="1" column="0">
+     <widget class="QLabel" name="label">
+      <property name="text">
+       <string>Path:</string>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="2">
+     <widget class="QPushButton" name="pushOpenFileDialog">
       <property name="minimumSize">
        <size>
         <width>25</width>
@@ -102,20 +116,22 @@
       </property>
      </widget>
     </item>
-    <item row="0" column="0">
-     <widget class="QLabel" name="label">
-      <property name="text">
-       <string>Path:</string>
+    <item row="2" column="2">
+     <widget class="QPushButton" name="pushOpenMetaFileDialog">
+      <property name="minimumSize">
+       <size>
+        <width>25</width>
+        <height>0</height>
+       </size>
       </property>
-     </widget>
-    </item>
-    <item row="0" column="2">
-     <widget class="QLineEdit" name="editPath">
-      <property name="sizePolicy">
-       <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-        <horstretch>0</horstretch>
-        <verstretch>0</verstretch>
-       </sizepolicy>
+      <property name="maximumSize">
+       <size>
+        <width>25</width>
+        <height>16777215</height>
+       </size>
+      </property>
+      <property name="text">
+       <string>...</string>
       </property>
      </widget>
     </item>
@@ -125,9 +141,9 @@
    <property name="geometry">
     <rect>
      <x>20</x>
-     <y>50</y>
+     <y>79</y>
      <width>361</width>
-     <height>161</height>
+     <height>171</height>
     </rect>
    </property>
    <property name="title">
@@ -135,9 +151,9 @@
    </property>
    <layout class="QVBoxLayout" name="verticalLayout">
     <item>
-     <widget class="QRadioButton" name="radioCurrentTiles">
+     <widget class="QRadioButton" name="radioImportAll">
       <property name="text">
-       <string>Export current range</string>
+       <string>Import all</string>
       </property>
       <property name="checked">
        <bool>true</bool>
@@ -145,18 +161,18 @@
      </widget>
     </item>
     <item>
-     <widget class="QRadioButton" name="radioCustomTiles">
+     <widget class="QRadioButton" name="radioImportRange">
       <property name="text">
-       <string>Export custom range</string>
+       <string>Import sub-range</string>
       </property>
      </widget>
     </item>
     <item>
-     <widget class="QWidget" name="widgetTileRange" native="true">
+     <widget class="QWidget" name="widget" native="true">
       <property name="enabled">
        <bool>false</bool>
       </property>
-      <layout class="QGridLayout" name="gridLayout_3">
+      <layout class="QGridLayout" name="gridLayout_2">
        <property name="leftMargin">
         <number>20</number>
        </property>
@@ -169,50 +185,57 @@
        <property name="bottomMargin">
         <number>0</number>
        </property>
-       <item row="0" column="1">
-        <widget class="QSpinBox" name="spinLvl">
-         <property name="minimum">
-          <number>1</number>
-         </property>
-         <property name="maximum">
-          <number>17</number>
-         </property>
-        </widget>
-       </item>
        <item row="1" column="1">
         <widget class="QSpinBox" name="spinIlat0"/>
        </item>
+       <item row="2" column="1">
+        <widget class="QSpinBox" name="spinIlng0"/>
+       </item>
+       <item row="2" column="0">
+        <widget class="QLabel" name="label_6">
+         <property name="text">
+          <string>Longitude index range:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="1">
+        <widget class="QLabel" name="labelLvl">
+         <property name="text">
+          <string>-</string>
+         </property>
+        </widget>
+       </item>
        <item row="0" column="0">
-        <widget class="QLabel" name="label_2">
+        <widget class="QLabel" name="label_3">
          <property name="text">
           <string>Resolution:</string>
          </property>
         </widget>
        </item>
        <item row="1" column="0">
-        <widget class="QLabel" name="label_3">
+        <widget class="QLabel" name="label_5">
          <property name="text">
           <string>Latitude index range:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="0">
-        <widget class="QLabel" name="label_4">
-         <property name="text">
-          <string>Longitude index range:</string>
          </property>
         </widget>
        </item>
        <item row="1" column="2">
         <widget class="QSpinBox" name="spinIlat1"/>
        </item>
-       <item row="2" column="1">
-        <widget class="QSpinBox" name="spinIlng0"/>
-       </item>
        <item row="2" column="2">
         <widget class="QSpinBox" name="spinIlng1"/>
        </item>
       </layout>
+     </widget>
+    </item>
+    <item>
+     <widget class="QCheckBox" name="checkSkipMissing">
+      <property name="text">
+       <string>Skip any missing tiles</string>
+      </property>
+      <property name="checked">
+       <bool>true</bool>
+      </property>
      </widget>
     </item>
    </layout>
@@ -223,7 +246,7 @@
   <connection>
    <sender>okButton</sender>
    <signal>clicked()</signal>
-   <receiver>DlgElevExport</receiver>
+   <receiver>DlgElevImport</receiver>
    <slot>accept()</slot>
    <hints>
     <hint type="sourcelabel">
@@ -239,7 +262,7 @@
   <connection>
    <sender>cancelButton</sender>
    <signal>clicked()</signal>
-   <receiver>DlgElevExport</receiver>
+   <receiver>DlgElevImport</receiver>
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">
