@@ -34,6 +34,7 @@ private:
 	Ui::DlgElevImport *ui;
 	tileedit *m_tileedit;
 	bool m_pathEdited, m_metaEdited;
+	bool m_haveMeta;
 	int m_propagationLevel;
 	ImageMetaInfo m_metaInfo;
 };

@@ -21,6 +21,7 @@ DlgElevImport::DlgElevImport(tileedit *parent)
 	connect(ui->checkPropagateChanges, SIGNAL(stateChanged(int)), this, SLOT(onPropagateChanges(int)));
 
 	m_pathEdited = m_metaEdited = false;
+	m_haveMeta = false;
 	m_propagationLevel = ui->spinPropagationLevel->value();
 	memset(&m_metaInfo, 0, sizeof(ImageMetaInfo));
 }
@@ -53,8 +54,8 @@ void DlgElevImport::onOpenMetaFileDialog()
 
 void DlgElevImport::onMetaFileChanged(const QString &name)
 {
-	bool found = scanMetaFile(name.toLatin1(), m_metaInfo);
-	if (found) {
+	m_haveMeta = scanMetaFile(name.toLatin1(), m_metaInfo);
+	if (m_haveMeta) {
 		ui->labelLvl->setText(QString::number(m_metaInfo.lvl));
 		ui->spinIlat0->setValue(m_metaInfo.ilat0);
 		ui->spinIlat1->setValue(m_metaInfo.ilat1 - 1);
@@ -119,17 +120,21 @@ bool DlgElevImport::scanMetaFile(const char *fname, ImageMetaInfo &meta)
 	fscanf(f, "vmin=%lf vmax=%lf scale=%lf offset=%lf type=%d padding=1x1 colormap=%d smin=%lf emin=%lf smean=%lf emean=%lf smax=%lf emax=%lf latmin=%lf latmax=%lf lngmin=%lf lngmax=%lf\n",
 		&meta.dmin, &meta.dmax, &meta.scale, &meta.offset, &meta.type, &meta.colormap, &smin, &emin, &smean, &emean, &smax, &emax,
 		&meta.latmin, &meta.latmax, &meta.lngmin, &meta.lngmax);
-	fscanf(f, "lvl=%d ilat0=%d ilat1=%d ilng0=%d ilng1=%d\n",
-		&meta.lvl, &meta.ilat0, &meta.ilat1, &meta.ilng0, &meta.ilng1);
-	fscanf(f, "%s", str);
-	if (!strncmp(str, "missing", 7)) {
-		while (true) {
-			n = fscanf(f, "%d/%d", &ilat, &ilng);
-			if (n == 2) {
-				meta.missing.push_back(std::make_pair(ilat, ilng));
+	if (fscanf(f, "lvl=%d ilat0=%d ilat1=%d ilng0=%d ilng1=%d\n",
+		&meta.lvl, &meta.ilat0, &meta.ilat1, &meta.ilng0, &meta.ilng1) != 5) {
+		meta.lvl = meta.ilat0 = meta.ilat1 = meta.ilng0 = meta.ilng1 = 0;
+	}
+	else {
+		fscanf(f, "%s", str);
+		if (!strncmp(str, "missing", 7)) {
+			while (true) {
+				n = fscanf(f, "%d/%d", &ilat, &ilng);
+				if (n == 2) {
+					meta.missing.push_back(std::make_pair(ilat, ilng));
+				}
+				else
+					break;
 			}
-			else
-				break;
 		}
 	}
 	fclose(f);
@@ -138,12 +143,44 @@ bool DlgElevImport::scanMetaFile(const char *fname, ImageMetaInfo &meta)
 
 void DlgElevImport::accept()
 {
-	if (!m_metaInfo.lvl) {
+	if (!m_haveMeta) {
 		QMessageBox mbox(QMessageBox::Warning, tr("tileedit: Warning"), tr("No valid metadata information is available"), QMessageBox::Close);
 		mbox.exec();
 		return;
 	}
+	else if (!m_metaInfo.lvl) {
+		QMessageBox mbox(QMessageBox::Warning, tr("tileedit: Warning"), tr("Metadata do not contain tile index information. Assume single-tile image, to be imported into the current tile location?"), QMessageBox::Yes | QMessageBox::No);
+		if (mbox.exec() == QMessageBox::Yes) {
+			m_metaInfo.lvl = m_tileedit->m_lvl;
+			m_metaInfo.ilat0 = m_tileedit->m_ilat;
+			m_metaInfo.ilat1 = m_metaInfo.ilat0 + 1;
+			m_metaInfo.ilng0 = m_tileedit->m_ilng;
+			m_metaInfo.ilng1 = m_metaInfo.ilng0 + 1;
 
+			ui->labelLvl->setText(QString::number(m_metaInfo.lvl));
+			ui->spinIlat0->setValue(m_metaInfo.ilat0);
+			ui->spinIlat1->setValue(m_metaInfo.ilat1 - 1);
+			ui->spinIlng0->setValue(m_metaInfo.ilng0);
+			ui->spinIlng1->setValue(m_metaInfo.ilng1 - 1);
+			ui->spinIlat0->setMinimum(m_metaInfo.ilat0);
+			ui->spinIlat1->setMinimum(m_metaInfo.ilat0);
+			ui->spinIlng0->setMinimum(m_metaInfo.ilng0);
+			ui->spinIlng1->setMinimum(m_metaInfo.ilng0);
+			ui->spinIlat0->setMaximum(m_metaInfo.ilat1 - 1);
+			ui->spinIlat1->setMaximum(m_metaInfo.ilat1 - 1);
+			ui->spinIlng0->setMaximum(m_metaInfo.ilng1 - 1);
+			ui->spinIlng1->setMaximum(m_metaInfo.ilng1 - 1);
+		}
+		else {
+			return;
+		}
+	}
+
+	if (m_metaInfo.colormap != 0) {
+		QMessageBox mbox(QMessageBox::Warning, tr("tileedit: Warning"), tr("Unsupported colormap specified in metafile. PNG file must be 16-bit greyscale image (colormap 0)."), QMessageBox::Close);
+		mbox.exec();
+		return;
+	}
 	ElevTileBlock *eblock = ElevTileBlock::Load(m_metaInfo.lvl, m_metaInfo.ilat0, m_metaInfo.ilat1, m_metaInfo.ilng0, m_metaInfo.ilng1);
 	if (!elvread_png(ui->editPath->text().toLatin1(), m_metaInfo, eblock->getData())) {
 		QMessageBox mbox(QMessageBox::Warning, tr("tileedit: Warning"), tr("Error reading PNG file"), QMessageBox::Close);
