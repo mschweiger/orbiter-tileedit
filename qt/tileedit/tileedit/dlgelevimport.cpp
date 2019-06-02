@@ -136,11 +136,6 @@ void DlgElevImport::accept()
 		return;
 	}
 
-	m_metaInfo.ilat0 = ui->spinIlat0->value();
-	m_metaInfo.ilat1 = ui->spinIlat1->value() + 1;
-	m_metaInfo.ilng0 = ui->spinIlng0->value();
-	m_metaInfo.ilng1 = ui->spinIlng1->value() + 1;
-
 	ElevTileBlock *eblock = ElevTileBlock::Load(m_metaInfo.lvl, m_metaInfo.ilat0, m_metaInfo.ilat1, m_metaInfo.ilng0, m_metaInfo.ilng1);
 	if (!elvread_png(ui->editPath->text().toLatin1(), m_metaInfo, eblock->getData())) {
 		QMessageBox mbox(QMessageBox::Warning, tr("tileedit: Warning"), tr("Error reading PNG file"), QMessageBox::Close);
@@ -148,8 +143,13 @@ void DlgElevImport::accept()
 		return;
 	}
 
-	for (int ilat = eblock->iLat0(); ilat < eblock->iLat1(); ilat++)
-		for (int ilng = eblock->iLng0(); ilng < eblock->iLng1(); ilng++) {
+	int ilat0 = ui->spinIlat0->value();
+	int ilat1 = ui->spinIlat1->value() + 1;
+	int ilng0 = ui->spinIlng0->value();
+	int ilng1 = ui->spinIlng1->value() + 1;
+
+	for (int ilat = ilat0; ilat < ilat1; ilat++)
+		for (int ilng = ilng0; ilng < ilng1; ilng++) {
 			eblock->SyncTile(ilat, ilng);
 			ElevTile *etile = (ElevTile*)eblock->_getTile(ilat, ilng);
 			if (etile->Level() == etile->subLevel())
