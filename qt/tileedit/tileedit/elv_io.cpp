@@ -395,6 +395,41 @@ void elvmodwrite(const char *fname, const ElevData &edata, const ElevData &ebase
 
 // ==================================================================================
 
+bool elvread_png(const char *fname, const ImageMetaInfo &meta, ElevData &edata)
+{
+	png_image image;
+	memset(&image, 0, sizeof(png_image));
+	image.version = PNG_IMAGE_VERSION;
+	image.opaque = NULL;
+	png_image_begin_read_from_file(&image, fname);
+	image.format = PNG_FORMAT_LINEAR_Y;
+
+	int nblock_x = meta.ilng1 - meta.ilng0;
+	int nblock_y = meta.ilat1 - meta.ilat0;
+	int w = nblock_x*TILE_FILERES + 3;
+	int h = nblock_y*TILE_FILERES + 3;
+	int n = w*h;
+	unsigned short *buf = new unsigned short[n];
+	png_image_finish_read(&image, NULL, buf, w, NULL);
+
+	double scale = meta.scale;
+	double offset = meta.offset;
+
+	int idx = 0;
+	for (int ih = h - 1; ih >= 0; ih--) {
+		for (int iw = 0; iw < w; iw++) {
+			unsigned short v16 = buf[idx++];
+			double v = v16 * scale + offset;
+			edata.data[iw + ih*w] = v;
+		}
+	}
+	png_image_free(&image);
+	delete[]buf;
+	return true;
+}
+
+// ==================================================================================
+
 void elvwrite_png(const char *fname, const ElevData &edata, double *data_scale, double *data_offset)
 {
 	int w = edata.width;
@@ -417,6 +452,9 @@ void elvwrite_png(const char *fname, const ElevData &edata, double *data_scale, 
 		shift = imin;
 	double offset = shift * scale;
 
+	if (data_scale) *data_scale = scale;
+	if (data_offset) *data_offset = offset;
+
 	int idx = 0;
 	for (int ih = h - 1; ih >= 0; ih--) {
 		for (int iw = 0; iw < w; iw++) {
@@ -435,9 +473,8 @@ void elvwrite_png(const char *fname, const ElevData &edata, double *data_scale, 
 	image.flags = 0;
 	image.colormap_entries = 0;
 	png_image_write_to_file(&image, fname, 0, buf, 0, 0);
+	png_image_free(&image);
 	delete[]buf;
-
-	// now write out the metadata into a separate file
 }
 
 // ==================================================================================

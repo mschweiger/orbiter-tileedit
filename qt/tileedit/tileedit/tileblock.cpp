@@ -518,6 +518,8 @@ void ElevTileBlock::SyncTile(int ilat, int ilng)
 			}
 		}
 	}
+	if (etile->m_modified)
+		etile->RescanLimits();
 }
 
 void ElevTileBlock::MatchNeighbourTiles()

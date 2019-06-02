@@ -1,6 +1,7 @@
 #ifndef DLGELEVIMPORT_H
 #define DLGELEVIMPORT_H
 
+#include "elv_io.h"
 #include <QDialog>
 
 namespace Ui {
@@ -9,18 +10,6 @@ namespace Ui {
 
 class tileedit;
 class ElevTileBlock;
-
-struct ImageMetaInfo
-{
-	int lvl;
-	int ilat0, ilat1, ilng0, ilng1;
-	double dmin, dmax;
-	double scale, offset;
-	double latmin, latmax, lngmin, lngmax;
-	int type;
-	int colormap;
-	std::vector<std::pair<int, int> > missing;
-};
 
 class DlgElevImport : public QDialog
 {
@@ -33,6 +22,7 @@ public slots:
 	void onOpenFileDialog();
 	void onOpenMetaFileDialog();
 	void onMetaFileChanged(const QString&);
+	void accept();
 
 protected:
 	bool scanMetaFile(const char *fname, ImageMetaInfo &meta);

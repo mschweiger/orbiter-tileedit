@@ -18,6 +18,7 @@ DlgElevImport::DlgElevImport(tileedit *parent)
 	connect(ui->editMetaPath, SIGNAL(textChanged(const QString&)), this, SLOT(onMetaFileChanged(const QString&)));
 
 	m_pathEdited = m_metaEdited = false;
+	memset(&m_metaInfo, 0, sizeof(ImageMetaInfo));
 }
 
 void DlgElevImport::onOpenFileDialog()
@@ -57,6 +58,7 @@ void DlgElevImport::onMetaFileChanged(const QString &name)
 		ui->spinIlng1->setValue(m_metaInfo.ilng1 - 1);
 	}
 	else {
+		memset(&m_metaInfo, 0, sizeof(ImageMetaInfo));
 		ui->labelLvl->setText("-");
 		ui->spinIlat0->setValue(0);
 		ui->spinIlat1->setValue(0);
@@ -91,4 +93,30 @@ bool DlgElevImport::scanMetaFile(const char *fname, ImageMetaInfo &meta)
 	}
 	fclose(f);
 	return true;
+}
+
+void DlgElevImport::accept()
+{
+	if (!m_metaInfo.lvl) {
+		QMessageBox mbox(QMessageBox::Warning, tr("tileedit: Warning"), tr("No valid metadata information is available"), QMessageBox::Close);
+		mbox.exec();
+		return;
+	}
+
+	ElevTileBlock *eblock = ElevTileBlock::Load(m_metaInfo.lvl, m_metaInfo.ilat0, m_metaInfo.ilat1, m_metaInfo.ilng0, m_metaInfo.ilng1);
+	if (!elvread_png(ui->editPath->text().toLatin1(), m_metaInfo, eblock->getData())) {
+		QMessageBox mbox(QMessageBox::Warning, tr("tileedit: Warning"), tr("Error reading PNG file"), QMessageBox::Close);
+		mbox.exec();
+		return;
+	}
+
+	for (int ilat = eblock->iLat0(); ilat < eblock->iLat1(); ilat++)
+		for (int ilng = eblock->iLng0(); ilng < eblock->iLng1(); ilng++) {
+			eblock->SyncTile(ilat, ilng);
+			ElevTile *etile = (ElevTile*)eblock->_getTile(ilat, ilng);
+			if (etile->Level() == etile->subLevel())
+				etile->SaveMod();
+		}
+
+	QDialog::accept();
 }

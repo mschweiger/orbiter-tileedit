@@ -102,19 +102,17 @@ void DlgElevExport::accept()
 	bool isWritten = false;
 
 	if (ui->radioCurrentTiles->isChecked()) {
-		if (m_CurrentBlock->hasAncestorData())
-			if (saveWithAncestorData()) {
-				m_CurrentBlock->ExportPNG(ui->editPath->text().toStdString());
-				isWritten = true;
-			}
+		if (!m_CurrentBlock->hasAncestorData() || saveWithAncestorData()) {
+			m_CurrentBlock->ExportPNG(ui->editPath->text().toStdString());
+			isWritten = true;
+		}
 	}
 	else {
 		ElevTileBlock *eblock = ElevTileBlock::Load(m_lvl, m_ilat0, m_ilat1, m_ilng0, m_ilng1);
-		if (eblock->hasAncestorData())
-			if (saveWithAncestorData()) {
-				eblock->ExportPNG(ui->editPath->text().toStdString());
-				isWritten = true;
-			}
+		if (!eblock->hasAncestorData() || saveWithAncestorData()) {
+			eblock->ExportPNG(ui->editPath->text().toStdString());
+			isWritten = true;
+		}
 		delete eblock;
 	}
 	if (isWritten)

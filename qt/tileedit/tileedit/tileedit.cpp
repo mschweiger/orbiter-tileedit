@@ -283,7 +283,9 @@ void tileedit::onElevExportImage()
 void tileedit::onElevImportImage()
 {
 	DlgElevImport dlg(this);
-	dlg.exec();
+	if (dlg.exec() == QDialog::Accepted) {
+		loadTile(m_lvl, m_ilat, m_ilng); // refresh
+	}
 }
 
 void tileedit::onElevConfigDestroyed(int r)
