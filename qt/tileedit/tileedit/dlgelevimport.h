@@ -22,6 +22,8 @@ public slots:
 	void onOpenFileDialog();
 	void onOpenMetaFileDialog();
 	void onMetaFileChanged(const QString&);
+	void onSelectAllTiles();
+	void onSelectTileRange();
 	void accept();
 
 protected:

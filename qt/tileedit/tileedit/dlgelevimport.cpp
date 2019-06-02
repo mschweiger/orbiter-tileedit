@@ -16,6 +16,8 @@ DlgElevImport::DlgElevImport(tileedit *parent)
 	connect(ui->pushOpenFileDialog, SIGNAL(clicked()), this, SLOT(onOpenFileDialog()));
 	connect(ui->pushOpenMetaFileDialog, SIGNAL(clicked()), this, SLOT(onOpenMetaFileDialog()));
 	connect(ui->editMetaPath, SIGNAL(textChanged(const QString&)), this, SLOT(onMetaFileChanged(const QString&)));
+	connect(ui->radioImportAll, SIGNAL(clicked()), this, SLOT(onSelectAllTiles()));
+	connect(ui->radioImportRange, SIGNAL(clicked()), this, SLOT(onSelectTileRange()));
 
 	m_pathEdited = m_metaEdited = false;
 	memset(&m_metaInfo, 0, sizeof(ImageMetaInfo));
@@ -56,6 +58,14 @@ void DlgElevImport::onMetaFileChanged(const QString &name)
 		ui->spinIlat1->setValue(m_metaInfo.ilat1 - 1);
 		ui->spinIlng0->setValue(m_metaInfo.ilng0);
 		ui->spinIlng1->setValue(m_metaInfo.ilng1 - 1);
+		ui->spinIlat0->setMinimum(m_metaInfo.ilat0);
+		ui->spinIlat1->setMinimum(m_metaInfo.ilat0);
+		ui->spinIlng0->setMinimum(m_metaInfo.ilng0);
+		ui->spinIlng1->setMinimum(m_metaInfo.ilng0);
+		ui->spinIlat0->setMaximum(m_metaInfo.ilat1 - 1);
+		ui->spinIlat1->setMaximum(m_metaInfo.ilat1 - 1);
+		ui->spinIlng0->setMaximum(m_metaInfo.ilng1 - 1);
+		ui->spinIlng1->setMaximum(m_metaInfo.ilng1 - 1);
 	}
 	else {
 		memset(&m_metaInfo, 0, sizeof(ImageMetaInfo));
@@ -64,7 +74,30 @@ void DlgElevImport::onMetaFileChanged(const QString &name)
 		ui->spinIlat1->setValue(0);
 		ui->spinIlng0->setValue(0);
 		ui->spinIlng1->setValue(0);
+		ui->spinIlat0->setMinimum(0);
+		ui->spinIlat1->setMinimum(0);
+		ui->spinIlng0->setMinimum(0);
+		ui->spinIlng1->setMinimum(0);
+		ui->spinIlat0->setMaximum(0);
+		ui->spinIlat1->setMaximum(0);
+		ui->spinIlng0->setMaximum(0);
+		ui->spinIlng1->setMaximum(0);
 	}
+}
+
+void DlgElevImport::onSelectAllTiles()
+{
+	ui->spinIlat0->setValue(m_metaInfo.ilat0);
+	ui->spinIlat1->setValue(m_metaInfo.ilat1 - 1);
+	ui->spinIlng0->setValue(m_metaInfo.ilng0);
+	ui->spinIlng1->setValue(m_metaInfo.ilng1 - 1);
+	ui->widgetTileRange->setEnabled(false);
+}
+
+void DlgElevImport::onSelectTileRange()
+{
+	ui->widgetTileRange->setEnabled(true);
+
 }
 
 bool DlgElevImport::scanMetaFile(const char *fname, ImageMetaInfo &meta)
@@ -102,6 +135,11 @@ void DlgElevImport::accept()
 		mbox.exec();
 		return;
 	}
+
+	m_metaInfo.ilat0 = ui->spinIlat0->value();
+	m_metaInfo.ilat1 = ui->spinIlat1->value() + 1;
+	m_metaInfo.ilng0 = ui->spinIlng0->value();
+	m_metaInfo.ilng1 = ui->spinIlng1->value() + 1;
 
 	ElevTileBlock *eblock = ElevTileBlock::Load(m_metaInfo.lvl, m_metaInfo.ilat0, m_metaInfo.ilat1, m_metaInfo.ilng0, m_metaInfo.ilng1);
 	if (!elvread_png(ui->editPath->text().toLatin1(), m_metaInfo, eblock->getData())) {
