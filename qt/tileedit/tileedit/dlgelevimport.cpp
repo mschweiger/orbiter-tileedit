@@ -199,6 +199,16 @@ void DlgElevImport::accept()
 			ElevTile *etile = (ElevTile*)eblock->_getTile(ilat, ilng);
 			if (etile->Level() == etile->subLevel())
 				etile->SaveMod();
+			else if (!ui->checkSkipMissing->isChecked()) {
+				ElevTile *tile = ElevTile::InterpolateFromAncestor(m_metaInfo.lvl, ilat, ilng);
+				if (tile) {
+					tile->dataChanged();
+					tile->Save();
+					tile->getData() = etile->getData();
+					tile->dataChanged();
+					tile->SaveMod();
+				}
+			}
 		}
 	if (m_propagationLevel) {
 		eblock->MatchParentTiles(m_propagationLevel);
