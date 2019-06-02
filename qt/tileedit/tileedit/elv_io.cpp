@@ -397,35 +397,38 @@ void elvmodwrite(const char *fname, const ElevData &edata, const ElevData &ebase
 
 bool elvread_png(const char *fname, const ImageMetaInfo &meta, ElevData &edata)
 {
+	bool ok = false;
 	png_image image;
 	memset(&image, 0, sizeof(png_image));
 	image.version = PNG_IMAGE_VERSION;
 	image.opaque = NULL;
-	png_image_begin_read_from_file(&image, fname);
-	image.format = PNG_FORMAT_LINEAR_Y;
+	if (png_image_begin_read_from_file(&image, fname)) {
+		image.format = PNG_FORMAT_LINEAR_Y;
 
-	int nblock_x = meta.ilng1 - meta.ilng0;
-	int nblock_y = meta.ilat1 - meta.ilat0;
-	int w = nblock_x*TILE_FILERES + 3;
-	int h = nblock_y*TILE_FILERES + 3;
-	int n = w*h;
-	unsigned short *buf = new unsigned short[n];
-	png_image_finish_read(&image, NULL, buf, w, NULL);
+		int nblock_x = meta.ilng1 - meta.ilng0;
+		int nblock_y = meta.ilat1 - meta.ilat0;
+		int w = nblock_x*TILE_FILERES + 3;
+		int h = nblock_y*TILE_FILERES + 3;
+		int n = w*h;
+		unsigned short *buf = new unsigned short[n];
+		png_image_finish_read(&image, NULL, buf, w, NULL);
 
-	double scale = meta.scale;
-	double offset = meta.offset;
+		double scale = meta.scale;
+		double offset = meta.offset;
 
-	int idx = 0;
-	for (int ih = h - 1; ih >= 0; ih--) {
-		for (int iw = 0; iw < w; iw++) {
-			unsigned short v16 = buf[idx++];
-			double v = v16 * scale + offset;
-			edata.data[iw + ih*w] = v;
+		int idx = 0;
+		for (int ih = h - 1; ih >= 0; ih--) {
+			for (int iw = 0; iw < w; iw++) {
+				unsigned short v16 = buf[idx++];
+				double v = v16 * scale + offset;
+				edata.data[iw + ih*w] = v;
+			}
 		}
+		delete[]buf;
+		ok = true;
 	}
 	png_image_free(&image);
-	delete[]buf;
-	return true;
+	return ok;
 }
 
 // ==================================================================================
