@@ -24,6 +24,7 @@ public slots:
 	void onMetaFileChanged(const QString&);
 	void onSelectAllTiles();
 	void onSelectTileRange();
+	void onPropagateChanges(int);
 	void accept();
 
 protected:
@@ -33,6 +34,7 @@ private:
 	Ui::DlgElevImport *ui;
 	tileedit *m_tileedit;
 	bool m_pathEdited, m_metaEdited;
+	int m_propagationLevel;
 	ImageMetaInfo m_metaInfo;
 };
 

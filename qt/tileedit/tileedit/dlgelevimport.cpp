@@ -18,8 +18,10 @@ DlgElevImport::DlgElevImport(tileedit *parent)
 	connect(ui->editMetaPath, SIGNAL(textChanged(const QString&)), this, SLOT(onMetaFileChanged(const QString&)));
 	connect(ui->radioImportAll, SIGNAL(clicked()), this, SLOT(onSelectAllTiles()));
 	connect(ui->radioImportRange, SIGNAL(clicked()), this, SLOT(onSelectTileRange()));
+	connect(ui->checkPropagateChanges, SIGNAL(stateChanged(int)), this, SLOT(onPropagateChanges(int)));
 
 	m_pathEdited = m_metaEdited = false;
+	m_propagationLevel = ui->spinPropagationLevel->value();
 	memset(&m_metaInfo, 0, sizeof(ImageMetaInfo));
 }
 
@@ -100,6 +102,12 @@ void DlgElevImport::onSelectTileRange()
 
 }
 
+void DlgElevImport::onPropagateChanges(int state)
+{
+	m_propagationLevel = (state == Qt::Checked ? ui->spinPropagationLevel->value() : 0);
+	ui->widgetPropagateChanges->setEnabled(state == Qt::Checked);
+}
+
 bool DlgElevImport::scanMetaFile(const char *fname, ImageMetaInfo &meta)
 {
 	FILE *f = fopen(fname, "rt");
@@ -155,6 +163,9 @@ void DlgElevImport::accept()
 			if (etile->Level() == etile->subLevel())
 				etile->SaveMod();
 		}
+	if (m_propagationLevel) {
+		eblock->MatchParentTiles(m_propagationLevel);
+	}
 
 	QDialog::accept();
 }
