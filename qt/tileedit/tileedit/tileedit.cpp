@@ -5,6 +5,8 @@
 #include "tileblock.h"
 #include "dlgconfig.h"
 #include "dlgelevconfig.h"
+#include "dlgelevexport.h"
+#include "dlgelevimport.h"
 #include <random>
 
 #include "QFileDialog"
@@ -138,6 +140,9 @@ void tileedit::createMenus()
 
 	QMenu *menu = ui->menuBar->addMenu(tr("&Elevation"));
 	menu->addAction(actionElevConfig);
+	menu->addSeparator();
+	menu->addAction(actionExportImage);
+	menu->addAction(actionImportImage);
 }
 
 void tileedit::createActions()
@@ -154,6 +159,12 @@ void tileedit::createActions()
 	actionElevConfig = new QAction(tr("&Configure"), this);
 	actionElevConfig->setCheckable(true);
 	connect(actionElevConfig, &QAction::triggered, this, &tileedit::onElevConfig);
+
+	actionExportImage = new QAction(tr("&Export to image"), this);
+	connect(actionExportImage, &QAction::triggered, this, &tileedit::onElevExportImage);
+
+	actionImportImage = new QAction(tr("&Import from image"), this);
+	connect(actionImportImage, &QAction::triggered, this, &tileedit::onElevImportImage);
 }
 
 void tileedit::elevDisplayParamChanged()
@@ -255,6 +266,26 @@ void tileedit::onElevConfig()
 	}
 	else
 		onElevConfigDestroyed(0);
+}
+
+void tileedit::onElevExportImage()
+{
+	if (!m_eTileBlock) {
+		QMessageBox mbox(QMessageBox::Warning, "tileedit", "No elevation layer loaded.", QMessageBox::Close);
+		mbox.exec();
+		return;
+	}
+
+	DlgElevExport dlg(this);
+	dlg.exec();
+}
+
+void tileedit::onElevImportImage()
+{
+	DlgElevImport dlg(this);
+	if (dlg.exec() == QDialog::Accepted) {
+		loadTile(m_lvl, m_ilat, m_ilng); // refresh
+	}
 }
 
 void tileedit::onElevConfigDestroyed(int r)

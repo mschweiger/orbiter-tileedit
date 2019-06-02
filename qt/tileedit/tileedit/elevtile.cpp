@@ -7,6 +7,7 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
 
+
 // ==================================================================================
 
 ElevData::ElevData()
@@ -47,6 +48,13 @@ double ElevData::nodeValue(int ix, int iy) const
 void ElevData::setNodeValue(int ix, int iy, double v)
 {
 	data[(ix+1) + (iy+1)*width] = v;
+}
+
+void ElevData::RescanLimits()
+{
+	auto minmax = std::minmax_element(data.begin(), data.end());
+	dmin = *minmax.first;
+	dmax = *minmax.second;
 }
 
 ElevData ElevData::SubTile(const std::pair<DWORD, DWORD> &xrange, const std::pair<DWORD, DWORD> &yrange)
@@ -113,9 +121,7 @@ double ElevTile::nodeElevation(int ndx, int ndy)
 
 void ElevTile::RescanLimits()
 {
-	auto minmax = std::minmax_element(m_edata.data.begin(), m_edata.data.end());
-	m_edata.dmin = *minmax.first;
-	m_edata.dmax = *minmax.second;
+	m_edata.RescanLimits();
 }
 
 bool ElevTile::Load(bool allowAncestorSubset)
@@ -227,20 +233,18 @@ void ElevTile::LoadSubset()
 void ElevTile::Save()
 {
 	if (m_modified) {
-		if (m_lvl == m_sublvl) { // for now, don't support saving ancestor subtiles
-			char path[1024];
-			sprintf(path, "%s/%s/%02d/%06d/%06d.elv", s_root.c_str(), Layer().c_str(), m_lvl, m_ilat, m_ilng);
-			int nlat = (m_lvl < 4 ? 1 : 1 << (m_lvl - 4));
-			int nlng = (m_lvl < 4 ? 1 : 1 << (m_lvl - 3));
-			double latmax = (1.0 - (double)m_ilat / (double)nlat) * M_PI - 0.5*M_PI;
-			double latmin = latmax - M_PI / nlat;
-			double lngmin = (double)m_ilng / (double)nlng * 2.0*M_PI - M_PI;
-			double lngmax = lngmin + 2.0*M_PI / nlng;
-			RescanLimits();
+		char path[1024];
+		sprintf(path, "%s/%s/%02d/%06d/%06d.elv", s_root.c_str(), Layer().c_str(), m_lvl, m_ilat, m_ilng);
+		int nlat = (m_lvl < 4 ? 1 : 1 << (m_lvl - 4));
+		int nlng = (m_lvl < 4 ? 1 : 1 << (m_lvl - 3));
+		double latmax = (1.0 - (double)m_ilat / (double)nlat) * M_PI - 0.5*M_PI;
+		double latmin = latmax - M_PI / nlat;
+		double lngmin = (double)m_ilng / (double)nlng * 2.0*M_PI - M_PI;
+		double lngmax = lngmin + 2.0*M_PI / nlng;
+		RescanLimits();
 
-			ensureLayerDir(s_root.c_str(), Layer().c_str(), m_lvl, m_ilat);
-			elvwrite(path, m_edata, latmin, latmax, lngmin, lngmax);
-		}
+		ensureLayerDir(s_root.c_str(), Layer().c_str(), m_lvl, m_ilat);
+		elvwrite(path, m_edata, latmin, latmax, lngmin, lngmax);
 		m_modified = false;
 	}
 }
@@ -248,21 +252,19 @@ void ElevTile::Save()
 void ElevTile::SaveMod()
 {
 	if (m_modified) {
-		if (m_lvl == m_sublvl) { // for now, don't support saving ancestor subtiles
-			char path[1024];
-			sprintf(path, "%s_mod", Layer().c_str());
-			ensureLayerDir(s_root.c_str(), path, m_lvl, m_ilat);
-			sprintf(path, "%s/%s_mod/%02d/%06d/%06d.elv", s_root.c_str(), Layer().c_str(), m_lvl, m_ilat, m_ilng);
-			int nlat = (m_lvl < 4 ? 1 : 1 << (m_lvl - 4));
-			int nlng = (m_lvl < 4 ? 1 : 1 << (m_lvl - 3));
-			double latmax = (1.0 - (double)m_ilat / (double)nlat) * M_PI - 0.5*M_PI;
-			double latmin = latmax - M_PI / nlat;
-			double lngmin = (double)m_ilng / (double)nlng * 2.0*M_PI - M_PI;
-			double lngmax = lngmin + 2.0*M_PI / nlng;
-			RescanLimits();
+		char path[1024];
+		sprintf(path, "%s_mod", Layer().c_str());
+		ensureLayerDir(s_root.c_str(), path, m_lvl, m_ilat);
+		sprintf(path, "%s/%s_mod/%02d/%06d/%06d.elv", s_root.c_str(), Layer().c_str(), m_lvl, m_ilat, m_ilng);
+		int nlat = (m_lvl < 4 ? 1 : 1 << (m_lvl - 4));
+		int nlng = (m_lvl < 4 ? 1 : 1 << (m_lvl - 3));
+		double latmax = (1.0 - (double)m_ilat / (double)nlat) * M_PI - 0.5*M_PI;
+		double latmin = latmax - M_PI / nlat;
+		double lngmin = (double)m_ilng / (double)nlng * 2.0*M_PI - M_PI;
+		double lngmax = lngmin + 2.0*M_PI / nlng;
+		RescanLimits();
 
-			elvmodwrite(path, m_edata, m_edataBase, latmin, latmax, lngmin, lngmax);
-		}
+		elvmodwrite(path, m_edata, m_edataBase, latmin, latmax, lngmin, lngmax);
 		m_modified = false;
 	}
 }

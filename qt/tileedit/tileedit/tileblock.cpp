@@ -1,5 +1,8 @@
 #include "tileblock.h"
+#include "elv_io.h"
 #include <algorithm>
+#define _USE_MATH_DEFINES
+#include <math.h>
 
 TileBlock::TileBlock(int lvl, int ilat0, int ilat1, int ilng0, int ilng1)
 {
@@ -64,12 +67,24 @@ Tile *TileBlock::_getTile(int ilat, int ilng)
 	return m_tile[idx];
 }
 
+const Tile *TileBlock::getTile(int idx) const
+{
+	if (idx < 0 || idx >= m_tile.size()) return 0;
+	return m_tile[idx];
+}
+
 DWORD TileBlock::pixelColour(int px, int py) const
 {
 	return m_img.data[px + py*m_img.width];
 }
 
-
+bool TileBlock::hasAncestorData() const
+{
+	for (int i = 0; i < m_tile.size(); i++)
+		if (m_tile[i]->Level() != m_tile[i]->subLevel())
+			return true;
+	return false;
+}
 
 SurfTileBlock::SurfTileBlock(int lvl, int ilat0, int ilat1, int ilng0, int ilng1)
 	: TileBlock(lvl, ilat0, ilat1, ilng0, ilng1)
@@ -411,6 +426,47 @@ void ElevTileBlock::SaveMod()
 	}
 }
 
+void ElevTileBlock::ExportPNG(const std::string &fname)
+{
+	const double DEG = 180.0 / M_PI;
+
+	double scale, offset;
+	double latmax = (1.0 - (double)m_ilat0 / (double)nLat()) * M_PI - 0.5*M_PI;
+	double latmin = (1.0 - (double)m_ilat1 / (double)nLat()) * M_PI - 0.5*M_PI;
+	double lngmin = (double)m_ilng0 / (double)nLng() * 2.0*M_PI - M_PI;
+	double lngmax = (double)m_ilng1 / (double)nLng() * 2.0*M_PI - M_PI;
+	RescanLimits();
+	elvwrite_png(fname.c_str(), m_edata, &scale, &offset);
+
+	// write out metadata into a separate file
+	char fname_meta[1024];
+	strcpy(fname_meta, fname.c_str());
+	strcat(fname_meta, ".hdr");
+	FILE *f = fopen(fname_meta, "wt");
+	if (f) {
+		fprintf(f, "vmin=%lf vmax=%lf scale=%lf offset=%lf type=%d padding=1x1 colormap=0 smin=0 emin=0 smean=0 emean=0 smax=0 emax=0 latmin=%+0.10lf latmax=%+0.10lf lngmin=%+0.10lf lngmax=%+0.10lf\n",
+			m_edata.dmin, m_edata.dmax, scale, offset, -16, latmin*DEG, latmax*DEG, lngmin*DEG, lngmax*DEG);
+		fprintf(f, "lvl=%d ilat0=%d ilat1=%d ilng0=%d ilng1=%d\n",
+			m_lvl, m_ilat0, m_ilat1, m_ilng0, m_ilng1);
+
+		bool writtenMissing = false;
+		for (int ilat = m_ilat0; ilat < m_ilat1; ilat++)
+			for (int ilng = m_ilng0; ilng < m_ilng1; ilng++) {
+				const Tile *tile = getTile(ilat, ilng);
+				if (tile->Level() != tile->subLevel()) {
+					if (!writtenMissing)
+						fprintf(f, "missing");
+					fprintf(f, " %d/%d", ilat, ilng);
+					writtenMissing = true;
+				}
+			}
+		if (writtenMissing)
+			fprintf(f, "\n");
+		fclose(f);
+	}
+
+}
+
 void ElevTileBlock::SyncTiles()
 {
 	for (int ilat = m_ilat0; ilat < m_ilat1; ilat++)
@@ -462,6 +518,8 @@ void ElevTileBlock::SyncTile(int ilat, int ilng)
 			}
 		}
 	}
+	if (etile->m_modified)
+		etile->RescanLimits();
 }
 
 void ElevTileBlock::MatchNeighbourTiles()
@@ -575,6 +633,11 @@ void ElevTileBlock::dataChanged(int exmin, int exmax, int eymin, int eymax)
 	m_edata.dmax = *minmax.second;
 
 	ExtractImage(exmin, exmax, eymin, eymax);
+}
+
+void ElevTileBlock::RescanLimits()
+{
+	m_edata.RescanLimits();
 }
 
 void ElevTileBlock::ExtractImage(int exmin, int exmax, int eymin, int eymax)

@@ -69,6 +69,12 @@
     <ClCompile Include="dlgconfig.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="dlgelevexport.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="dlgelevimport.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="tileedit.h">
@@ -86,6 +92,12 @@
     <QtMoc Include="dlgconfig.h">
       <Filter>Header Files</Filter>
     </QtMoc>
+    <QtMoc Include="dlgelevexport.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
+    <QtMoc Include="dlgelevimport.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
   </ItemGroup>
   <ItemGroup>
     <QtUic Include="tileedit.ui">
@@ -95,6 +107,12 @@
       <Filter>Form Files</Filter>
     </QtUic>
     <QtUic Include="dlgConfig.ui">
+      <Filter>Form Files</Filter>
+    </QtUic>
+    <QtUic Include="dlgElevExport.ui">
+      <Filter>Form Files</Filter>
+    </QtUic>
+    <QtUic Include="dlgElevImport.ui">
       <Filter>Form Files</Filter>
     </QtUic>
   </ItemGroup>

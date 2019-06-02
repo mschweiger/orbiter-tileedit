@@ -2,6 +2,9 @@
 #include <direct.h>
 #include <vector>
 #include <algorithm>
+#define _USE_MATH_DEFINES
+#include <math.h>
+#include <png.h>
 #include "elv_io.h"
 
 #pragma pack(push,1)
@@ -388,6 +391,93 @@ void elvmodwrite(const char *fname, const ElevData &edata, const ElevData &ebase
 		}
 	}
 	fclose(f);
+}
+
+// ==================================================================================
+
+bool elvread_png(const char *fname, const ImageMetaInfo &meta, ElevData &edata)
+{
+	bool ok = false;
+	png_image image;
+	memset(&image, 0, sizeof(png_image));
+	image.version = PNG_IMAGE_VERSION;
+	image.opaque = NULL;
+	if (png_image_begin_read_from_file(&image, fname)) {
+		image.format = PNG_FORMAT_LINEAR_Y;
+
+		int nblock_x = meta.ilng1 - meta.ilng0;
+		int nblock_y = meta.ilat1 - meta.ilat0;
+		int w = nblock_x*TILE_FILERES + 3;
+		int h = nblock_y*TILE_FILERES + 3;
+		int n = w*h;
+		unsigned short *buf = new unsigned short[n];
+		png_image_finish_read(&image, NULL, buf, w, NULL);
+
+		double scale = meta.scale;
+		double offset = meta.offset;
+
+		int idx = 0;
+		for (int ih = h - 1; ih >= 0; ih--) {
+			for (int iw = 0; iw < w; iw++) {
+				unsigned short v16 = buf[idx++];
+				double v = v16 * scale + offset;
+				edata.data[iw + ih*w] = v;
+			}
+		}
+		delete[]buf;
+		ok = true;
+	}
+	png_image_free(&image);
+	return ok;
+}
+
+// ==================================================================================
+
+void elvwrite_png(const char *fname, const ElevData &edata, double *data_scale, double *data_offset)
+{
+	int w = edata.width;
+	int h = edata.height;
+	int n = w*h;
+	unsigned short *buf = new unsigned short[n];
+
+	double scale = edata.dres;
+	int imin = (int)(edata.dmin / scale);
+	int imax = (int)(edata.dmax / scale);
+	int shift;
+	while((imax-imin) > (1 << 16)) { // need to rescale to fit range
+		scale *= 2.0;
+		imin = (int)(edata.dmin / scale);
+		imax = (int)(edata.dmax / scale);
+	}
+	if (imin >= 0 && imax < USHRT_MAX)
+		shift = 0;
+	else
+		shift = imin;
+	double offset = shift * scale;
+
+	if (data_scale) *data_scale = scale;
+	if (data_offset) *data_offset = offset;
+
+	int idx = 0;
+	for (int ih = h - 1; ih >= 0; ih--) {
+		for (int iw = 0; iw < w; iw++) {
+			double v = edata.data[iw + ih*w];
+			unsigned short v16 = (unsigned short)((int)(v / scale) - shift);
+			buf[idx++] = v16;
+		}
+	}
+
+	png_image image;
+	image.opaque = NULL;
+	image.version = PNG_IMAGE_VERSION;
+	image.format = PNG_FORMAT_LINEAR_Y;
+	image.width = w;
+	image.height = h;
+	image.flags = 0;
+	image.colormap_entries = 0;
+	png_image_write_to_file(&image, fname, 0, buf, 0, 0);
+	png_image_free(&image);
+	delete[]buf;
 }
 
 // ==================================================================================

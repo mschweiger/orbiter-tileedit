@@ -31,6 +31,8 @@ class tileedit : public QMainWindow
 
 	friend class DlgConfig;
 	friend class DlgElevConfig;
+	friend class DlgElevExport;
+	friend class DlgElevImport;
 	friend class TileCanvas;
 
 public:
@@ -63,6 +65,8 @@ private slots:
 	void on_actionExit_triggered();
 	void on_actionConfig_triggered();
 	void onElevConfig();
+	void onElevExportImage();
+	void onElevImportImage();
 	void onElevConfigDestroyed(int r);
     void onResolutionChanged(int val);
     void onLatidxChanged(int val);
@@ -86,6 +90,8 @@ private:
 	QAction *actionConfig;
 	QAction *actionExit;
 	QAction *actionElevConfig;
+	QAction *actionExportImage;
+	QAction *actionImportImage;
 
     QLabel *status;
 

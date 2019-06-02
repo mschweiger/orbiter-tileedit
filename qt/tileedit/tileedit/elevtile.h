@@ -19,6 +19,7 @@ struct ElevData {
 	double nodeValue(int ix, int iy) const;
 	void setNodeValue(int ix, int iy, double v);
 	ElevData SubTile(const std::pair<DWORD, DWORD> &xrange, const std::pair<DWORD, DWORD> &yrange);
+	void RescanLimits();
 };
 
 struct ElevDisplayParam {

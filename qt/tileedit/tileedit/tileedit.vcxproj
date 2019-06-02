@@ -55,14 +55,17 @@
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="..\zlib.props" />
+    <Import Project="..\libpng.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="..\zlib.props" />
+    <Import Project="..\libpng.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release_static|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="..\zlib.props" />
+    <Import Project="..\libpng.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -166,6 +169,8 @@
     <ClCompile Include="ddsread.cpp" />
     <ClCompile Include="dlgconfig.cpp" />
     <ClCompile Include="dlgelevconfig.cpp" />
+    <ClCompile Include="dlgelevexport.cpp" />
+    <ClCompile Include="dlgelevimport.cpp" />
     <ClCompile Include="elevtile.cpp" />
     <ClCompile Include="elv_io.cpp" />
     <ClCompile Include="main.cpp" />
@@ -181,6 +186,8 @@
   <ItemGroup>
     <QtUic Include="dlgConfig.ui" />
     <QtUic Include="dlgElevConfig.ui" />
+    <QtUic Include="dlgElevExport.ui" />
+    <QtUic Include="dlgElevImport.ui" />
     <QtUic Include="tileedit.ui" />
   </ItemGroup>
   <ItemGroup>
@@ -192,6 +199,16 @@
       <IncludePath Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.\GeneratedFiles;.;$(QTDIR)\include;.\GeneratedFiles\$(ConfigurationName);$(QTDIR)\include\QtCore;$(QTDIR)\include\QtGui;$(QTDIR)\include\QtANGLE;$(QTDIR)\include\QtWidgets;$(ZlibIncludeDir)</IncludePath>
       <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.\GeneratedFiles;.;$(QTDIR)\include;.\GeneratedFiles\$(ConfigurationName);$(QTDIR)\include\QtCore;$(QTDIR)\include\QtGui;$(QTDIR)\include\QtANGLE;$(QTDIR)\include\QtWidgets;$(ZlibIncludeDir)</IncludePath>
       <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release_static|x64'">.\GeneratedFiles;.;$(QTDIR)\include;.\GeneratedFiles\$(ConfigurationName);$(QTDIR)\include\QtCore;$(QTDIR)\include\QtGui;$(QTDIR)\include\QtANGLE;$(QTDIR)\include\QtWidgets;$(ZlibIncludeDir)</IncludePath>
+    </QtMoc>
+    <QtMoc Include="dlgelevexport.h">
+      <IncludePath Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.\GeneratedFiles;.;$(QTDIR)\include;.\GeneratedFiles\$(ConfigurationName);$(QTDIR)\include\QtCore;$(QTDIR)\include\QtGui;$(QTDIR)\include\QtANGLE;$(QTDIR)\include\QtWidgets;$(LibpngIncludeDir);$(ZlibIncludeDir)</IncludePath>
+      <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.\GeneratedFiles;.;$(QTDIR)\include;.\GeneratedFiles\$(ConfigurationName);$(QTDIR)\include\QtCore;$(QTDIR)\include\QtGui;$(QTDIR)\include\QtANGLE;$(QTDIR)\include\QtWidgets;$(LibpngIncludeDir);$(ZlibIncludeDir)</IncludePath>
+      <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release_static|x64'">.\GeneratedFiles;.;$(QTDIR)\include;.\GeneratedFiles\$(ConfigurationName);$(QTDIR)\include\QtCore;$(QTDIR)\include\QtGui;$(QTDIR)\include\QtANGLE;$(QTDIR)\include\QtWidgets;$(LibpngIncludeDir);$(ZlibIncludeDir)</IncludePath>
+    </QtMoc>
+    <QtMoc Include="dlgelevimport.h">
+      <IncludePath Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.\GeneratedFiles;.;$(QTDIR)\include;.\GeneratedFiles\$(ConfigurationName);$(QTDIR)\include\QtCore;$(QTDIR)\include\QtGui;$(QTDIR)\include\QtANGLE;$(QTDIR)\include\QtWidgets;$(LibpngIncludeDir);$(ZlibIncludeDir)</IncludePath>
+      <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.\GeneratedFiles;.;$(QTDIR)\include;.\GeneratedFiles\$(ConfigurationName);$(QTDIR)\include\QtCore;$(QTDIR)\include\QtGui;$(QTDIR)\include\QtANGLE;$(QTDIR)\include\QtWidgets;$(LibpngIncludeDir);$(ZlibIncludeDir)</IncludePath>
+      <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release_static|x64'">.\GeneratedFiles;.;$(QTDIR)\include;.\GeneratedFiles\$(ConfigurationName);$(QTDIR)\include\QtCore;$(QTDIR)\include\QtGui;$(QTDIR)\include\QtANGLE;$(QTDIR)\include\QtWidgets;$(LibpngIncludeDir);$(ZlibIncludeDir)</IncludePath>
     </QtMoc>
     <ClInclude Include="ZTreeMgr.h" />
     <QtMoc Include="colorbar.h">

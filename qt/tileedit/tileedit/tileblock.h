@@ -20,6 +20,7 @@ public:
 	int nLng() const { return (m_lvl < 4 ? 1 : 1 << (m_lvl - 3)); }
 	int nLatBlock() const { return m_nblocklat; }
 	int nLngBlock() const { return m_nblocklng; }
+	int nBlock() const { return m_nblocklat * m_nblocklng; }
 	DWORD pixelColour(int px, int py) const;
 
 	const Image &getImage() const { return m_img; }
@@ -27,10 +28,15 @@ public:
 	virtual bool setTile(int ilat, int ilng, const Tile *tile) { return false; }
 
 	/**
-	 * \brief Returns a pointer to one of the constituent
+	 * \brief Returns a pointer to one of the constituent tiles, using lat/lng index pair
 	 */
 	const Tile *getTile(int ilat, int ilng) const;
 	Tile *_getTile(int ilat, int ilng);
+
+	/**
+	 * \brief Returns a pointer to one of the constituent tiles, unsing linear index
+	 */
+	const Tile *getTile(int idx) const;
 
 	/**
 	 * \brief Copies one of the constituent tiles and returns a pointer to the copy.
@@ -43,6 +49,11 @@ public:
 	 * \brief Copy one of the constituent tiles into an existing tile.
 	 */
 	virtual bool copyTile(int ilat, int ilng, Tile *tile) const = 0;
+
+	/**
+	 * \brief Returns true if at least one of the tiles has been synthesized from an ancestor
+	 */
+	bool hasAncestorData() const;
 
 protected:
 
@@ -108,11 +119,13 @@ public:
 	virtual bool copyTile(int ilat, int ilng, Tile *tile) const;
 	void Save();
 	void SaveMod();
+	void ExportPNG(const std::string &fname);
 	void setWaterMask(const MaskTileBlock *mtileblock);
 	double nodeElevation(int ndx, int ndy) const;
 	void displayParamChanged();
 	void dataChanged(int exmin = -1, int exmax = -1, int eymin = -1, int eymax = -1);
 	bool isModified() const { return m_isModified; }
+	void RescanLimits();
 
 	/**
 	 * \brief Map edits to the tileblock back to the individual tiles
