@@ -48,4 +48,23 @@ private:
 	ElevTileBlock *m_CurrentBlock;
 };
 
+class DlgElevExportColorbar : public QWidget
+{
+	Q_OBJECT
+
+public:
+	explicit DlgElevExportColorbar(QWidget *parent = 0);
+	void setColorRange(double vmin, double vmax);
+	void setDataRange(double dmin, double dmax);
+	void setPaintRange(bool paint);
+
+protected:
+	void paintEvent(QPaintEvent *event);
+
+private:
+	bool m_paintDataRange;
+	double m_vmin, m_vmax;
+	double m_dmin, m_dmax;
+};
+
 #endif // !DLGELEVEXPORT_H

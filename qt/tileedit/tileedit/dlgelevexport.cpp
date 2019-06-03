@@ -2,9 +2,11 @@
 #include "ui_dlgElevExport.h"
 #include "tileedit.h"
 #include "tileblock.h"
+#include "cmap.h"
 
 #include <QFileDialog>
 #include <QMessageBox>
+#include <QPainter>
 
 DlgElevExport::DlgElevExport(tileedit *parent)
 	: QDialog(parent)
@@ -117,6 +119,7 @@ void DlgElevExport::onScaleAuto()
 	ui->dspinImageMin->setValue(m_elevMin);
 	ui->dspinImageMax->setValue(m_elevMax);
 	ui->dspinImageResolution->setValue((m_elevMax - m_elevMin) / (double)USHRT_MAX);
+	ui->widgetColormap->setColorRange(ui->dspinImageMin->value(), ui->dspinImageMax->value());
 }
 
 void DlgElevExport::onScaleManual()
@@ -126,17 +129,26 @@ void DlgElevExport::onScaleManual()
 
 void DlgElevExport::onImageValMin(double v)
 {
+	ui->dspinImageResolution->blockSignals(true);
 	ui->dspinImageResolution->setValue((ui->dspinImageMax->value() - v) / (double)USHRT_MAX);
+	ui->dspinImageResolution->blockSignals(false);
+	ui->widgetColormap->setColorRange(ui->dspinImageMin->value(), ui->dspinImageMax->value());
 }
 
 void DlgElevExport::onImageValMax(double v)
 {
+	ui->dspinImageResolution->blockSignals(true);
 	ui->dspinImageResolution->setValue((v - ui->dspinImageMin->value()) / (double)USHRT_MAX);
+	ui->dspinImageResolution->blockSignals(false);
+	ui->widgetColormap->setColorRange(ui->dspinImageMin->value(), ui->dspinImageMax->value());
 }
 
 void DlgElevExport::onImageResolution(double v)
 {
+	ui->dspinImageMax->blockSignals(true);
 	ui->dspinImageMax->setValue(v * (double)USHRT_MAX + ui->dspinImageMin->value());
+	ui->dspinImageMax->blockSignals(false);
+	ui->widgetColormap->setColorRange(ui->dspinImageMin->value(), ui->dspinImageMax->value());
 }
 
 void DlgElevExport::accept()
@@ -204,5 +216,67 @@ void DlgElevExport::RescanLimits()
 		ui->dspinImageMin->setValue(m_elevMin);
 		ui->dspinImageMax->setValue(m_elevMax);
 		ui->dspinImageResolution->setValue((m_elevMax - m_elevMin) / (double)USHRT_MAX);
+	}
+
+	ui->widgetColormap->setDataRange(m_elevMin, m_elevMax);
+	ui->widgetColormap->setColorRange(ui->dspinImageMin->value(), ui->dspinImageMax->value());
+	ui->widgetColormap->setPaintRange(true);
+}
+
+// =====================================================================================
+
+DlgElevExportColorbar::DlgElevExportColorbar(QWidget *parent)
+	: QWidget(parent)
+{
+	m_paintDataRange = false;
+	m_vmin = m_vmax = m_dmin = m_dmax = 0.0;
+}
+
+void DlgElevExportColorbar::setColorRange(double vmin, double vmax)
+{
+	m_vmin = vmin;
+	m_vmax = vmax;
+	if (m_paintDataRange)
+		this->update();
+}
+
+void DlgElevExportColorbar::setDataRange(double dmin, double dmax)
+{
+	m_dmin = dmin;
+	m_dmax = dmax;
+	if (m_paintDataRange)
+		this->update();
+}
+
+void DlgElevExportColorbar::setPaintRange(bool paint)
+{
+	if (paint != m_paintDataRange) {
+		m_paintDataRange = paint;
+		this->update();
+	}
+}
+
+void DlgElevExportColorbar::paintEvent(QPaintEvent *event)
+{
+	QPainter painter(this);
+
+	const Cmap &cm = cmap(CMAP_GREY);
+	DWORD data[256];
+	memcpy(data, cm, 256 * sizeof(DWORD));
+	for (int i = 0; i < 256; i++)
+		data[i] |= 0xff000000;
+	QImage qimg((BYTE*)data, 256, 1, QImage::Format_ARGB32);
+	painter.drawImage(rect(), qimg);
+
+	int w = rect().width();
+	int h = rect().height();
+	painter.setPen(QColor(0, 0, 0));
+	painter.drawRect(0, 0, w - 1, h - 1);
+
+	if (m_paintDataRange) {
+		int xmin = max(0, min(w-1, (int)(w * (m_dmin - m_vmin) / (m_vmax - m_vmin))));
+		int xmax = max(0, min(w-1, (int)(w * (m_dmax - m_vmin) / (m_vmax - m_vmin))));
+		painter.setPen(QColor(255, 0, 0));
+		painter.drawRect(xmin, 0, xmax - xmin, h-1);
 	}
 }
