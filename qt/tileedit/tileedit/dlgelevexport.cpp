@@ -21,6 +21,11 @@ DlgElevExport::DlgElevExport(tileedit *parent)
 	connect(ui->spinIlat1, SIGNAL(valueChanged(int)), this, SLOT(onIlat1(int)));
 	connect(ui->spinIlng0, SIGNAL(valueChanged(int)), this, SLOT(onIlng0(int)));
 	connect(ui->spinIlng1, SIGNAL(valueChanged(int)), this, SLOT(onIlng1(int)));
+	connect(ui->radioScaleAuto, SIGNAL(clicked()), this, SLOT(onScaleAuto()));
+	connect(ui->radioScaleManual, SIGNAL(clicked()), this, SLOT(onScaleManual()));
+	connect(ui->dspinImageMin, SIGNAL(valueChanged(double)), this, SLOT(onImageValMin(double)));
+	connect(ui->dspinImageMax, SIGNAL(valueChanged(double)), this, SLOT(onImageValMax(double)));
+	connect(ui->dspinImageResolution, SIGNAL(valueChanged(double)), this, SLOT(onImageResolution(double)));
 
 	m_CurrentBlock = m_tileedit->m_eTileBlock;
 	if (m_CurrentBlock) {
@@ -44,6 +49,8 @@ DlgElevExport::DlgElevExport(tileedit *parent)
 	ui->spinIlng0->setMaximum(nLng(m_lvl) - 1);
 	ui->spinIlng1->setMaximum(nLng(m_lvl) - 1);
 
+	RescanLimits();
+
 	char path[1024], drive[16], dir[1024], name[1024], ext[1024];
 	GetModuleFileNameA(NULL, path, 1024);
 	_splitpath(path, drive, dir, name, ext);
@@ -61,11 +68,13 @@ void DlgElevExport::onOpenFileDialog()
 void DlgElevExport::onSelectCurrentTiles()
 {
 	ui->widgetTileRange->setEnabled(false);
+	RescanLimits();
 }
 
 void DlgElevExport::onSelectCustomTiles()
 {
 	ui->widgetTileRange->setEnabled(true);
+	RescanLimits();
 }
 
 void DlgElevExport::onResolution(int value)
@@ -80,37 +89,73 @@ void DlgElevExport::onResolution(int value)
 void DlgElevExport::onIlat0(int value)
 {
 	m_ilat0 = value;
+	RescanLimits();
 }
 
 void DlgElevExport::onIlat1(int value)
 {
 	m_ilat1 = value + 1;
+	RescanLimits();
 }
 
 void DlgElevExport::onIlng0(int value)
 {
 	m_ilng0 = value;
+	RescanLimits();
 }
 
 void DlgElevExport::onIlng1(int value)
 {
 	m_ilng1 = value + 1;
+	RescanLimits();
+}
+
+void DlgElevExport::onScaleAuto()
+{
+	ui->widgetScale->setEnabled(false);
+
+	ui->dspinImageMin->setValue(m_elevMin);
+	ui->dspinImageMax->setValue(m_elevMax);
+	ui->dspinImageResolution->setValue((m_elevMax - m_elevMin) / (double)USHRT_MAX);
+}
+
+void DlgElevExport::onScaleManual()
+{
+	ui->widgetScale->setEnabled(true);
+}
+
+void DlgElevExport::onImageValMin(double v)
+{
+	ui->dspinImageResolution->setValue((ui->dspinImageMax->value() - v) / (double)USHRT_MAX);
+}
+
+void DlgElevExport::onImageValMax(double v)
+{
+	ui->dspinImageResolution->setValue((v - ui->dspinImageMin->value()) / (double)USHRT_MAX);
+}
+
+void DlgElevExport::onImageResolution(double v)
+{
+	ui->dspinImageMax->setValue(v * (double)USHRT_MAX + ui->dspinImageMin->value());
 }
 
 void DlgElevExport::accept()
 {
 	bool isWritten = false;
 
+	double vmin = ui->dspinImageMin->value();
+	double vmax = ui->dspinImageMax->value();
+
 	if (ui->radioCurrentTiles->isChecked()) {
 		if (!m_CurrentBlock->hasAncestorData() || saveWithAncestorData()) {
-			m_CurrentBlock->ExportPNG(ui->editPath->text().toStdString());
+			m_CurrentBlock->ExportPNG(ui->editPath->text().toStdString(), vmin, vmax);
 			isWritten = true;
 		}
 	}
 	else {
 		ElevTileBlock *eblock = ElevTileBlock::Load(m_lvl, m_ilat0, m_ilat1, m_ilng0, m_ilng1);
 		if (!eblock->hasAncestorData() || saveWithAncestorData()) {
-			eblock->ExportPNG(ui->editPath->text().toStdString());
+			eblock->ExportPNG(ui->editPath->text().toStdString(), vmin, vmax);
 			isWritten = true;
 		}
 		delete eblock;
@@ -123,4 +168,41 @@ bool DlgElevExport::saveWithAncestorData() const
 {
 	QMessageBox mbox(QMessageBox::Warning, tr("tileedit: Warning"), tr("The exported tilegrid contains at least one non-existent tile which has been synthesized from an ancestor sub-region. Export anyway?"), QMessageBox::Yes | QMessageBox::No);
 	return (mbox.exec() == QMessageBox::Yes);
+}
+
+void DlgElevExport::RescanLimits()
+{
+	m_elevMin = 0.0;
+	m_elevMax = 0.0;
+
+	if (ui->radioCurrentTiles->isChecked()) {
+		if (m_CurrentBlock) {
+			m_elevMin = m_CurrentBlock->getData().dmin;
+			m_elevMax = m_CurrentBlock->getData().dmax;
+		}
+	}
+	else {
+		bool isFirst = true;
+		for (int ilat = m_ilat0; ilat < m_ilat1; ilat++)
+			for (int ilng = m_ilng0; ilng < m_ilng1; ilng++) {
+				ElevTile *tile = ElevTile::Load(m_lvl, ilat, ilng);
+				if (isFirst || tile->getData().dmin < m_elevMin)
+					m_elevMin = tile->getData().dmin;
+				if (isFirst || tile->getData().dmax > m_elevMax)
+					m_elevMax = tile->getData().dmax;
+				isFirst = false;
+			}
+	}
+
+	char cbuf[1024];
+	sprintf(cbuf, "%+0.2lf m", m_elevMin);
+	ui->labelDataMin->setText(cbuf);
+	sprintf(cbuf, "%+0.2lf m", m_elevMax);
+	ui->labelDataMax->setText(cbuf);
+
+	if (ui->radioScaleAuto->isChecked()) {
+		ui->dspinImageMin->setValue(m_elevMin);
+		ui->dspinImageMax->setValue(m_elevMax);
+		ui->dspinImageResolution->setValue((m_elevMax - m_elevMin) / (double)USHRT_MAX);
+	}
 }

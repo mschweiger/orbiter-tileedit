@@ -119,7 +119,7 @@ public:
 	virtual bool copyTile(int ilat, int ilng, Tile *tile) const;
 	void Save();
 	void SaveMod();
-	void ExportPNG(const std::string &fname);
+	void ExportPNG(const std::string &fname, double vmin, double vmax);
 	void setWaterMask(const MaskTileBlock *mtileblock);
 	double nodeElevation(int ndx, int ndy) const;
 	void displayParamChanged();

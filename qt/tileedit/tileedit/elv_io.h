@@ -25,7 +25,7 @@ void elvwrite(const char *fname, const ElevData &edata, double latmin, double la
 void elvmodwrite(const char *fname, const ElevData &edata, const ElevData &ebasedata, double latmin, double latmax, double lngmin, double lngmax);
 
 bool elvread_png(const char *fname, const ImageMetaInfo &meta, ElevData &edata);
-void elvwrite_png(const char *fname, const ElevData &edata, double *data_scale, double *data_offset);
+void elvwrite_png(const char *fname, const ElevData &edata, double vmin, double vmax);
 
 void ensureLayerDir(const char *rootDir, const char *layer, int lvl, int ilat);
 

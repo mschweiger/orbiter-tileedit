@@ -137,6 +137,7 @@ bool ElevTile::Load(bool allowAncestorSubset)
 		LoadSubset();
 	}
 
+	RescanLimits();
 	return m_edata.data.size() > 0;
 }
 
