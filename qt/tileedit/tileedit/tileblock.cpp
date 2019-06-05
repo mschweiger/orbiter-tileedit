@@ -426,7 +426,7 @@ void ElevTileBlock::SaveMod()
 	}
 }
 
-void ElevTileBlock::ExportPNG(const std::string &fname)
+void ElevTileBlock::ExportPNG(const std::string &fname, double vmin, double vmax)
 {
 	const double DEG = 180.0 / M_PI;
 
@@ -436,7 +436,7 @@ void ElevTileBlock::ExportPNG(const std::string &fname)
 	double lngmin = (double)m_ilng0 / (double)nLng() * 2.0*M_PI - M_PI;
 	double lngmax = (double)m_ilng1 / (double)nLng() * 2.0*M_PI - M_PI;
 	RescanLimits();
-	elvwrite_png(fname.c_str(), m_edata, &scale, &offset);
+	elvwrite_png(fname.c_str(), m_edata, vmin, vmax);
 
 	// write out metadata into a separate file
 	char fname_meta[1024];
@@ -445,7 +445,7 @@ void ElevTileBlock::ExportPNG(const std::string &fname)
 	FILE *f = fopen(fname_meta, "wt");
 	if (f) {
 		fprintf(f, "vmin=%lf vmax=%lf scale=%lf offset=%lf type=%d padding=1x1 colormap=0 smin=0 emin=0 smean=0 emean=0 smax=0 emax=0 latmin=%+0.10lf latmax=%+0.10lf lngmin=%+0.10lf lngmax=%+0.10lf\n",
-			m_edata.dmin, m_edata.dmax, scale, offset, -16, latmin*DEG, latmax*DEG, lngmin*DEG, lngmax*DEG);
+			vmin/m_edata.dres, vmax/m_edata.dres, m_edata.dres, 0.0, -16, latmin*DEG, latmax*DEG, lngmin*DEG, lngmax*DEG);
 		fprintf(f, "lvl=%d ilat0=%d ilat1=%d ilng0=%d ilng1=%d\n",
 			m_lvl, m_ilat0, m_ilat1, m_ilng0, m_ilng1);
 

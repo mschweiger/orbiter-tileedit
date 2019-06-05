@@ -415,12 +415,16 @@ bool elvread_png(const char *fname, const ImageMetaInfo &meta, ElevData &edata)
 
 		double scale = meta.scale;
 		double offset = meta.offset;
+		double vmin = meta.dmin;
+		double vmax = meta.dmax;
+		double s = (vmax - vmin) / (double)USHRT_MAX;
+		edata.dres = scale;
 
 		int idx = 0;
 		for (int ih = h - 1; ih >= 0; ih--) {
 			for (int iw = 0; iw < w; iw++) {
 				unsigned short v16 = buf[idx++];
-				double v = v16 * scale + offset;
+				double v = (double)v16 * s + vmin;
 				edata.data[iw + ih*w] = v;
 			}
 		}
@@ -433,37 +437,23 @@ bool elvread_png(const char *fname, const ImageMetaInfo &meta, ElevData &edata)
 
 // ==================================================================================
 
-void elvwrite_png(const char *fname, const ElevData &edata, double *data_scale, double *data_offset)
+void elvwrite_png(const char *fname, const ElevData &edata, double vmin, double vmax)
 {
 	int w = edata.width;
 	int h = edata.height;
 	int n = w*h;
 	unsigned short *buf = new unsigned short[n];
 
-	double scale = edata.dres;
-	int imin = (int)(edata.dmin / scale);
-	int imax = (int)(edata.dmax / scale);
-	int shift;
-	while((imax-imin) > (1 << 16)) { // need to rescale to fit range
-		scale *= 2.0;
-		imin = (int)(edata.dmin / scale);
-		imax = (int)(edata.dmax / scale);
-	}
-	if (imin >= 0 && imax < USHRT_MAX)
-		shift = 0;
-	else
-		shift = imin;
-	double offset = shift * scale;
-
-	if (data_scale) *data_scale = scale;
-	if (data_offset) *data_offset = offset;
-
+	const double v16max = (double)USHRT_MAX;
+	double scale = v16max / (vmax - vmin);
 	int idx = 0;
+
 	for (int ih = h - 1; ih >= 0; ih--) {
 		for (int iw = 0; iw < w; iw++) {
 			double v = edata.data[iw + ih*w];
-			unsigned short v16 = (unsigned short)((int)(v / scale) - shift);
-			buf[idx++] = v16;
+			double vmap = (v - vmin)*scale;
+			vmap = max(0.0, min(v16max, vmap));
+			buf[idx++] = (unsigned short)vmap;
 		}
 	}
 

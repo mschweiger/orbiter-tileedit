@@ -52,9 +52,11 @@ void ElevData::setNodeValue(int ix, int iy, double v)
 
 void ElevData::RescanLimits()
 {
-	auto minmax = std::minmax_element(data.begin(), data.end());
-	dmin = *minmax.first;
-	dmax = *minmax.second;
+	if (data.size()) {
+		auto minmax = std::minmax_element(data.begin(), data.end());
+		dmin = *minmax.first;
+		dmax = *minmax.second;
+	}
 }
 
 ElevData ElevData::SubTile(const std::pair<DWORD, DWORD> &xrange, const std::pair<DWORD, DWORD> &yrange)
@@ -137,6 +139,7 @@ bool ElevTile::Load(bool allowAncestorSubset)
 		LoadSubset();
 	}
 
+	RescanLimits();
 	return m_edata.data.size() > 0;
 }
 
