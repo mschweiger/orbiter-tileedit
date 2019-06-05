@@ -20,6 +20,7 @@ public:
 private:
 	bool saveWithAncestorData() const;
 	void RescanLimits();
+	void CheckTruncation();
 
 public slots:
 	void onOpenFileDialog();

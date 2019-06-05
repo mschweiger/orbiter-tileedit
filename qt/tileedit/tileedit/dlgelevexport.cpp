@@ -51,6 +51,9 @@ DlgElevExport::DlgElevExport(tileedit *parent)
 	ui->spinIlng0->setMaximum(nLng(m_lvl) - 1);
 	ui->spinIlng1->setMaximum(nLng(m_lvl) - 1);
 
+	ui->labelTruncationWarning->setVisible(false);
+	ui->labelTruncationWarning->setStyleSheet("Color:red;");
+
 	RescanLimits();
 
 	char path[1024], drive[16], dir[1024], name[1024], ext[1024];
@@ -120,11 +123,13 @@ void DlgElevExport::onScaleAuto()
 	ui->dspinImageMax->setValue(m_elevMax);
 	ui->dspinImageResolution->setValue((m_elevMax - m_elevMin) / (double)USHRT_MAX);
 	ui->widgetColormap->setColorRange(ui->dspinImageMin->value(), ui->dspinImageMax->value());
+	ui->labelTruncationWarning->setVisible(false);
 }
 
 void DlgElevExport::onScaleManual()
 {
 	ui->widgetScale->setEnabled(true);
+	CheckTruncation();
 }
 
 void DlgElevExport::onImageValMin(double v)
@@ -133,6 +138,7 @@ void DlgElevExport::onImageValMin(double v)
 	ui->dspinImageResolution->setValue((ui->dspinImageMax->value() - v) / (double)USHRT_MAX);
 	ui->dspinImageResolution->blockSignals(false);
 	ui->widgetColormap->setColorRange(ui->dspinImageMin->value(), ui->dspinImageMax->value());
+	CheckTruncation();
 }
 
 void DlgElevExport::onImageValMax(double v)
@@ -141,6 +147,7 @@ void DlgElevExport::onImageValMax(double v)
 	ui->dspinImageResolution->setValue((v - ui->dspinImageMin->value()) / (double)USHRT_MAX);
 	ui->dspinImageResolution->blockSignals(false);
 	ui->widgetColormap->setColorRange(ui->dspinImageMin->value(), ui->dspinImageMax->value());
+	CheckTruncation();
 }
 
 void DlgElevExport::onImageResolution(double v)
@@ -149,6 +156,7 @@ void DlgElevExport::onImageResolution(double v)
 	ui->dspinImageMax->setValue(v * (double)USHRT_MAX + ui->dspinImageMin->value());
 	ui->dspinImageMax->blockSignals(false);
 	ui->widgetColormap->setColorRange(ui->dspinImageMin->value(), ui->dspinImageMax->value());
+	CheckTruncation();
 }
 
 void DlgElevExport::accept()
@@ -223,6 +231,12 @@ void DlgElevExport::RescanLimits()
 	ui->widgetColormap->setPaintRange(true);
 }
 
+void DlgElevExport::CheckTruncation()
+{
+	bool truncate = (m_elevMin < ui->dspinImageMin->value() || m_elevMax > ui->dspinImageMax->value());
+	ui->labelTruncationWarning->setVisible(truncate);
+}
+
 // =====================================================================================
 
 DlgElevExportColorbar::DlgElevExportColorbar(QWidget *parent)
@@ -266,17 +280,33 @@ void DlgElevExportColorbar::paintEvent(QPaintEvent *event)
 	for (int i = 0; i < 256; i++)
 		data[i] |= 0xff000000;
 	QImage qimg((BYTE*)data, 256, 1, QImage::Format_ARGB32);
-	painter.drawImage(rect(), qimg);
 
-	int w = rect().width();
-	int h = rect().height();
-	painter.setPen(QColor(0, 0, 0));
-	painter.drawRect(0, 0, w - 1, h - 1);
+	int w = rect().width() - 1;
+	int h = rect().height() - 1;
+	QRect r(0, 0, w, h);
 
 	if (m_paintDataRange) {
-		int xmin = max(0, min(w-1, (int)(w * (m_dmin - m_vmin) / (m_vmax - m_vmin))));
-		int xmax = max(0, min(w-1, (int)(w * (m_dmax - m_vmin) / (m_vmax - m_vmin))));
+		if (m_dmin < m_vmin || m_dmax > m_vmax) {
+			painter.setBrush(QBrush(QColor(255, 128, 128)));
+			painter.drawRect(r);
+			painter.setBrush(Qt::NoBrush);
+		}
+		double smin = min(m_dmin, m_vmin);
+		double smax = max(m_dmax, m_vmax);
+		if (m_dmin < m_vmin) {
+			r.setLeft((int)((m_vmin - smin) / (smax - smin) * w));
+		}
+		if (m_dmax > m_vmax)
+			r.setRight((int)((m_vmax - smin) / (smax - smin) * w));
+	}
+	painter.drawImage(r, qimg);
+	painter.setPen(QColor(0, 0, 0));
+	painter.drawRect(r);
+
+	if (m_paintDataRange) {
+		int xmin = max(0, min(w, (int)(w * (m_dmin - m_vmin) / (m_vmax - m_vmin))));
+		int xmax = max(0, min(w, (int)(w * (m_dmax - m_vmin) / (m_vmax - m_vmin))));
 		painter.setPen(QColor(255, 0, 0));
-		painter.drawRect(xmin, 0, xmax - xmin, h-1);
+		painter.drawRect(xmin, 0, xmax - xmin, h);
 	}
 }
