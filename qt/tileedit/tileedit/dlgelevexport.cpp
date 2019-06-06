@@ -56,10 +56,11 @@ DlgElevExport::DlgElevExport(tileedit *parent)
 
 	RescanLimits();
 
-	char path[1024], drive[16], dir[1024], name[1024], ext[1024];
-	GetModuleFileNameA(NULL, path, 1024);
-	_splitpath(path, drive, dir, name, ext);
-	sprintf(path, "%s%selev_%02d_%06d_%06d.png", drive, dir, m_lvl, m_ilat0, m_ilng0);
+	QSettings *settings = m_tileedit->settings();
+	QString path = settings->value("export/path", ".").toString();
+	char fname[1024];
+	sprintf(fname, "/elev_%02d_%06d_%06d.png", m_lvl, m_ilat0, m_ilng0);
+	path.append(fname);
 	ui->editPath->setText(path);
 }
 
@@ -180,8 +181,14 @@ void DlgElevExport::accept()
 		}
 		delete eblock;
 	}
-	if (isWritten)
+	if (isWritten) {
+		QString path = ui->editPath->text();
+		QFileInfo fi(path);
+		QSettings *settings = m_tileedit->settings();
+		settings->setValue("export/path", fi.absolutePath());
+
 		QDialog::accept();
+	}
 }
 
 bool DlgElevExport::saveWithAncestorData() const
