@@ -12,6 +12,7 @@
 #include "QFileDialog"
 #include "QResizeEvent"
 #include "QMessageBox"
+#include "QSettings"
 
 static std::vector<std::pair<int, int> > paintStencil1 = { {0,0} };
 static std::vector<std::pair<int, int> > paintStencil2 = { {0,0}, {1,0}, {0,1}, {1,1} };
@@ -26,7 +27,20 @@ tileedit::tileedit(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::tileedit)
 {
-    m_sTileBlock = 0;
+	QCoreApplication::setOrganizationName("Orbiter");
+	QCoreApplication::setOrganizationDomain("orbit.medphys.ucl.ac.uk");
+	QCoreApplication::setApplicationName("tileedit");
+
+	QSettings settings;
+	m_elevDisplayParam.cmName = (CmapName)settings.value("elevdisp/cmap", CMAP_GREY).toInt();
+	m_elevDisplayParam.useWaterMask = settings.value("elevdisp/wmask", false).toBool();
+	m_elevDisplayParam.autoRange = settings.value("elevdisp/autorange", true).toBool();
+	m_elevDisplayParam.rangeMin = settings.value("elevdisp/rmin", 0.0).toDouble();
+	m_elevDisplayParam.rangeMax = settings.value("elevdisp/rmax", 1000.0).toDouble();
+	m_openMode = settings.value("config/openmode", TILESEARCH_CACHE | TILESEARCH_ARCHIVE).toUInt();
+	m_blocksize = settings.value("config/blocksize", 1).toInt();
+
+	m_sTileBlock = 0;
 	m_mTileBlock = 0;
 	m_lTileBlock = 0;
 	m_eTileBlock = 0;
@@ -36,9 +50,7 @@ tileedit::tileedit(QWidget *parent)
 	m_mgrMask = 0;
 	m_mgrElev = 0;
 	m_mgrElevMod = 0;
-	m_blocksize = 1;
 
-	m_openMode = TILESEARCH_CACHE | TILESEARCH_ARCHIVE;
 	Tile::setOpenMode(m_openMode);
 	ElevTileBlock::setElevDisplayParam(&m_elevDisplayParam);
 
@@ -95,9 +107,13 @@ tileedit::tileedit(QWidget *parent)
 
 	ui->widgetElevEditTools->setVisible(false);
 
+	settings.beginReadArray("canvas");
 	for (int i = 0; i < 3; i++) {
-		m_panel[i].canvas->setTileedit(this);
 		m_panel[i].canvas->setIdx(i);
+		settings.setArrayIndex(i);
+		m_panel[i].canvas->setTileedit(this);
+		int layer = settings.value("layer", i).toInt();
+		m_panel[i].layerType->setCurrentIndex(layer);
 		connect(m_panel[i].canvas, SIGNAL(tileChanged(int, int, int)), this, SLOT(OnTileChangedFromPanel(int, int, int)));
 		connect(m_panel[i].canvas, SIGNAL(tileEntered(TileCanvas*)), this, SLOT(OnTileEntered(TileCanvas*)));
 		connect(m_panel[i].canvas, SIGNAL(tileLeft(TileCanvas*)), this, SLOT(OnTileLeft(TileCanvas*)));
@@ -107,6 +123,7 @@ tileedit::tileedit(QWidget *parent)
 		m_panel[i].colourscale->setVisible(false);
 		m_panel[i].colourscale->findChild<Colorbar*>()->setElevDisplayParam(m_elevDisplayParam);
 	}
+	settings.endArray();
     connect(m_panel[0].layerType, SIGNAL(currentIndexChanged(int)), this, SLOT(onLayerType0(int)));
     connect(m_panel[1].layerType, SIGNAL(currentIndexChanged(int)), this, SLOT(onLayerType1(int)));
     connect(m_panel[2].layerType, SIGNAL(currentIndexChanged(int)), this, SLOT(onLayerType2(int)));
@@ -202,6 +219,13 @@ void tileedit::elevDisplayParamChanged()
 			m_panel[i].rangeMax->setText(cbuf);
 		}
 	}
+
+	QSettings settings;
+	settings.setValue("elevdisp/cmap", (int)m_elevDisplayParam.cmName);
+	settings.setValue("elevdisp/wmask", m_elevDisplayParam.useWaterMask);
+	settings.setValue("elevdisp/autorange", m_elevDisplayParam.autoRange);
+	settings.setValue("elevdisp/rmin", m_elevDisplayParam.rangeMin);
+	settings.setValue("elevdisp/rmax", m_elevDisplayParam.rangeMax);
 }
 
 void tileedit::setLoadMode(DWORD mode)
@@ -209,9 +233,12 @@ void tileedit::setLoadMode(DWORD mode)
 	if (mode != m_openMode) {
 		m_openMode = mode;
 		Tile::setOpenMode(m_openMode);
+		QSettings settings;
+		settings.setValue("config/openmode", (uint)m_openMode);
 
 		// reload current tile
-		setTile(m_lvl, m_ilat, m_ilng);
+		if (Tile::root().size())
+			setTile(m_lvl, m_ilat, m_ilng);
 	}
 }
 
@@ -223,24 +250,34 @@ void tileedit::setBlockSize(int bsize)
 		// reload current tile
 		m_ilat = max(0, min(m_ilat, nLat(m_lvl) - bsize));
 		m_ilng = max(0, min(m_ilng, nLng(m_lvl) - bsize));
-		setTile(m_lvl, m_ilat, m_ilng);
+		if (Tile::root().size())
+			setTile(m_lvl, m_ilat, m_ilng);
+
+		QSettings settings;
+		settings.setValue("config/blocksize", m_blocksize);
 	}
 }
 
 void tileedit::openDir()
 {
-    std::string rootDir = QFileDialog::getExistingDirectory(this, tr("Open celestial body")).toStdString();
+	QSettings settings;
+	QString rootDir;
+	if (settings.contains("rootdir"))
+		rootDir = settings.value("rootdir").toString();
+
+    rootDir = QFileDialog::getExistingDirectory(this, tr("Open celestial body"), rootDir);
 	if (rootDir.size()) {
-		Tile::setRoot(rootDir);
+		settings.setValue("rootdir", rootDir);
+		Tile::setRoot(rootDir.toStdString());
 
 		if (m_openMode & TILESEARCH_ARCHIVE)
-			setupTreeManagers(rootDir);
+			setupTreeManagers(rootDir.toStdString());
 
 		setTile(1, 0, 0);
 		ensureSquareCanvas(rect().width(), rect().height());
 
 		char cbuf[256];
-		sprintf(cbuf, "tileedit [%s]", rootDir.c_str());
+		sprintf(cbuf, "tileedit [%s]", rootDir.toLatin1().data());
 		setWindowTitle(cbuf);
 	}
 }
@@ -447,17 +484,35 @@ void tileedit::onEditButtonClicked(int id)
 
 void tileedit::onLayerType0(int idx)
 {
+	QSettings settings;
+	settings.beginWriteArray("canvas");
+	settings.setArrayIndex(0);
+	settings.setValue("layer", idx);
+	settings.endArray();
+
     refreshPanel(0);
 }
 
 void tileedit::onLayerType1(int idx)
 {
-    refreshPanel(1);
+	QSettings settings;
+	settings.beginWriteArray("canvas");
+	settings.setArrayIndex(1);
+	settings.setValue("layer", idx);
+	settings.endArray();
+
+	refreshPanel(1);
 }
 
 void tileedit::onLayerType2(int idx)
 {
-    refreshPanel(2);
+	QSettings settings;
+	settings.beginWriteArray("canvas");
+	settings.setArrayIndex(2);
+	settings.setValue("layer", idx);
+	settings.endArray();
+
+	refreshPanel(2);
 }
 
 void tileedit::resizeEvent(QResizeEvent *event)
