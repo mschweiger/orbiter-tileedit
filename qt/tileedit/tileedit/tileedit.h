@@ -7,6 +7,7 @@
 #include <QLabel>
 #include <QComboBox>
 #include <QDoubleSpinBox>
+#include <QSettings>
 
 #include "elevtile.h"
 #include "ZTreeMgr.h"
@@ -42,6 +43,7 @@ public:
 	void elevDisplayParamChanged();
 	void setLoadMode(DWORD mode);
 	void setBlockSize(int bsize);
+	QSettings *settings() { return m_settings; }
 
 protected:
     void createActions();
@@ -85,6 +87,7 @@ private slots:
 
 private:
     Ui::tileedit *ui;
+	QSettings *m_settings;
     QMenu *fileMenu;
     QAction *openAct;
 	QAction *actionConfig;

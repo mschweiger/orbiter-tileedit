@@ -12,6 +12,7 @@
 #include "QFileDialog"
 #include "QResizeEvent"
 #include "QMessageBox"
+#include "QSettings"
 
 static std::vector<std::pair<int, int> > paintStencil1 = { {0,0} };
 static std::vector<std::pair<int, int> > paintStencil2 = { {0,0}, {1,0}, {0,1}, {1,1} };
@@ -26,7 +27,21 @@ tileedit::tileedit(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::tileedit)
 {
-    m_sTileBlock = 0;
+	char path[1024], drive[16], dir[1024], name[1024], ext[1024];
+	GetModuleFileNameA(NULL, path, 1024);
+	_splitpath(path, drive, dir, name, ext);
+	sprintf(path, "%s%s%s.ini", drive, dir, name);
+	m_settings = new QSettings(path, QSettings::IniFormat);
+
+	m_elevDisplayParam.cmName = (CmapName)m_settings->value("elevdisp/cmap", CMAP_GREY).toInt();
+	m_elevDisplayParam.useWaterMask = m_settings->value("elevdisp/wmask", false).toBool();
+	m_elevDisplayParam.autoRange = m_settings->value("elevdisp/autorange", true).toBool();
+	m_elevDisplayParam.rangeMin = m_settings->value("elevdisp/rmin", 0.0).toDouble();
+	m_elevDisplayParam.rangeMax = m_settings->value("elevdisp/rmax", 1000.0).toDouble();
+	m_openMode = m_settings->value("config/openmode", TILESEARCH_CACHE | TILESEARCH_ARCHIVE).toUInt();
+	m_blocksize = m_settings->value("config/blocksize", 1).toInt();
+
+	m_sTileBlock = 0;
 	m_mTileBlock = 0;
 	m_lTileBlock = 0;
 	m_eTileBlock = 0;
@@ -36,9 +51,7 @@ tileedit::tileedit(QWidget *parent)
 	m_mgrMask = 0;
 	m_mgrElev = 0;
 	m_mgrElevMod = 0;
-	m_blocksize = 1;
 
-	m_openMode = TILESEARCH_CACHE | TILESEARCH_ARCHIVE;
 	Tile::setOpenMode(m_openMode);
 	ElevTileBlock::setElevDisplayParam(&m_elevDisplayParam);
 
@@ -95,9 +108,13 @@ tileedit::tileedit(QWidget *parent)
 
 	ui->widgetElevEditTools->setVisible(false);
 
+	m_settings->beginReadArray("canvas");
 	for (int i = 0; i < 3; i++) {
-		m_panel[i].canvas->setTileedit(this);
 		m_panel[i].canvas->setIdx(i);
+		m_settings->setArrayIndex(i);
+		m_panel[i].canvas->setTileedit(this);
+		int layer = m_settings->value("layer", i).toInt();
+		m_panel[i].layerType->setCurrentIndex(layer);
 		connect(m_panel[i].canvas, SIGNAL(tileChanged(int, int, int)), this, SLOT(OnTileChangedFromPanel(int, int, int)));
 		connect(m_panel[i].canvas, SIGNAL(tileEntered(TileCanvas*)), this, SLOT(OnTileEntered(TileCanvas*)));
 		connect(m_panel[i].canvas, SIGNAL(tileLeft(TileCanvas*)), this, SLOT(OnTileLeft(TileCanvas*)));
@@ -107,6 +124,7 @@ tileedit::tileedit(QWidget *parent)
 		m_panel[i].colourscale->setVisible(false);
 		m_panel[i].colourscale->findChild<Colorbar*>()->setElevDisplayParam(m_elevDisplayParam);
 	}
+	m_settings->endArray();
     connect(m_panel[0].layerType, SIGNAL(currentIndexChanged(int)), this, SLOT(onLayerType0(int)));
     connect(m_panel[1].layerType, SIGNAL(currentIndexChanged(int)), this, SLOT(onLayerType1(int)));
     connect(m_panel[2].layerType, SIGNAL(currentIndexChanged(int)), this, SLOT(onLayerType2(int)));
@@ -127,6 +145,8 @@ tileedit::~tileedit()
 		delete m_eTileBlock;
 
 	releaseTreeManagers();
+
+	delete m_settings;
 }
 
 void tileedit::createMenus()
@@ -202,6 +222,12 @@ void tileedit::elevDisplayParamChanged()
 			m_panel[i].rangeMax->setText(cbuf);
 		}
 	}
+
+	m_settings->setValue("elevdisp/cmap", (int)m_elevDisplayParam.cmName);
+	m_settings->setValue("elevdisp/wmask", m_elevDisplayParam.useWaterMask);
+	m_settings->setValue("elevdisp/autorange", m_elevDisplayParam.autoRange);
+	m_settings->setValue("elevdisp/rmin", m_elevDisplayParam.rangeMin);
+	m_settings->setValue("elevdisp/rmax", m_elevDisplayParam.rangeMax);
 }
 
 void tileedit::setLoadMode(DWORD mode)
@@ -209,9 +235,11 @@ void tileedit::setLoadMode(DWORD mode)
 	if (mode != m_openMode) {
 		m_openMode = mode;
 		Tile::setOpenMode(m_openMode);
+		m_settings->setValue("config/openmode", (uint)m_openMode);
 
 		// reload current tile
-		setTile(m_lvl, m_ilat, m_ilng);
+		if (Tile::root().size())
+			setTile(m_lvl, m_ilat, m_ilng);
 	}
 }
 
@@ -223,24 +251,32 @@ void tileedit::setBlockSize(int bsize)
 		// reload current tile
 		m_ilat = max(0, min(m_ilat, nLat(m_lvl) - bsize));
 		m_ilng = max(0, min(m_ilng, nLng(m_lvl) - bsize));
-		setTile(m_lvl, m_ilat, m_ilng);
+		if (Tile::root().size())
+			setTile(m_lvl, m_ilat, m_ilng);
+
+		m_settings->setValue("config/blocksize", m_blocksize);
 	}
 }
 
 void tileedit::openDir()
 {
-    std::string rootDir = QFileDialog::getExistingDirectory(this, tr("Open celestial body")).toStdString();
+	QString rootDir;
+	if (m_settings->contains("rootdir"))
+		rootDir = m_settings->value("rootdir").toString();
+
+    rootDir = QFileDialog::getExistingDirectory(this, tr("Open celestial body"), rootDir);
 	if (rootDir.size()) {
-		Tile::setRoot(rootDir);
+		m_settings->setValue("rootdir", rootDir);
+		Tile::setRoot(rootDir.toStdString());
 
 		if (m_openMode & TILESEARCH_ARCHIVE)
-			setupTreeManagers(rootDir);
+			setupTreeManagers(rootDir.toStdString());
 
 		setTile(1, 0, 0);
 		ensureSquareCanvas(rect().width(), rect().height());
 
 		char cbuf[256];
-		sprintf(cbuf, "tileedit [%s]", rootDir.c_str());
+		sprintf(cbuf, "tileedit [%s]", rootDir.toLatin1().data());
 		setWindowTitle(cbuf);
 	}
 }
@@ -331,35 +367,15 @@ void tileedit::refreshPanel(int panelIdx)
     switch(m_panel[panelIdx].layerType->currentIndex()) {
     case 0:
         m_panel[panelIdx].canvas->setTileBlock(m_sTileBlock);
-		//if (m_sTileBlock)
-		//	sprintf(cbuf, "%02d / %06d / %06d", m_stile->subLevel(), m_stile->subiLat(), m_stile->subiLng());
-		//else
-		//	cbuf[0] = '\0';
-		//m_panel[panelIdx].fileId->setText(cbuf);
         break;
 	case 1:
 		m_panel[panelIdx].canvas->setTileBlock(m_mTileBlock);
-		//if (m_mTileBlock)
-		//	sprintf(cbuf, "%02d / %06d / %06d", m_mtile->subLevel(), m_mtile->subiLat(), m_mtile->subiLng());
-		//else
-		//	cbuf[0] = '\0';
-		//m_panel[panelIdx].fileId->setText(cbuf);
 		break;
 	case 2:
 		m_panel[panelIdx].canvas->setTileBlock(m_lTileBlock);
-		//if (m_lTileBlock)
-		//	sprintf(cbuf, "%02d / %06d / %06d", m_ltile->subLevel(), m_ltile->subiLat(), m_ltile->subiLng());
-		//else
-		//	cbuf[0] = '\0';
-		//m_panel[panelIdx].fileId->setText(cbuf);
 		break;
 	case 3:
 		m_panel[panelIdx].canvas->setTileBlock(m_eTileBlock);
-		//if (m_eTileBlock)
-		//	sprintf(cbuf, "%02d / %06d / %06d", m_etile->subLevel(), m_etile->subiLat(), m_etile->subiLng());
-		//else
-		//	cbuf[0] = '\0';
-		//m_panel[panelIdx].fileId->setText(cbuf);
 		elevDisplayParamChanged();
 		break;
 	default:
@@ -447,17 +463,32 @@ void tileedit::onEditButtonClicked(int id)
 
 void tileedit::onLayerType0(int idx)
 {
+	m_settings->beginWriteArray("canvas");
+	m_settings->setArrayIndex(0);
+	m_settings->setValue("layer", idx);
+	m_settings->endArray();
+
     refreshPanel(0);
 }
 
 void tileedit::onLayerType1(int idx)
 {
-    refreshPanel(1);
+	m_settings->beginWriteArray("canvas");
+	m_settings->setArrayIndex(1);
+	m_settings->setValue("layer", idx);
+	m_settings->endArray();
+
+	refreshPanel(1);
 }
 
 void tileedit::onLayerType2(int idx)
 {
-    refreshPanel(2);
+	m_settings->beginWriteArray("canvas");
+	m_settings->setArrayIndex(2);
+	m_settings->setValue("layer", idx);
+	m_settings->endArray();
+
+	refreshPanel(2);
 }
 
 void tileedit::resizeEvent(QResizeEvent *event)

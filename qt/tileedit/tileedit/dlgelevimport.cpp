@@ -28,7 +28,12 @@ DlgElevImport::DlgElevImport(tileedit *parent)
 
 void DlgElevImport::onOpenFileDialog()
 {
-	QString path = QFileDialog::getOpenFileName(this, tr("Import elevation tiles from image file"), ui->editPath->text(), tr("Portable network graphics (*.png)"));
+	QString path = ui->editPath->text();
+	if (!path.size()) {
+		QSettings *settings = m_tileedit->settings();
+		path = settings->value("export/path", ".").toString();
+	}
+	path = QFileDialog::getOpenFileName(this, tr("Import elevation tiles from image file"), path, tr("Portable network graphics (*.png)"));
 	if (path.size()) {
 		ui->editPath->setText(path);
 		if (!m_metaEdited) {

@@ -37,6 +37,7 @@ public:
 	virtual const std::string Layer() const = 0;
 
 	static void setRoot(const std::string &root);
+	static const std::string &root() { return s_root; }
 	static void setOpenMode(int mode);
 
 protected:
