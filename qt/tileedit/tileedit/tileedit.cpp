@@ -39,6 +39,7 @@ tileedit::tileedit(QWidget *parent)
 	m_elevDisplayParam.rangeMin = m_settings->value("elevdisp/rmin", 0.0).toDouble();
 	m_elevDisplayParam.rangeMax = m_settings->value("elevdisp/rmax", 1000.0).toDouble();
 	m_openMode = m_settings->value("config/openmode", TILESEARCH_CACHE | TILESEARCH_ARCHIVE).toUInt();
+	m_queryAncestor = m_settings->value("config/queryancestor", true).toBool();
 	m_blocksize = m_settings->value("config/blocksize", 1).toInt();
 
 	m_sTileBlock = 0;
@@ -53,6 +54,7 @@ tileedit::tileedit(QWidget *parent)
 	m_mgrElevMod = 0;
 
 	Tile::setOpenMode(m_openMode);
+	Tile::setQueryAncestor(m_queryAncestor);
 	ElevTileBlock::setElevDisplayParam(&m_elevDisplayParam);
 
 	m_mouseDown = false;
@@ -236,6 +238,19 @@ void tileedit::setLoadMode(DWORD mode)
 		m_openMode = mode;
 		Tile::setOpenMode(m_openMode);
 		m_settings->setValue("config/openmode", (uint)m_openMode);
+
+		// reload current tile
+		if (Tile::root().size())
+			setTile(m_lvl, m_ilat, m_ilng);
+	}
+}
+
+void tileedit::setAncestorMode(bool query)
+{
+	if (query != m_queryAncestor) {
+		m_queryAncestor = query;
+		Tile::setQueryAncestor(m_queryAncestor);
+		m_settings->setValue("config/queryancestor", m_queryAncestor);
 
 		// reload current tile
 		if (Tile::root().size())

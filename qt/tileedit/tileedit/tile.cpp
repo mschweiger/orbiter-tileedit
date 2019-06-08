@@ -4,6 +4,7 @@
 #include <algorithm>
 
 int Tile::s_openMode = 0x3;
+bool Tile::s_queryAncestor = true;
 std::string Tile::s_root;
 
 Tile::Tile(int lvl, int ilat, int ilng)
@@ -58,6 +59,11 @@ void Tile::setOpenMode(int mode)
 	s_openMode = mode;
 }
 
+void Tile::setQueryAncestor(bool query)
+{
+	s_queryAncestor = query;
+}
+
 
 DXT1Tile::DXT1Tile(int lvl, int ilat, int ilng)
 	: Tile(lvl, ilat, ilng)
@@ -68,7 +74,7 @@ void DXT1Tile::LoadDXT1(const ZTreeMgr *mgr)
 {
 	LoadImage(img, m_lvl, m_ilat, m_ilng, mgr);
 
-	if (img.data.size() == 0) {
+	if (img.data.size() == 0 && s_queryAncestor) {
 		LoadSubset(this, mgr);
 	}
 }
@@ -132,7 +138,11 @@ SurfTile *SurfTile::Load(int lvl, int ilat, int ilng)
 {
     SurfTile *stile = new SurfTile(lvl, ilat, ilng);
 	stile->LoadDXT1(s_treeMgr);
-    return stile;
+	if (!stile->img.data.size()) {
+		delete stile;
+		return 0;
+	}
+	return stile;
 }
 
 void SurfTile::setTreeMgr(const ZTreeMgr *treeMgr)

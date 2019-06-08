@@ -134,6 +134,10 @@ SurfTileBlock *SurfTileBlock::Load(int lvl, int ilat0, int ilat1, int ilng0, int
 		for (int ilng = ilng0; ilng < ilng1; ilng++) {
 			int idx = (ilat - ilat0)*stileblock->m_nblocklng + (ilng - ilng0);
 			stileblock->m_tile[idx] = SurfTile::Load(lvl, ilat, ilng);
+			if (!stileblock->m_tile[idx]) {
+				delete stileblock;
+				return 0;
+			}
 			const Image &im = stileblock->m_tile[idx]->getImage();
 			int yrep = tilesize / im.height;
 			int xrep = tilesize / im.width;

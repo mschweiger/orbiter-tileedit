@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>270</width>
-    <height>202</height>
+    <height>268</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -17,7 +17,7 @@
    <property name="geometry">
     <rect>
      <x>20</x>
-     <y>150</y>
+     <y>220</y>
      <width>231</width>
      <height>33</height>
     </rect>
@@ -105,7 +105,7 @@
    <property name="geometry">
     <rect>
      <x>19</x>
-     <y>79</y>
+     <y>150</y>
      <width>231</width>
      <height>53</height>
     </rect>
@@ -126,6 +126,35 @@
         <string>2x2 tile blocks</string>
        </property>
       </item>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QGroupBox" name="groupBox_3">
+   <property name="geometry">
+    <rect>
+     <x>19</x>
+     <y>80</y>
+     <width>231</width>
+     <height>61</height>
+    </rect>
+   </property>
+   <property name="title">
+    <string>Missing tiles</string>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+   </property>
+   <layout class="QVBoxLayout" name="verticalLayout_3">
+    <item>
+     <widget class="QCheckBox" name="checkInterpolateFromAncestor">
+      <property name="text">
+       <string>Represent by ancestor subregion 
+if available</string>
+      </property>
+      <property name="checked">
+       <bool>true</bool>
+      </property>
      </widget>
     </item>
    </layout>
