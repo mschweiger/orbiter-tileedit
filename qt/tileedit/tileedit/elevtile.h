@@ -72,7 +72,7 @@ public:
 
 protected:
 	ElevTile(int lvl, int ilat, int ilng);
-	bool Load(bool allowAncestorSubset = true);
+	bool Load(bool directOnly = false);
 	bool InterpolateFromAncestor();
 	void LoadSubset();
 	void LoadData(ElevData &edata, int lvl, int ilat, int ilng);

@@ -39,6 +39,7 @@ public:
 	static void setRoot(const std::string &root);
 	static const std::string &root() { return s_root; }
 	static void setOpenMode(int mode);
+	static void setQueryAncestor(bool query);
 
 protected:
     int m_lvl;
@@ -53,6 +54,7 @@ protected:
 
 	static std::string s_root;
 	static int s_openMode;
+	static bool s_queryAncestor;
 };
 
 class DXT1Tile: public Tile

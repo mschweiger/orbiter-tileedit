@@ -42,6 +42,8 @@ public:
 
 	void elevDisplayParamChanged();
 	void setLoadMode(DWORD mode);
+	void setAncestorMode(bool query);
+
 	void setBlockSize(int bsize);
 	QSettings *settings() { return m_settings; }
 
@@ -124,6 +126,7 @@ private:
     int m_ilng;
 
 	DWORD m_openMode;
+	bool m_queryAncestor;
 	int m_blocksize;
 
 	ElevDisplayParam m_elevDisplayParam;

@@ -126,7 +126,7 @@ void ElevTile::RescanLimits()
 	m_edata.RescanLimits();
 }
 
-bool ElevTile::Load(bool allowAncestorSubset)
+bool ElevTile::Load(bool directOnly)
 {
 	LoadData(m_edataBase, m_lvl, m_ilat, m_ilng);
 	m_edata = m_edataBase;
@@ -134,7 +134,7 @@ bool ElevTile::Load(bool allowAncestorSubset)
 	if (m_edata.data.size()) {
 		LoadModData(m_edata, m_lvl, m_ilat, m_ilng);
 	}
-	else if (allowAncestorSubset) {
+	else if (!directOnly && s_queryAncestor) {
 		// interpolate from ancestor
 		LoadSubset();
 	}
@@ -151,7 +151,7 @@ bool ElevTile::InterpolateFromAncestor()
 	int parent_ilng = m_ilng / 2;
 	ElevTile parent(parent_lvl, parent_ilat, parent_ilng);
 
-	if (!parent.Load(false))
+	if (!parent.Load(true))
 		if (!parent.InterpolateFromAncestor())
 			return false;
 
