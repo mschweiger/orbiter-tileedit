@@ -49,6 +49,7 @@ protected:
 private:
     const TileBlock *m_tileBlock;
 	int m_canvasIdx;
+	int m_lvl, m_ilat0, m_ilat1, m_ilng0, m_ilng1;
 	GlyphMode m_glyphMode;
 	tileedit *m_tileedit;
 
@@ -84,6 +85,7 @@ public:
     };
 
     explicit TileCanvasOverlay(QWidget *parent = 0);
+	void setCanvas(TileCanvas *canvas);
     Glyph glyph() const { return m_glyph; }
     void setGlyph(Glyph glyph);
 	void setCrosshair(double x, double y, double rad);
@@ -99,6 +101,7 @@ private:
 	QPen m_penCrosshair;
 	double m_crosshairX, m_crosshairY;
 	double m_crosshairR;
+	TileCanvas *m_canvas;
 	const TileBlock *m_tileBlock;
 	static QFont s_font;
 };

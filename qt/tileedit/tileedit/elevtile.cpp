@@ -170,7 +170,7 @@ void ElevTile::LoadData(ElevData &edata, int lvl, int ilat, int ilng)
 {
 	if (s_openMode & 0x1) { // try cache
 		char path[1024];
-		sprintf(path, "%s/%s/%02d/%06d/%06d.elv", s_root.c_str(), Layer().c_str(), m_lvl, m_ilat, m_ilng);
+		sprintf(path, "%s/%s/%02d/%06d/%06d.elv", s_root.c_str(), Layer().c_str(), lvl, ilat, ilng);
 		edata = elvread(path);
 	}
 	if (edata.data.size() == 0 && s_openMode & 0x2 && s_treeMgr) { // try archive
