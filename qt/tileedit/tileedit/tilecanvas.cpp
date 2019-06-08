@@ -221,10 +221,10 @@ void TileCanvas::setGlyphMode(GlyphMode mode)
 	overlay->setCursor(mode == GLYPHMODE_NAVIGATE ? Qt::ArrowCursor : Qt::BlankCursor);
 }
 
-void TileCanvas::setCrosshair(double x, double y)
+void TileCanvas::setCrosshair(double x, double y, double rad)
 {
 	if (m_tileBlock)
-		overlay->setCrosshair(x, y);
+		overlay->setCrosshair(x, y, rad);
 }
 
 void TileCanvas::showOverlay(bool show)
@@ -249,7 +249,7 @@ TileCanvasOverlay::TileCanvasOverlay(QWidget *parent)
     m_penGlyph.setWidth(3);
     m_penGlyph.setStyle(Qt::SolidLine);
 
-	m_penCrosshair.setColor(QColor(255, 0, 0));
+	m_penCrosshair.setColor(QColor(255, 0, 0, 128));
 	m_penCrosshair.setWidth(1);
 	m_penCrosshair.setStyle(Qt::SolidLine);
 
@@ -266,12 +266,13 @@ void TileCanvasOverlay::setGlyph(Glyph glyph)
     }
 }
 
-void TileCanvasOverlay::setCrosshair(double x, double y)
+void TileCanvasOverlay::setCrosshair(double x, double y, double rad)
 {
 	if (m_glyph != GLYPH_CROSSHAIR || m_crosshairX != x || m_crosshairY != y) {
 		m_glyph = GLYPH_CROSSHAIR;
 		m_crosshairX = x;
 		m_crosshairY = y;
+		m_crosshairR = rad;
 		update();
 	}
 }
@@ -279,14 +280,15 @@ void TileCanvasOverlay::setCrosshair(double x, double y)
 void TileCanvasOverlay::paintEvent(QPaintEvent *event)
 {
     QPainter painter(this);
+	painter.setClipping(true);
     painter.fillRect(rect(), QColor(0,0,0,0));
 
     if(m_glyph != GLYPH_NONE) {
         painter.setPen(m_glyph == GLYPH_CROSSHAIR ? m_penCrosshair : m_penGlyph);
         int w = rect().width();
         int h = rect().height();
-        int dw = w/16;
-        int dh = h/16;
+        int dw = w/32;
+        int dh = h/32;
 		char cbuf[256];
         switch(m_glyph) {
         case GLYPH_RECTFULL:
@@ -334,10 +336,18 @@ void TileCanvasOverlay::paintEvent(QPaintEvent *event)
 			{
 			int x = (int)(m_crosshairX * w);
 			int y = (int)(m_crosshairY * h);
-			painter.drawLine(x - dw, y, x - dw / 2, y);
-			painter.drawLine(x + dw, y, x + dw / 2, y);
-			painter.drawLine(x, y - dh, x, y - dh / 2);
-			painter.drawLine(x, y + dh, x, y + dh / 2);
+			int dx = (int)(m_crosshairR * w + 0.5) + 1;
+			int dy = (int)(m_crosshairR * h + 0.5) + 1;
+			painter.drawEllipse(x - dx, y - dy, dx * 2, dy * 2);
+			painter.drawLine(x - dx, y, x - dx - dw, y);
+			painter.drawLine(x + dx, y, x + dx + dw, y);
+			painter.drawLine(x, y - dy, x, y - dy - dh);
+			painter.drawLine(x, y + dy, x, y + dy + dh);
+
+			//painter.drawLine(x - dw, y, x - dw / 2, y);
+			//painter.drawLine(x + dw, y, x + dw / 2, y);
+			//painter.drawLine(x, y - dh, x, y - dh / 2);
+			//painter.drawLine(x, y + dh, x, y + dh / 2);
 			}
 			break;
         }

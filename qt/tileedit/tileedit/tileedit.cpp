@@ -618,7 +618,20 @@ void tileedit::OnMouseMovedInCanvas(int canvasIdx, QMouseEvent *event)
 		if (m_mouseDown)
 			editElevation(canvasIdx, event->x(), event->y());
 		for (int i = 0; i < 3; i++) {
-			m_panel[i].canvas->setCrosshair(((double)x + 0.5) / (double)cw, ((double)y + 0.5) / (double)ch);
+			int toolrad;
+			switch (m_elevEditMode) {
+			case ELEVEDIT_PAINT:
+				toolrad = ui->spinElevPaintSize->value();
+				break;
+			case ELEVEDIT_RANDOM:
+				toolrad = ui->spinElevRandomSize->value();
+				break;
+			case ELEVEDIT_ERASE:
+				toolrad = ui->spinElevEraseSize->value();
+				break;
+			}
+			double r = (toolrad * 0.5) / (double)(m_eTileBlock->getData().width - 3);
+			m_panel[i].canvas->setCrosshair(((double)x + 0.5) / (double)cw, ((double)y + 0.5) / (double)ch, r);
 		}
 	}
 }

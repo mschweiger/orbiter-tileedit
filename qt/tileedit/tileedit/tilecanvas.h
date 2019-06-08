@@ -39,7 +39,7 @@ public:
     void mouseReleaseEvent(QMouseEvent *event);
     void setTileBlock(const TileBlock *tileBlock);
 	void setGlyphMode(GlyphMode mode);
-	void setCrosshair(double x, double y);
+	void setCrosshair(double x, double y, double rad);
 	void showOverlay(bool show);
 
 protected:
@@ -86,7 +86,7 @@ public:
     explicit TileCanvasOverlay(QWidget *parent = 0);
     Glyph glyph() const { return m_glyph; }
     void setGlyph(Glyph glyph);
-	void setCrosshair(double x, double y);
+	void setCrosshair(double x, double y, double rad);
     void paintEvent(QPaintEvent *event);
     void mouseMoveEvent(QMouseEvent *event);
 	void mousePressEvent(QMouseEvent *event);
@@ -98,6 +98,7 @@ private:
     QPen m_penGlyph;
 	QPen m_penCrosshair;
 	double m_crosshairX, m_crosshairY;
+	double m_crosshairR;
 	const TileBlock *m_tileBlock;
 	static QFont s_font;
 };
