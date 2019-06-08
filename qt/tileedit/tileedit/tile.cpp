@@ -71,15 +71,6 @@ void DXT1Tile::LoadDXT1(const ZTreeMgr *mgr)
 	if (img.data.size() == 0) {
 		LoadSubset(this, mgr);
 	}
-
-	// failed to load tile or extract ancestor subset (i.e. quadtree root is missing)
-	// just substitute black image as last resort
-	if (img.data.size() == 0) {
-		int sz = (m_lvl == 1 ? 128 : m_lvl == 2 ? 256 : 512);
-		img.width = img.height = sz;
-		img.data.resize(sz*sz);
-		m_sublvl = 0; // to indicate load fail
-	}
 }
 
 void DXT1Tile::LoadSubset(DXT1Tile *tile, const ZTreeMgr *mgr)
@@ -141,7 +132,11 @@ SurfTile *SurfTile::Load(int lvl, int ilat, int ilng)
 {
     SurfTile *stile = new SurfTile(lvl, ilat, ilng);
 	stile->LoadDXT1(s_treeMgr);
-    return stile;
+	if (!stile->img.data.size()) {
+		delete stile;
+		return 0;
+	}
+	return stile;
 }
 
 void SurfTile::setTreeMgr(const ZTreeMgr *treeMgr)
