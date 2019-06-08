@@ -8,6 +8,8 @@ TileCanvas::TileCanvas(QWidget *parent)
 	: QWidget(parent)
 {
 	m_tileedit = 0;
+	m_lvl = 0;
+	m_ilat0 = m_ilat1 = m_ilng0 = m_ilng1 = 0;
 
     m_tileBlock = 0;
 	m_glyphMode = GLYPHMODE_NAVIGATE;
@@ -65,141 +67,145 @@ void TileCanvas::mousePressEvent(QMouseEvent *event)
 
 void TileCanvas::mouseReleaseEvent(QMouseEvent *event)
 {
-	int lvl = m_lvl;
-	int ilat0 = m_ilat0;
-	int ilat1 = m_ilat1;
-	int ilng0 = m_ilng0;
-	int ilng1 = m_ilng1;
-	int nlat = nLat(m_lvl);
-	int nlng = nLng(m_lvl);
+	if (m_lvl) {
+		int lvl = m_lvl;
+		int ilat0 = m_ilat0;
+		int ilat1 = m_ilat1;
+		int ilng0 = m_ilng0;
+		int ilng1 = m_ilng1;
+		int nlat = nLat(m_lvl);
+		int nlng = nLng(m_lvl);
 
-	TileCanvasOverlay::Glyph glyph = overlay->glyph();
-	switch (glyph) {
-	case TileCanvasOverlay::GLYPH_RECTFULL:
-		lvl++;
-		ilat0 = 0;
-		ilng0 = 0;
-		break;
-	case TileCanvasOverlay::GLYPH_RECTLEFT:
-		lvl++;
-		ilat0 = 0;
-		ilng0 = 0;
-		break;
-	case TileCanvasOverlay::GLYPH_RECTRIGHT:
-		lvl++;
-		ilat0 = 0;
-		ilng0 = m_tileedit->m_blocksize;
-		break;
-	case TileCanvasOverlay::GLYPH_RECTNW:
-		lvl++;
-		ilat0 = ilat0 * 2;
-		ilng0 = ilng0 * 2;
-		break;
-	case TileCanvasOverlay::GLYPH_RECTNE:
-		lvl++;
-		ilat0 = ilat0 * 2;
-		ilng0 = ilng0 * 2 + m_tileedit->m_blocksize;
-		break;
-	case TileCanvasOverlay::GLYPH_RECTSW:
-		lvl++;
-		ilat0 = ilat0 * 2 + m_tileedit->m_blocksize;
-		ilng0 = ilng0 * 2;
-		break;
-	case TileCanvasOverlay::GLYPH_RECTSE:
-		lvl++;
-		ilat0 = ilat0 * 2 + m_tileedit->m_blocksize;
-		ilng0 = ilng0 * 2 + m_tileedit->m_blocksize;
-		break;
-	case TileCanvasOverlay::GLYPH_ARROWLEFT:
-		ilng0 = (ilng0 > 0 ? ilng0 - 1 : 0);
-		break;
-	case TileCanvasOverlay::GLYPH_ARROWRIGHT:
-		ilng0 = (ilng1 < nlng ? ilng0 + 1 : nlng - 1);
-		break;
-	case TileCanvasOverlay::GLYPH_ARROWTOP:
-		ilat0 = (ilat0 > 0 ? ilat0 - 1 : 0);
-		break;
-	case TileCanvasOverlay::GLYPH_ARROWBOTTOM:
-		ilat0 = (ilat1 < nlat ? ilat0 + 1 : nlat - 1);
-		break;
-	case TileCanvasOverlay::GLYPH_CROSSCENTER:
-		lvl = (lvl > 1 ? lvl - 1 : 1);
-		ilat0 /= 2;
-		ilng0 /= 2;
-		ilng1 = ilng0 + m_tileedit->m_blocksize;
-		if (ilng1 > nLng(lvl) && ilng0)
-			ilng0--;
-		break;
-	}
+		TileCanvasOverlay::Glyph glyph = overlay->glyph();
+		switch (glyph) {
+		case TileCanvasOverlay::GLYPH_RECTFULL:
+			lvl++;
+			ilat0 = 0;
+			ilng0 = 0;
+			break;
+		case TileCanvasOverlay::GLYPH_RECTLEFT:
+			lvl++;
+			ilat0 = 0;
+			ilng0 = 0;
+			break;
+		case TileCanvasOverlay::GLYPH_RECTRIGHT:
+			lvl++;
+			ilat0 = 0;
+			ilng0 = m_tileedit->m_blocksize;
+			break;
+		case TileCanvasOverlay::GLYPH_RECTNW:
+			lvl++;
+			ilat0 = ilat0 * 2;
+			ilng0 = ilng0 * 2;
+			break;
+		case TileCanvasOverlay::GLYPH_RECTNE:
+			lvl++;
+			ilat0 = ilat0 * 2;
+			ilng0 = ilng0 * 2 + m_tileedit->m_blocksize;
+			break;
+		case TileCanvasOverlay::GLYPH_RECTSW:
+			lvl++;
+			ilat0 = ilat0 * 2 + m_tileedit->m_blocksize;
+			ilng0 = ilng0 * 2;
+			break;
+		case TileCanvasOverlay::GLYPH_RECTSE:
+			lvl++;
+			ilat0 = ilat0 * 2 + m_tileedit->m_blocksize;
+			ilng0 = ilng0 * 2 + m_tileedit->m_blocksize;
+			break;
+		case TileCanvasOverlay::GLYPH_ARROWLEFT:
+			ilng0 = (ilng0 > 0 ? ilng0 - 1 : 0);
+			break;
+		case TileCanvasOverlay::GLYPH_ARROWRIGHT:
+			ilng0 = (ilng1 < nlng ? ilng0 + 1 : nlng - 1);
+			break;
+		case TileCanvasOverlay::GLYPH_ARROWTOP:
+			ilat0 = (ilat0 > 0 ? ilat0 - 1 : 0);
+			break;
+		case TileCanvasOverlay::GLYPH_ARROWBOTTOM:
+			ilat0 = (ilat1 < nlat ? ilat0 + 1 : nlat - 1);
+			break;
+		case TileCanvasOverlay::GLYPH_CROSSCENTER:
+			lvl = (lvl > 1 ? lvl - 1 : 1);
+			ilat0 /= 2;
+			ilng0 /= 2;
+			ilng1 = ilng0 + m_tileedit->m_blocksize;
+			if (ilng1 > nLng(lvl) && ilng0)
+				ilng0--;
+			break;
+		}
 
-	if (lvl != m_lvl ||
-		ilat0 != m_ilat0 ||
-		ilng0 != m_ilng0) {
-		emit tileChanged(lvl, ilat0, ilng0);
+		if (lvl != m_lvl ||
+			ilat0 != m_ilat0 ||
+			ilng0 != m_ilng0) {
+			emit tileChanged(lvl, ilat0, ilng0);
+		}
 	}
 	emit mouseReleasedInCanvas(m_canvasIdx, event);
 }
 
 void TileCanvas::updateGlyph(int x, int y)
 {
-    int w = rect().width();
-    int h = rect().height();
-    int dw = w/16;
-    int dh = h/16;
+	if (m_lvl) {
+		int w = rect().width();
+		int h = rect().height();
+		int dw = w / 16;
+		int dh = h / 16;
 
-	if (m_glyphMode == GLYPHMODE_NAVIGATE) {
+		if (m_glyphMode == GLYPHMODE_NAVIGATE) {
 
-		int nlat = nLat(m_lvl);
-		int nlng = nLng(m_lvl);
+			int nlat = nLat(m_lvl);
+			int nlng = nLng(m_lvl);
 
-		// check for zoom-out indicator
-		if (m_lvl > 1) {
-			if (x >= w / 2 - dw && x < w / 2 + dw && y >= h / 2 - dh && y < h / 2 + dh) {
-				overlay->setGlyph(TileCanvasOverlay::GLYPH_CROSSCENTER);
+			// check for zoom-out indicator
+			if (m_lvl > 1) {
+				if (x >= w / 2 - dw && x < w / 2 + dw && y >= h / 2 - dh && y < h / 2 + dh) {
+					overlay->setGlyph(TileCanvasOverlay::GLYPH_CROSSCENTER);
+					return;
+				}
+			}
+
+			// check for pan left/right indicator
+			if (m_ilng0 > 0 && x < dw && y >= h / 2 - dh && y < h / 2 + dh) {
+				overlay->setGlyph(TileCanvasOverlay::GLYPH_ARROWLEFT);
 				return;
 			}
-		}
-
-		// check for pan left/right indicator
-		if (m_ilng0 > 0 && x < dw && y >= h / 2 - dh && y < h / 2 + dh) {
-			overlay->setGlyph(TileCanvasOverlay::GLYPH_ARROWLEFT);
-			return;
-		}
-		else if (m_ilng1 < nlng && x >= w - dw && y >= h / 2 - dh && y < h / 2 + dh) {
-			overlay->setGlyph(TileCanvasOverlay::GLYPH_ARROWRIGHT);
-			return;
-		}
-
-		// check for pan up/down indicator
-		if (m_ilat0 > 0 && y < dh && x >= w / 2 - dw && x < w / 2 + dw) {
-			overlay->setGlyph(TileCanvasOverlay::GLYPH_ARROWTOP);
-			return;
-		}
-		else if (m_ilat1 < nlat && y >= h - dh && x >= w / 2 - dw && x < w / 2 + dw) {
-			overlay->setGlyph(TileCanvasOverlay::GLYPH_ARROWBOTTOM);
-			return;
-		}
-
-		if (nLng(m_lvl + 1) <= m_tileedit->m_blocksize) {
-			overlay->setGlyph(TileCanvasOverlay::GLYPH_RECTFULL);
-		}
-		else if (nLat(m_lvl + 1) <= m_tileedit->m_blocksize) {
-		//else if (m_tileBlock->Level() == 3) {
-			overlay->setGlyph(x < w / 2 ? TileCanvasOverlay::GLYPH_RECTLEFT : TileCanvasOverlay::GLYPH_RECTRIGHT);
-		}
-		else if (m_lvl < 19) {
-			if (x < w / 2) {
-				overlay->setGlyph(y < h / 2 ? TileCanvasOverlay::GLYPH_RECTNW : TileCanvasOverlay::GLYPH_RECTSW);
+			else if (m_ilng1 < nlng && x >= w - dw && y >= h / 2 - dh && y < h / 2 + dh) {
+				overlay->setGlyph(TileCanvasOverlay::GLYPH_ARROWRIGHT);
+				return;
 			}
-			else {
-				overlay->setGlyph(y < h / 2 ? TileCanvasOverlay::GLYPH_RECTNE : TileCanvasOverlay::GLYPH_RECTSE);
+
+			// check for pan up/down indicator
+			if (m_ilat0 > 0 && y < dh && x >= w / 2 - dw && x < w / 2 + dw) {
+				overlay->setGlyph(TileCanvasOverlay::GLYPH_ARROWTOP);
+				return;
 			}
+			else if (m_ilat1 < nlat && y >= h - dh && x >= w / 2 - dw && x < w / 2 + dw) {
+				overlay->setGlyph(TileCanvasOverlay::GLYPH_ARROWBOTTOM);
+				return;
+			}
+
+			if (nLng(m_lvl + 1) <= m_tileedit->m_blocksize) {
+				overlay->setGlyph(TileCanvasOverlay::GLYPH_RECTFULL);
+			}
+			else if (nLat(m_lvl + 1) <= m_tileedit->m_blocksize) {
+				//else if (m_tileBlock->Level() == 3) {
+				overlay->setGlyph(x < w / 2 ? TileCanvasOverlay::GLYPH_RECTLEFT : TileCanvasOverlay::GLYPH_RECTRIGHT);
+			}
+			else if (m_lvl < 19) {
+				if (x < w / 2) {
+					overlay->setGlyph(y < h / 2 ? TileCanvasOverlay::GLYPH_RECTNW : TileCanvasOverlay::GLYPH_RECTSW);
+				}
+				else {
+					overlay->setGlyph(y < h / 2 ? TileCanvasOverlay::GLYPH_RECTNE : TileCanvasOverlay::GLYPH_RECTSE);
+				}
+			}
+			else
+				overlay->setGlyph(TileCanvasOverlay::GLYPH_NONE);
 		}
-		else
+		else {
 			overlay->setGlyph(TileCanvasOverlay::GLYPH_NONE);
-	}
-	else {
-		overlay->setGlyph(TileCanvasOverlay::GLYPH_NONE);
+		}
 	}
 }
 
