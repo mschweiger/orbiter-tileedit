@@ -287,8 +287,8 @@ void TileCanvasOverlay::paintEvent(QPaintEvent *event)
         painter.setPen(m_glyph == GLYPH_CROSSHAIR ? m_penCrosshair : m_penGlyph);
         int w = rect().width();
         int h = rect().height();
-        int dw = w/32;
-        int dh = h/32;
+        int dw = w/16;
+        int dh = h/16;
 		char cbuf[256];
         switch(m_glyph) {
         case GLYPH_RECTFULL:
@@ -339,15 +339,10 @@ void TileCanvasOverlay::paintEvent(QPaintEvent *event)
 			int dx = (int)(m_crosshairR * w + 0.5) + 1;
 			int dy = (int)(m_crosshairR * h + 0.5) + 1;
 			painter.drawEllipse(x - dx, y - dy, dx * 2, dy * 2);
-			painter.drawLine(x - dx, y, x - dx - dw, y);
-			painter.drawLine(x + dx, y, x + dx + dw, y);
-			painter.drawLine(x, y - dy, x, y - dy - dh);
-			painter.drawLine(x, y + dy, x, y + dy + dh);
-
-			//painter.drawLine(x - dw, y, x - dw / 2, y);
-			//painter.drawLine(x + dw, y, x + dw / 2, y);
-			//painter.drawLine(x, y - dh, x, y - dh / 2);
-			//painter.drawLine(x, y + dh, x, y + dh / 2);
+			painter.drawLine(x - dx, y, x - dx - dw/2, y);
+			painter.drawLine(x + dx, y, x + dx + dw/2, y);
+			painter.drawLine(x, y - dy, x, y - dy - dh/2);
+			painter.drawLine(x, y + dy, x, y + dy + dh/2);
 			}
 			break;
         }
