@@ -203,8 +203,9 @@ void tileedit::elevDisplayParamChanged()
 	}
 
 	for (int i = 0; i < 3; i++) {
-		if (m_panel[i].layerType->currentIndex() == 3)
-			m_panel[i].canvas->update();
+		if (m_panel[i].layerType->currentIndex() >= 3) {
+			m_panel[i].canvas->updateImage();
+		}
 		Colorbar *cbar = m_panel[i].colourscale->findChild<Colorbar*>();
 		if (cbar) {
 			cbar->displayParamChanged();
@@ -381,20 +382,23 @@ void tileedit::refreshPanel(int panelIdx)
 
     switch(m_panel[panelIdx].layerType->currentIndex()) {
     case 0:
-        m_panel[panelIdx].canvas->setTileBlock(m_sTileBlock);
+        m_panel[panelIdx].canvas->setTileBlock(m_sTileBlock, TILEMODE_SURFACE);
         break;
 	case 1:
-		m_panel[panelIdx].canvas->setTileBlock(m_mTileBlock);
+		m_panel[panelIdx].canvas->setTileBlock(m_mTileBlock, TILEMODE_WATERMASK);
 		break;
 	case 2:
-		m_panel[panelIdx].canvas->setTileBlock(m_lTileBlock);
+		m_panel[panelIdx].canvas->setTileBlock(m_lTileBlock, TILEMODE_NIGHTLIGHT);
 		break;
 	case 3:
-		m_panel[panelIdx].canvas->setTileBlock(m_eTileBlock);
+		m_panel[panelIdx].canvas->setTileBlock(m_eTileBlock, TILEMODE_ELEVATION);
 		elevDisplayParamChanged();
 		break;
+	case 4:
+		m_panel[panelIdx].canvas->setTileBlock(m_eTileBlock, TILEMODE_ELEVMOD);
+		break;
 	default:
-        m_panel[panelIdx].canvas->setTileBlock(0);
+        m_panel[panelIdx].canvas->setTileBlock(0, TILEMODE_NONE);
         break;
     }
 	m_panel[panelIdx].colourscale->setVisible(m_panel[panelIdx].layerType->currentIndex() == 3);
@@ -549,7 +553,7 @@ void tileedit::OnTileEntered(TileCanvas *canvas)
 	ui->groupTileData->setTitle(idx >= 0 ? m_panel[idx].layerType->currentText() : "Tile");
 	ui->labelKey2->setText(idx >= 0 && m_panel[idx].layerType->currentIndex() == 3 ? "Node:" : "Pixel:");
 
-	const char *ValStr[4] = { "Colour:", "Type:", "Colour:", "Elev.:" };
+	const char *ValStr[5] = { "Colour:", "Type:", "Colour:", "Elev.:", "Elev.:" };
 	ui->labelKey3->setText(idx >= 0 ? ValStr[m_panel[idx].layerType->currentIndex()] : "-");
 }
 
@@ -778,7 +782,7 @@ void tileedit::editElevation(int canvasIdx, int x, int y)
 				else
 					m_eTileBlock->dataChanged(nx + padx - (sz / 2 + 1), nx + padx + (sz / 2 + 1), ny + pady - (sz / 2 + 1), ny + pady + (sz / 2 + 1));
 				for (int i = 0; i < 3; i++)
-					if (m_panel[i].layerType->currentIndex() == 3) { // elevation
+					if (m_panel[i].layerType->currentIndex() >= 3) { // elevation
 						refreshPanel(i);
 					}
 			}
@@ -810,7 +814,7 @@ void tileedit::editElevation(int canvasIdx, int x, int y)
 				} else
 					m_eTileBlock->dataChanged(nx + padx - (sz / 2 + 1), nx + padx + (sz / 2 + 1), ny + pady - (sz / 2 + 1), ny + pady + (sz / 2 + 1));
 				for (int i = 0; i < 3; i++)
-					if (m_panel[i].layerType->currentIndex() == 3) { // elevation
+					if (m_panel[i].layerType->currentIndex() >= 3) { // elevation
 						refreshPanel(i);
 					}
 			}

@@ -31,6 +31,14 @@ struct DDSHEADER {
     DWORD dwReserved2;
 };
 
+Image &Image::operator=(const Image &img)
+{
+	data = img.data;
+	width = img.width;
+	height = img.height;
+	return *this;
+}
+
 Image Image::SubImage(const std::pair<DWORD,DWORD> &xrange, const std::pair<DWORD,DWORD> &yrange)
 {
     Image sub;

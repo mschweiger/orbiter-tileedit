@@ -636,7 +636,7 @@ void ElevTileBlock::dataChanged(int exmin, int exmax, int eymin, int eymax)
 	m_edata.dmin = *minmax.first;
 	m_edata.dmax = *minmax.second;
 
-	ExtractImage(exmin, exmax, eymin, eymax);
+	ExtractImage(m_img, TILEMODE_ELEVATION, exmin, exmax, eymin, eymax);
 }
 
 void ElevTileBlock::RescanLimits()
@@ -644,13 +644,18 @@ void ElevTileBlock::RescanLimits()
 	m_edata.RescanLimits();
 }
 
-void ElevTileBlock::ExtractImage(int exmin, int exmax, int eymin, int eymax)
+void ElevTileBlock::ExtractImage(Image &img, TileMode mode, int exmin, int exmax, int eymin, int eymax) const
 {
+	if (mode == TILEMODE_ELEVMOD) {
+		ExtractModImage(img, mode, exmin, exmax, eymin, eymax);
+		return;
+	}
+
 	double dmin, dmax;
 
-	m_img.width = (m_edata.width - 2) * 2 - 2;
-	m_img.height = (m_edata.height - 2) * 2 - 2;
-	m_img.data.resize(m_img.width * m_img.height);
+	img.width = (m_edata.width - 2) * 2 - 2;
+	img.height = (m_edata.height - 2) * 2 - 2;
+	img.data.resize(img.width * img.height);
 
 	if (s_elevDisplayParam->autoRange) {
 		dmin = m_edata.dmin;
@@ -663,9 +668,9 @@ void ElevTileBlock::ExtractImage(int exmin, int exmax, int eymin, int eymax)
 	double dscale = (dmax > dmin ? 256.0 / (dmax - dmin) : 1.0);
 
 	int imin = (exmin < 0 ? 0 : max(0, (exmin - 1) * 2 - 1));
-	int imax = (exmax < 0 ? m_img.width : min((int)m_img.width, exmax * 2));
-	int jmin = (eymax < 0 ? 0 : max(0, (int)m_img.height - (eymax - 1) * 2));
-	int jmax = (eymin < 0 ? m_img.height : min((int)m_img.height, (int)m_img.height - (eymin - 1) * 2 + 1));
+	int imax = (exmax < 0 ? img.width : min((int)img.width, exmax * 2));
+	int jmin = (eymax < 0 ? 0 : max(0, (int)img.height - (eymax - 1) * 2));
+	int jmax = (eymin < 0 ? img.height : min((int)img.height, (int)img.height - (eymin - 1) * 2 + 1));
 
 	const Cmap &cm = cmap(s_elevDisplayParam->cmName);
 	bool useMask = s_elevDisplayParam->useWaterMask && m_waterMask.size();
@@ -673,21 +678,63 @@ void ElevTileBlock::ExtractImage(int exmin, int exmax, int eymin, int eymax)
 	for (int j = jmin; j < jmax; j++)
 		for (int i = imin; i < imax; i++) {
 			int ex = (i + 1) / 2 + 1;
-			int ey = (m_img.height - j) / 2 + 1;
+			int ey = (img.height - j) / 2 + 1;
 			double d = m_edata.data[ex + ey * m_edata.width];
 			int v = max(min((int)((d - dmin) * dscale), 255), 0);
-			if (v < 0 || v > 255)
-				std::cerr << "Problem" << std::endl;
-			m_img.data[i + j * m_img.width] = (0xff000000 | cm[v]);
+			img.data[i + j * img.width] = (0xff000000 | cm[v]);
 
-			if (useMask && m_waterMask[i + j * m_img.width])
-				m_img.data[i + j * m_img.width] = 0xffB9E3FF;
+			if (useMask && m_waterMask[i + j * img.width])
+				img.data[i + j * img.width] = 0xffB9E3FF;
+		}
+}
+
+void ElevTileBlock::ExtractModImage(Image &img, TileMode mode, int exmin, int exmax, int eymin, int eymax) const
+{
+	double dmin, dmax;
+
+	img.width = (m_edata.width - 2) * 2 - 2;
+	img.height = (m_edata.height - 2) * 2 - 2;
+	img.data.resize(img.width * img.height);
+
+	if (s_elevDisplayParam->autoRange) {
+		dmin = m_edata.dmin;
+		dmax = m_edata.dmax;
+	}
+	else {
+		dmin = s_elevDisplayParam->rangeMin;
+		dmax = s_elevDisplayParam->rangeMax;
+	}
+	double dscale = (dmax > dmin ? 256.0 / (dmax - dmin) : 1.0);
+
+	int imin = (exmin < 0 ? 0 : max(0, (exmin - 1) * 2 - 1));
+	int imax = (exmax < 0 ? img.width : min((int)img.width, exmax * 2));
+	int jmin = (eymax < 0 ? 0 : max(0, (int)img.height - (eymax - 1) * 2));
+	int jmax = (eymin < 0 ? img.height : min((int)img.height, (int)img.height - (eymin - 1) * 2 + 1));
+
+	const Cmap &cm = cmap(s_elevDisplayParam->cmName);
+	bool useMask = s_elevDisplayParam->useWaterMask && m_waterMask.size();
+
+	for (int j = jmin; j < jmax; j++)
+		for (int i = imin; i < imax; i++) {
+			int ex = (i + 1) / 2 + 1;
+			int ey = (img.height - j) / 2 + 1;
+			double d = m_edata.data[ex + ey * m_edata.width];
+			double db = m_edataBase.data[ex + ey * m_edata.width];
+			if (d != db) {
+				int v = max(min((int)((d - dmin) * dscale), 255), 0);
+				img.data[i + j * img.width] = (0xff000000 | cm[v]);
+			}
+			else {
+				bool b = (i / 8 + j / 8) & 1;
+				img.data[i + j * img.width] = (b ? 0xff808080 : 0xff909090);
+			}
 		}
 }
 
 void ElevTileBlock::displayParamChanged()
 {
-	ExtractImage();
+	// obsolete - this should be handled by the canvas object
+	ExtractImage(m_img, TILEMODE_ELEVATION);
 }
 
 

@@ -23,6 +23,9 @@ public:
 	int nBlock() const { return m_nblocklat * m_nblocklng; }
 	DWORD pixelColour(int px, int py) const;
 
+	virtual void ExtractImage(Image &img, TileMode mode, int exmin = -1, int exmax = -1, int eymin = -1, int eymax = -1) const
+	{ img = m_img; }
+
 	const Image &getImage() const { return m_img; }
 
 	virtual bool setTile(int ilat, int ilng, const Tile *tile) { return false; }
@@ -151,8 +154,10 @@ public:
 	 */
 	bool MatchParentTiles(int minlvl) const;
 
+	void ExtractImage(Image &img, TileMode mode, int exmin = -1, int exmax = -1, int eymin = -1, int eymax = -1) const;
+
 protected:
-	void ExtractImage(int exmin = -1, int exmax = -1, int eymin = -1, int eymax = -1);
+	void ExtractModImage(Image &img, TileMode mode, int exmin = -1, int exmax = -1, int eymin = -1, int eymax = -1) const;
 
 private:
 	ElevData m_edata;

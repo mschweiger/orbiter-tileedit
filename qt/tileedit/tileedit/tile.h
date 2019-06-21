@@ -6,6 +6,15 @@
 #include "ddsread.h"
 #include "ZTreeMgr.h"
 
+enum TileMode {
+	TILEMODE_NONE,
+	TILEMODE_SURFACE,
+	TILEMODE_WATERMASK,
+	TILEMODE_NIGHTLIGHT,
+	TILEMODE_ELEVATION,
+	TILEMODE_ELEVMOD
+};
+
 inline int nLat(int lvl) { return (lvl < 4 ? 1 : 1 << (lvl - 4)); }
 inline int nLng(int lvl) { return (lvl < 4 ? 1 : 1 << (lvl - 3)); }
 

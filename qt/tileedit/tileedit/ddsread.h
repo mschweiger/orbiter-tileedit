@@ -7,6 +7,7 @@ struct Image {
     DWORD height;
 
 	Image() { width = height = 0; }
+	Image &operator=(const Image &img);
     Image SubImage(const std::pair<DWORD,DWORD> &xrange, const std::pair<DWORD,DWORD> &yrange);
 };
 

@@ -12,6 +12,7 @@ TileCanvas::TileCanvas(QWidget *parent)
 	m_ilat0 = m_ilat1 = m_ilng0 = m_ilng1 = 0;
 
     m_tileBlock = 0;
+	m_tileMode = TILEMODE_NONE;
 	m_glyphMode = GLYPHMODE_NAVIGATE;
     overlay = new TileCanvasOverlay(this);
 	overlay->setCanvas(this);
@@ -37,9 +38,8 @@ void TileCanvas::paintEvent(QPaintEvent *event)
     painter.drawRect(rect());
 
     if (m_tileBlock) {
-        const Image &img = m_tileBlock->getImage();
-        const BYTE *data = (const BYTE*)img.data.data();
-        QImage qimg(data, img.width, img.height, QImage::Format_ARGB32);
+        const BYTE *data = (const BYTE*)m_img.data.data();
+        QImage qimg(data, m_img.width, m_img.height, QImage::Format_ARGB32);
         painter.drawImage(rect(), qimg);
     }
 }
@@ -209,15 +209,17 @@ void TileCanvas::updateGlyph(int x, int y)
 	}
 }
 
-void TileCanvas::setTileBlock(const TileBlock *tileBlock)
+void TileCanvas::setTileBlock(const TileBlock *tileBlock, TileMode mode)
 {
 	m_tileBlock = tileBlock;
+	m_tileMode = mode;
 	if (m_tileBlock) {
 		m_lvl = m_tileBlock->Level();
 		m_ilat0 = m_tileBlock->iLat0();
 		m_ilat1 = m_tileBlock->iLat1();
 		m_ilng0 = m_tileBlock->iLng0();
 		m_ilng1 = m_tileBlock->iLng1();
+		m_tileBlock->ExtractImage(m_img, mode);
 	}
 	else if (m_tileedit) {
 		m_lvl = m_tileedit->m_lvl;
@@ -233,6 +235,14 @@ void TileCanvas::setTileBlock(const TileBlock *tileBlock)
 	}
 	overlay->setTileBlock(tileBlock);
 	update();
+}
+
+void TileCanvas::updateImage()
+{
+	if (m_tileBlock) {
+		m_tileBlock->ExtractImage(m_img, m_tileMode);
+		update();
+	}
 }
 
 void TileCanvas::setGlyphMode(GlyphMode mode)
