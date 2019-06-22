@@ -41,8 +41,6 @@ public:
 	void setSubiLng(int ilng) { m_subilng = ilng; }
 
     const Image &getImage() const { return img; }
-	void setImage(const Image &im) { img = im; }
-	DWORD pixelColour(int px, int py) const;
 	virtual const std::string Layer() const = 0;
 
 	static void setRoot(const std::string &root);
@@ -89,21 +87,10 @@ protected:
 	static const ZTreeMgr *s_treeMgr;
 };
 
-class NightlightTile : public Tile
-{
-	friend class MaskTile;
-
-public:
-	const std::string Layer() const { return std::string("Mask"); }
-
-protected:
-	NightlightTile(const Tile &tile);
-};
-
 class MaskTile : public DXT1Tile
 {
 public:
-	static std::pair<MaskTile*, NightlightTile*> Load(int lvl, int ilat, int ilng);
+	static MaskTile *Load(int lvl, int ilat, int ilng);
 	static void setTreeMgr(const ZTreeMgr *mgr);
 	const std::string Layer() const { return std::string("Mask"); }
 

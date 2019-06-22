@@ -44,7 +44,6 @@ tileedit::tileedit(QWidget *parent)
 
 	m_sTileBlock = 0;
 	m_mTileBlock = 0;
-	m_lTileBlock = 0;
 	m_eTileBlock = 0;
 	m_eTileBlockRef = 0;
 
@@ -141,8 +140,6 @@ tileedit::~tileedit()
         delete m_sTileBlock;
 	if (m_mTileBlock)
 		delete m_mTileBlock;
-	if (m_lTileBlock)
-		delete m_lTileBlock;
 	if (m_eTileBlock)
 		delete m_eTileBlock;
 
@@ -360,11 +357,7 @@ void tileedit::loadTile(int lvl, int ilat, int ilng)
 
 	if (m_mTileBlock)
 		delete m_mTileBlock;
-	if (m_lTileBlock)
-		delete m_lTileBlock;
-	std::pair<MaskTileBlock*, NightlightTileBlock*> ml = MaskTileBlock::Load(lvl, ilat, ilat1, ilng, ilng1);
-	m_mTileBlock = ml.first;
-	m_lTileBlock = ml.second;
+	m_mTileBlock = MaskTileBlock::Load(lvl, ilat, ilat1, ilng, ilng1);
 
 	if (m_eTileBlock)
 		delete m_eTileBlock;
@@ -388,7 +381,7 @@ void tileedit::refreshPanel(int panelIdx)
 		m_panel[panelIdx].canvas->setTileBlock(m_mTileBlock, TILEMODE_WATERMASK);
 		break;
 	case 2:
-		m_panel[panelIdx].canvas->setTileBlock(m_lTileBlock, TILEMODE_NIGHTLIGHT);
+		m_panel[panelIdx].canvas->setTileBlock(m_mTileBlock, TILEMODE_NIGHTLIGHT);
 		break;
 	case 3:
 		m_panel[panelIdx].canvas->setTileBlock(m_eTileBlock, TILEMODE_ELEVATION);

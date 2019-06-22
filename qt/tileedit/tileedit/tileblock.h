@@ -82,25 +82,13 @@ protected:
 };
 
 
-class NightlightTileBlock : public TileBlock
-{
-	friend class MaskTileBlock;
-
-public:
-	virtual Tile *copyTile(int ilat, int ilng) const;
-	virtual bool copyTile(int ilat, int ilng, Tile *tile) const;
-
-protected:
-	NightlightTileBlock(int lvl, int ilat0, int ilat1, int ilng0, int ilng1);
-};
-
-
 class MaskTileBlock : public TileBlock
 {
 public:
-	static std::pair<MaskTileBlock*, NightlightTileBlock*> Load(int lvl, int ilat0, int ilat1, int ilng0, int ilng1);
+	static MaskTileBlock *Load(int lvl, int ilat0, int ilat1, int ilng0, int ilng1);
 	virtual Tile *copyTile(int ilat, int ilng) const;
 	virtual bool copyTile(int ilat, int ilng, Tile *tile) const;
+	virtual void ExtractImage(Image &img, TileMode mode, int exmin = -1, int exmax = -1, int eymin = -1, int eymax = -1) const;
 
 protected:
 	MaskTileBlock(int lvl, int ilat0, int ilat1, int ilng0, int ilng1);

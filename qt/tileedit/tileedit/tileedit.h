@@ -135,7 +135,6 @@ private:
 
     SurfTileBlock *m_sTileBlock;
 	MaskTileBlock *m_mTileBlock;
-	NightlightTileBlock *m_lTileBlock;
 	ElevTileBlock *m_eTileBlock;
 	ElevTileBlock *m_eTileBlockRef;
 

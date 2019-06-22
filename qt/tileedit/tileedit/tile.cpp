@@ -44,11 +44,6 @@ void Tile::set(const Tile *tile)
 	img = tile->img;
 }
 
-DWORD Tile::pixelColour(int px, int py) const
-{
-	return img.data[px + py*img.width];
-}
-
 void Tile::setRoot(const std::string &root)
 {
 	s_root.assign(root);
@@ -150,11 +145,6 @@ void SurfTile::setTreeMgr(const ZTreeMgr *treeMgr)
 	s_treeMgr = treeMgr;
 }
 
-NightlightTile::NightlightTile(const Tile &tile)
-	: Tile(tile)
-{
-}
-
 
 const ZTreeMgr *MaskTile::s_treeMgr = 0;
 
@@ -163,22 +153,15 @@ MaskTile::MaskTile(int lvl, int ilat, int ilng)
 {
 }
 
-std::pair<MaskTile*,NightlightTile*> MaskTile::Load(int lvl, int ilat, int ilng)
+MaskTile *MaskTile::Load(int lvl, int ilat, int ilng)
 {
 	MaskTile *mtile = new MaskTile(lvl, ilat, ilng);
 	mtile->LoadDXT1(s_treeMgr);
 	if (!mtile->img.data.size()) {
 		delete mtile;
-		return std::make_pair((MaskTile*)0, (NightlightTile*)0);
+		return 0;
 	}
-	NightlightTile *ltile = new NightlightTile(*mtile);
-
-	// separate water mask and night lights
-	for (int i = 0; i < mtile->img.data.size(); i++) {
-		mtile->img.data[i] |= 0x00FFFFFF;
-		ltile->img.data[i] |= 0xFF000000;
-	}
-	return std::make_pair(mtile, ltile);
+	return mtile;
 }
 
 void MaskTile::setTreeMgr(const ZTreeMgr *treeMgr)

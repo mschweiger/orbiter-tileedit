@@ -162,41 +162,6 @@ SurfTileBlock *SurfTileBlock::Load(int lvl, int ilat0, int ilat1, int ilng0, int
 }
 
 
-NightlightTileBlock::NightlightTileBlock(int lvl, int ilat0, int ilat1, int ilng0, int ilng1)
-	: TileBlock(lvl, ilat0, ilat1, ilng0, ilng1)
-{
-}
-
-Tile *NightlightTileBlock::copyTile(int ilat, int ilng) const
-{
-	if (ilat < m_ilat0 || ilat >= m_ilat1) return 0;
-	if (ilng < m_ilng0 || ilng >= m_ilng1) return 0;
-
-	int idx = (ilat - m_ilat0) * m_nblocklng + (ilng - m_ilng0);
-
-	if (!m_tile[idx]) return 0;
-
-	NightlightTile *ltile = static_cast<NightlightTile*>(m_tile[idx]);
-
-	return new NightlightTile(*ltile);
-}
-
-bool NightlightTileBlock::copyTile(int ilat, int ilng, Tile *tile) const
-{
-	if (ilat < m_ilat0 || ilat >= m_ilat1) return false;
-	if (ilng < m_ilng0 || ilng >= m_ilng1) return false;
-
-	int idx = (ilat - m_ilat0) * m_nblocklng + (ilng - m_ilng0);
-	if (!m_tile[idx]) return false;
-
-	NightlightTile *ltile = static_cast<NightlightTile*>(tile);
-	if (!ltile) return false;
-
-	ltile->set(m_tile[idx]);
-	return true;
-}
-
-
 MaskTileBlock::MaskTileBlock(int lvl, int ilat0, int ilat1, int ilng0, int ilng1)
 	: TileBlock(lvl, ilat0, ilat1, ilng0, ilng1)
 {
@@ -231,45 +196,48 @@ bool MaskTileBlock::copyTile(int ilat, int ilng, Tile *tile) const
 	return true;
 }
 
-std::pair<MaskTileBlock*, NightlightTileBlock*> MaskTileBlock::Load(int lvl, int ilat0, int ilat1, int ilng0, int ilng1)
+void MaskTileBlock::ExtractImage(Image &img, TileMode mode, int exmin, int exmax, int eymin, int eymax) const
+{
+	img = m_img;
+	if (mode == TILEMODE_WATERMASK)
+		for (int i = 0; i < img.data.size(); i++)
+			img.data[i] |= 0x00FFFFFF;
+	else
+		for (int i = 0; i < img.data.size(); i++)
+			img.data[i] |= 0xFF000000;
+}
+
+MaskTileBlock *MaskTileBlock::Load(int lvl, int ilat0, int ilat1, int ilng0, int ilng1)
 {
 	const int tilesize = 512;
 
 	MaskTileBlock *mtileblock = new MaskTileBlock(lvl, ilat0, ilat1, ilng0, ilng1);
-	NightlightTileBlock *ltileblock = new NightlightTileBlock(lvl, ilat0, ilat1, ilng0, ilng1);
 
 	mtileblock->m_img.width = tilesize*mtileblock->m_nblocklng;
 	mtileblock->m_img.height = tilesize*mtileblock->m_nblocklat;
 	mtileblock->m_img.data.resize(mtileblock->m_img.width * mtileblock->m_img.height);
-	ltileblock->m_img.width = tilesize*ltileblock->m_nblocklng;
-	ltileblock->m_img.height = tilesize*ltileblock->m_nblocklat;
-	ltileblock->m_img.data.resize(ltileblock->m_img.width * ltileblock->m_img.height);
 
 	for (int ilat = ilat0; ilat < ilat1; ilat++) {
 		for (int ilng = ilng0; ilng < ilng1; ilng++) {
 			int idx = (ilat - ilat0)*mtileblock->m_nblocklng + (ilng - ilng0);
-			std::pair<MaskTile*, NightlightTile*> mltile = MaskTile::Load(lvl, ilat, ilng);
-			if (!mltile.first) {
+			mtileblock->m_tile[idx] = MaskTile::Load(lvl, ilat, ilng);
+			if (!mtileblock->m_tile[idx]) {
 				delete mtileblock;
-				delete ltileblock;
-				return std::make_pair((MaskTileBlock*)0, (NightlightTileBlock*)0);
+				return 0;
 			}
-			mtileblock->m_tile[idx] = mltile.first;
-			ltileblock->m_tile[idx] = mltile.second;
-			const Image &mim = mtileblock->m_tile[idx]->getImage();
-			const Image &lim = ltileblock->m_tile[idx]->getImage();
-			int yrep = tilesize / mim.height;
-			int xrep = tilesize / mim.width;
+			const Image &im = mtileblock->m_tile[idx]->getImage();
+			int yrep = tilesize / im.height;
+			int xrep = tilesize / im.width;
 			int yofs = (ilat - ilat0) * tilesize;
 			int xofs = (ilng - ilng0) * tilesize;
 
-			for (int i = 0; i < mim.height; i++) {
+			for (int i = 0; i < im.height; i++) {
 				for (int ii = 0; ii < yrep; ii++) {
-					for (int j = 0; j < mim.width; j++) {
+					for (int j = 0; j < im.width; j++) {
 						for (int jj = 0; jj < xrep; jj++) {
+							DWORD v = im.data[i*im.width + j];
 							int idx = yofs * mtileblock->m_img.width + xofs + j*xrep + jj;
-							mtileblock->m_img.data[idx] = mim.data[i*mim.width + j];
-							ltileblock->m_img.data[idx] = lim.data[i*lim.width + j];
+							mtileblock->m_img.data[idx] = v;
 						}
 					}
 					yofs++;
@@ -277,7 +245,7 @@ std::pair<MaskTileBlock*, NightlightTileBlock*> MaskTileBlock::Load(int lvl, int
 			}
 		}
 	}
-	return std::make_pair(mtileblock, ltileblock);
+	return mtileblock;
 }
 
 
