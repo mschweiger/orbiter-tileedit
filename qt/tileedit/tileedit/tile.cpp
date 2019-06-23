@@ -28,7 +28,6 @@ Tile::Tile(const Tile &tile)
 	m_subilng = tile.m_subilng;
 	lat_subrange = tile.lat_subrange;
 	lng_subrange = tile.lng_subrange;
-	img = tile.img;
 }
 
 void Tile::set(const Tile *tile)
@@ -41,7 +40,6 @@ void Tile::set(const Tile *tile)
 	m_subilng = tile->m_subilng;
 	lat_subrange = tile->lat_subrange;
 	lng_subrange = tile->lng_subrange;
-	img = tile->img;
 }
 
 void Tile::setRoot(const std::string &root)
@@ -65,11 +63,25 @@ DXT1Tile::DXT1Tile(int lvl, int ilat, int ilng)
 {
 }
 
+DXT1Tile::DXT1Tile(const DXT1Tile &tile)
+	: Tile(tile)
+{
+	m_idata = tile.m_idata;
+}
+
+void DXT1Tile::set(const Tile *tile)
+{
+	Tile::set(tile);
+	const DXT1Tile *dxt1tile = dynamic_cast<const DXT1Tile*>(tile);
+	if (dxt1tile)
+		m_idata = dxt1tile->m_idata;
+}
+
 void DXT1Tile::LoadDXT1(const ZTreeMgr *mgr)
 {
-	LoadImage(img, m_lvl, m_ilat, m_ilng, mgr);
+	LoadImage(m_idata, m_lvl, m_ilat, m_ilng, mgr);
 
-	if (img.data.size() == 0 && s_queryAncestor) {
+	if (m_idata.data.size() == 0 && s_queryAncestor) {
 		LoadSubset(this, mgr);
 	}
 }
@@ -93,12 +105,12 @@ void DXT1Tile::LoadSubset(DXT1Tile *tile, const ZTreeMgr *mgr)
 		m_subilat /= 2;
 		m_subilng /= 2;
 
-		LoadImage(img, m_sublvl, m_subilat, m_subilng, mgr);
-		if (img.data.size() == 0) {
+		LoadImage(m_idata, m_sublvl, m_subilat, m_subilng, mgr);
+		if (m_idata.data.size() == 0) {
 			LoadSubset(tile, mgr);
 		}
 		else {
-			img = img.SubImage(lng_subrange, lat_subrange);
+			m_idata = m_idata.SubImage(lng_subrange, lat_subrange);
 		}
 	}
 }
@@ -133,7 +145,7 @@ SurfTile *SurfTile::Load(int lvl, int ilat, int ilng)
 {
     SurfTile *stile = new SurfTile(lvl, ilat, ilng);
 	stile->LoadDXT1(s_treeMgr);
-	if (!stile->img.data.size()) {
+	if (!stile->m_idata.data.size()) {
 		delete stile;
 		return 0;
 	}
@@ -157,7 +169,7 @@ MaskTile *MaskTile::Load(int lvl, int ilat, int ilng)
 {
 	MaskTile *mtile = new MaskTile(lvl, ilat, ilng);
 	mtile->LoadDXT1(s_treeMgr);
-	if (!mtile->img.data.size()) {
+	if (!mtile->m_idata.data.size()) {
 		delete mtile;
 		return 0;
 	}

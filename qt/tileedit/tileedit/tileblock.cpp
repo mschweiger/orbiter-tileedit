@@ -73,11 +73,6 @@ const Tile *TileBlock::getTile(int idx) const
 	return m_tile[idx];
 }
 
-DWORD TileBlock::pixelColour(int px, int py) const
-{
-	return m_img.data[px + py*m_img.width];
-}
-
 bool TileBlock::hasAncestorData() const
 {
 	for (int i = 0; i < m_tile.size(); i++)
@@ -86,8 +81,15 @@ bool TileBlock::hasAncestorData() const
 	return false;
 }
 
-SurfTileBlock::SurfTileBlock(int lvl, int ilat0, int ilat1, int ilng0, int ilng1)
+
+DXT1TileBlock::DXT1TileBlock(int lvl, int ilat0, int ilat1, int ilng0, int ilng1)
 	: TileBlock(lvl, ilat0, ilat1, ilng0, ilng1)
+{
+}
+
+
+SurfTileBlock::SurfTileBlock(int lvl, int ilat0, int ilat1, int ilng0, int ilng1)
+	: DXT1TileBlock(lvl, ilat0, ilat1, ilng0, ilng1)
 {
 }
 
@@ -126,19 +128,20 @@ SurfTileBlock *SurfTileBlock::Load(int lvl, int ilat0, int ilat1, int ilng0, int
 
 	SurfTileBlock *stileblock = new SurfTileBlock(lvl, ilat0, ilat1, ilng0, ilng1);
 
-	stileblock->m_img.width = tilesize*stileblock->m_nblocklng;
-	stileblock->m_img.height = tilesize*stileblock->m_nblocklat;
-	stileblock->m_img.data.resize(stileblock->m_img.width * stileblock->m_img.height);
+	stileblock->m_idata.width = tilesize*stileblock->m_nblocklng;
+	stileblock->m_idata.height = tilesize*stileblock->m_nblocklat;
+	stileblock->m_idata.data.resize(stileblock->m_idata.width * stileblock->m_idata.height);
 
 	for (int ilat = ilat0; ilat < ilat1; ilat++) {
 		for (int ilng = ilng0; ilng < ilng1; ilng++) {
 			int idx = (ilat - ilat0)*stileblock->m_nblocklng + (ilng - ilng0);
-			stileblock->m_tile[idx] = SurfTile::Load(lvl, ilat, ilng);
-			if (!stileblock->m_tile[idx]) {
+			SurfTile *stile = SurfTile::Load(lvl, ilat, ilng);
+			if (!stile) {
 				delete stileblock;
 				return 0;
 			}
-			const Image &im = stileblock->m_tile[idx]->getImage();
+			stileblock->m_tile[idx] = stile;
+			const Image &im = stile->getData();
 			int yrep = tilesize / im.height;
 			int xrep = tilesize / im.width;
 			int yofs = (ilat - ilat0) * tilesize;
@@ -149,8 +152,8 @@ SurfTileBlock *SurfTileBlock::Load(int lvl, int ilat0, int ilat1, int ilng0, int
 					for (int j = 0; j < im.width; j++) {
 						for (int jj = 0; jj < xrep; jj++) {
 							DWORD v = im.data[i*im.width + j];
-							int idx = yofs * stileblock->m_img.width + xofs + j*xrep + jj;
-							stileblock->m_img.data[idx] = v;
+							int idx = yofs * stileblock->m_idata.width + xofs + j*xrep + jj;
+							stileblock->m_idata.data[idx] = v;
 						}
 					}
 					yofs++;
@@ -163,7 +166,7 @@ SurfTileBlock *SurfTileBlock::Load(int lvl, int ilat0, int ilat1, int ilng0, int
 
 
 MaskTileBlock::MaskTileBlock(int lvl, int ilat0, int ilat1, int ilng0, int ilng1)
-	: TileBlock(lvl, ilat0, ilat1, ilng0, ilng1)
+	: DXT1TileBlock(lvl, ilat0, ilat1, ilng0, ilng1)
 {
 }
 
@@ -198,7 +201,7 @@ bool MaskTileBlock::copyTile(int ilat, int ilng, Tile *tile) const
 
 void MaskTileBlock::ExtractImage(Image &img, TileMode mode, int exmin, int exmax, int eymin, int eymax) const
 {
-	img = m_img;
+	img = m_idata;
 	if (mode == TILEMODE_WATERMASK)
 		for (int i = 0; i < img.data.size(); i++)
 			img.data[i] |= 0x00FFFFFF;
@@ -213,19 +216,20 @@ MaskTileBlock *MaskTileBlock::Load(int lvl, int ilat0, int ilat1, int ilng0, int
 
 	MaskTileBlock *mtileblock = new MaskTileBlock(lvl, ilat0, ilat1, ilng0, ilng1);
 
-	mtileblock->m_img.width = tilesize*mtileblock->m_nblocklng;
-	mtileblock->m_img.height = tilesize*mtileblock->m_nblocklat;
-	mtileblock->m_img.data.resize(mtileblock->m_img.width * mtileblock->m_img.height);
+	mtileblock->m_idata.width = tilesize*mtileblock->m_nblocklng;
+	mtileblock->m_idata.height = tilesize*mtileblock->m_nblocklat;
+	mtileblock->m_idata.data.resize(mtileblock->m_idata.width * mtileblock->m_idata.height);
 
 	for (int ilat = ilat0; ilat < ilat1; ilat++) {
 		for (int ilng = ilng0; ilng < ilng1; ilng++) {
 			int idx = (ilat - ilat0)*mtileblock->m_nblocklng + (ilng - ilng0);
-			mtileblock->m_tile[idx] = MaskTile::Load(lvl, ilat, ilng);
-			if (!mtileblock->m_tile[idx]) {
+			MaskTile *mtile = MaskTile::Load(lvl, ilat, ilng);
+			if (!mtile) {
 				delete mtileblock;
 				return 0;
 			}
-			const Image &im = mtileblock->m_tile[idx]->getImage();
+			mtileblock->m_tile[idx] = mtile;
+			const Image &im = mtile->getData();
 			int yrep = tilesize / im.height;
 			int xrep = tilesize / im.width;
 			int yofs = (ilat - ilat0) * tilesize;
@@ -236,8 +240,8 @@ MaskTileBlock *MaskTileBlock::Load(int lvl, int ilat0, int ilat1, int ilng0, int
 					for (int j = 0; j < im.width; j++) {
 						for (int jj = 0; jj < xrep; jj++) {
 							DWORD v = im.data[i*im.width + j];
-							int idx = yofs * mtileblock->m_img.width + xofs + j*xrep + jj;
-							mtileblock->m_img.data[idx] = v;
+							int idx = yofs * mtileblock->m_idata.width + xofs + j*xrep + jj;
+							mtileblock->m_idata.data[idx] = v;
 						}
 					}
 					yofs++;
@@ -580,7 +584,7 @@ void ElevTileBlock::setWaterMask(const MaskTileBlock *mtileblock)
 	int w = (m_edata.width - 2) * 2 - 2;
 	int h = (m_edata.height - 2) * 2 - 2;
 
-	const Image &mask = mtileblock->getImage();
+	const Image &mask = mtileblock->getData();
 	if (mask.width == w && mask.height == h) {
 		m_waterMask.resize(w*h);
 		for (int i = 0; i < h; i++) {
@@ -604,7 +608,7 @@ void ElevTileBlock::dataChanged(int exmin, int exmax, int eymin, int eymax)
 	m_edata.dmin = *minmax.first;
 	m_edata.dmax = *minmax.second;
 
-	ExtractImage(m_img, TILEMODE_ELEVATION, exmin, exmax, eymin, eymax);
+	//ExtractImage(m_img, TILEMODE_ELEVATION, exmin, exmax, eymin, eymax);
 }
 
 void ElevTileBlock::RescanLimits()
@@ -698,13 +702,6 @@ void ElevTileBlock::ExtractModImage(Image &img, TileMode mode, int exmin, int ex
 			}
 		}
 }
-
-void ElevTileBlock::displayParamChanged()
-{
-	// obsolete - this should be handled by the canvas object
-	ExtractImage(m_img, TILEMODE_ELEVATION);
-}
-
 
 #ifdef UNDEF
 bool ElevTileBlock::getTile(int ilat, int ilng, Tile *tile) const

@@ -447,7 +447,7 @@ void ElevTile::setWaterMask(const MaskTile *mtile)
 	int w = (m_edata.width - 2) * 2 - 2;
 	int h = (m_edata.height - 2) * 2 - 2;
 
-	const Image &mask = mtile->getImage();
+	const Image &mask = mtile->getData();
 	if (mask.width == w && mask.height == h) {
 		m_waterMask.resize(w*h);
 		for (int i = 0; i < h; i++) {

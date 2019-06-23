@@ -40,7 +40,6 @@ public:
 	void setSubiLat(int ilat) { m_subilat = ilat; }
 	void setSubiLng(int ilng) { m_subilng = ilng; }
 
-    const Image &getImage() const { return img; }
 	virtual const std::string Layer() const = 0;
 
 	static void setRoot(const std::string &root);
@@ -57,7 +56,6 @@ protected:
     int m_subilng;
     std::pair<DWORD, DWORD> lat_subrange;
     std::pair<DWORD, DWORD> lng_subrange;
-    Image img;
 
 	static std::string s_root;
 	static int s_openMode;
@@ -68,11 +66,16 @@ class DXT1Tile: public Tile
 {
 public:
 	DXT1Tile(int lvl, int ilat, int ilng);
+	DXT1Tile(const DXT1Tile &tile);
+	virtual void set(const Tile *tile);
+	const Image &getData() const { return m_idata; }
 
 protected:
 	virtual void LoadDXT1(const ZTreeMgr *mgr = 0);
 	void LoadSubset(DXT1Tile *tile, const ZTreeMgr *mgr = 0);
 	void LoadImage(Image &im, int lvl, int ilat, int ilng, const ZTreeMgr *mgr);
+
+	Image m_idata;
 };
 
 class SurfTile: public DXT1Tile

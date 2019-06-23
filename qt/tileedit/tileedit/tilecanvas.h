@@ -30,6 +30,7 @@ public:
 	int idx() const { return m_canvasIdx; }
 	void setIdx(int idx) { m_canvasIdx = idx; }
 	void setTileedit(tileedit *te) { m_tileedit = te; }
+	const Image &getImage() const { return m_img; }
     void resizeEvent(QResizeEvent *event);
     void paintEvent(QPaintEvent *event);
     void enterEvent(QEvent *event);

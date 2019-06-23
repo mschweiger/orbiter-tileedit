@@ -21,12 +21,8 @@ public:
 	int nLatBlock() const { return m_nblocklat; }
 	int nLngBlock() const { return m_nblocklng; }
 	int nBlock() const { return m_nblocklat * m_nblocklng; }
-	DWORD pixelColour(int px, int py) const;
 
-	virtual void ExtractImage(Image &img, TileMode mode, int exmin = -1, int exmax = -1, int eymin = -1, int eymax = -1) const
-	{ img = m_img; }
-
-	const Image &getImage() const { return m_img; }
+	virtual void ExtractImage(Image &img, TileMode mode, int exmin = -1, int exmax = -1, int eymin = -1, int eymax = -1) const = 0;
 
 	virtual bool setTile(int ilat, int ilng, const Tile *tile) { return false; }
 
@@ -64,13 +60,25 @@ protected:
 	int m_ilat0, m_ilat1;
 	int m_ilng0, m_ilng1;
 	int m_nblocklat, m_nblocklng;
-	Image m_img;
 
 	std::vector<Tile*> m_tile; ///< constituent tiles
 };
 
 
-class SurfTileBlock : public TileBlock
+class DXT1TileBlock : public TileBlock
+{
+public:
+	DXT1TileBlock(int lvl, int ilat0, int ilat1, int ilng0, int ilng1);
+	virtual void ExtractImage(Image &img, TileMode mode, int exmin = -1, int exmax = -1, int eymin = -1, int eymax = -1) const
+	{ img = m_idata; }
+	const Image &getData() const { return m_idata; }
+
+protected:
+	Image m_idata;
+};
+
+
+class SurfTileBlock : public DXT1TileBlock
 {
 public:
 	static SurfTileBlock *Load(int lvl, int ilat0, int ilat1, int ilng0, int ilng1);
@@ -82,7 +90,7 @@ protected:
 };
 
 
-class MaskTileBlock : public TileBlock
+class MaskTileBlock : public DXT1TileBlock
 {
 public:
 	static MaskTileBlock *Load(int lvl, int ilat0, int ilat1, int ilng0, int ilng1);
@@ -103,7 +111,6 @@ public:
 	ElevTileBlock(const ElevTileBlock &etileblock);
 	static void setElevDisplayParam(const ElevDisplayParam *elevDisplayParam);
 	bool setTile(int ilat, int ilng, const Tile *tile);
-	//bool getTile(int ilat, int ilng, Tile *tile) const;
 	ElevData &getData() { return m_edata; }
 	ElevData &getBaseData() { return m_edataBase; }
 	virtual Tile *copyTile(int ilat, int ilng) const;
@@ -113,7 +120,6 @@ public:
 	void ExportPNG(const std::string &fname, double vmin, double vmax);
 	void setWaterMask(const MaskTileBlock *mtileblock);
 	double nodeElevation(int ndx, int ndy) const;
-	void displayParamChanged();
 	void dataChanged(int exmin = -1, int exmax = -1, int eymin = -1, int eymax = -1);
 	bool isModified() const { return m_isModified; }
 	void RescanLimits();

@@ -195,8 +195,6 @@ void tileedit::elevDisplayParamChanged()
 			m_elevDisplayParam.rangeMin = m_eTileBlock->getData().dmin;
 			m_elevDisplayParam.rangeMax = m_eTileBlock->getData().dmax;
 		}
-
-		m_eTileBlock->displayParamChanged();
 	}
 
 	for (int i = 0; i < 3; i++) {
@@ -563,15 +561,18 @@ void tileedit::OnTileLeft(TileCanvas *canvas)
 
 void tileedit::OnMouseMovedInCanvas(int canvasIdx, QMouseEvent *event)
 {
-	const TileBlock *tileblock = m_panel[canvasIdx].canvas->tileBlock();
+	TileCanvas *canvas = m_panel[canvasIdx].canvas;
+	const TileBlock *tileblock = canvas->tileBlock();
+	const Image &img = canvas->getImage();
+
 	int x = event->x();
 	int y = event->y();
-	int cw = m_panel[canvasIdx].canvas->rect().width();
-	int ch = m_panel[canvasIdx].canvas->rect().height();
+	int cw = canvas->rect().width();
+	int ch = canvas->rect().height();
 
-	if (tileblock && tileblock->getImage().data.size()) {
-		int iw = tileblock->getImage().width;
-		int ih = tileblock->getImage().height;
+	if (tileblock && img.data.size()) {
+		int iw = img.width;
+		int ih = img.height;
 
 		int nlat = (m_lvl < 4 ? 1 : 1 << (m_lvl - 4));
 		int nlng = (m_lvl < 4 ? 1 : 1 << (m_lvl - 3));
@@ -602,7 +603,7 @@ void tileedit::OnMouseMovedInCanvas(int canvasIdx, QMouseEvent *event)
 		else {
 			sprintf(cbuf, "X=%d/%d, Y=%d/%d", mx, iw, my, ih);
 			ui->labelData2->setText(cbuf);
-			DWORD col = tileblock->pixelColour(mx, my);
+			DWORD col = img.data[mx + my*img.width];
 			if (m_panel[canvasIdx].layerType->currentIndex() == 1) {
 				ui->labelData3->setText(col & 0xFF000000 ? "Diffuse (Land)" : "Specular (Water)");
 			} else {
@@ -612,8 +613,8 @@ void tileedit::OnMouseMovedInCanvas(int canvasIdx, QMouseEvent *event)
 		}
 		for (int i = 0; i < 3; i++) {
 			if (m_eTileBlock && m_panel[i].layerType->currentIndex() == 3) {
-				iw = m_eTileBlock->getImage().width;
-				ih = m_eTileBlock->getImage().height;
+				iw = img.width;
+				ih = img.height;
 				mx = ((x*iw) / cw + 1) / 2;
 				my = (ih - (y*ih) / ch) / 2;
 				double elev = m_eTileBlock->nodeElevation(mx, my);
@@ -650,13 +651,17 @@ void tileedit::OnMouseMovedInCanvas(int canvasIdx, QMouseEvent *event)
 
 std::pair<int, int> tileedit::ElevNodeFromPixCoord(int canvasIdx, int x, int y)
 {
+	// Should be moved into TileCanvas class
+
 	std::pair<int, int> node;
-	const TileBlock *tileblock = m_panel[canvasIdx].canvas->tileBlock();
-	if (tileblock && tileblock->getImage().data.size()) {
-		int iw = tileblock->getImage().width;
-		int ih = tileblock->getImage().height;
-		int cw = m_panel[canvasIdx].canvas->rect().width();
-		int ch = m_panel[canvasIdx].canvas->rect().height();
+	TileCanvas *canvas = m_panel[canvasIdx].canvas;
+	const Image &img = canvas->getImage();
+
+	if (img.data.size()) {
+		int iw = img.width;
+		int ih = img.height;
+		int cw = canvas->rect().width();
+		int ch = canvas->rect().height();
 		int mx = (x*iw) / cw;
 		int my = (y*ih) / ch;
 		mx = (mx + 1) / 2;
