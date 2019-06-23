@@ -598,7 +598,15 @@ void ElevTileBlock::setWaterMask(const MaskTileBlock *mtileblock)
 double ElevTileBlock::nodeElevation(int ndx, int ndy) const
 {
 	int idx = (ndy + 1)*m_edata.width + (ndx + 1);
-	return (double)m_edata.data[idx];
+	return m_edata.data[idx];
+}
+
+double ElevTileBlock::nodeModElevation(int ndx, int ndy) const
+{
+	int idx = (ndy + 1)*m_edata.width + (ndx + 1);
+	double v = m_edata.data[idx];
+	double v0 = m_edataBase.data[idx];
+	return (v != v0 ? v : DBL_MAX);
 }
 
 void ElevTileBlock::dataChanged(int exmin, int exmax, int eymin, int eymax)
@@ -607,8 +615,6 @@ void ElevTileBlock::dataChanged(int exmin, int exmax, int eymin, int eymax)
 	auto minmax = std::minmax_element(m_edata.data.begin(), m_edata.data.end());
 	m_edata.dmin = *minmax.first;
 	m_edata.dmax = *minmax.second;
-
-	//ExtractImage(m_img, TILEMODE_ELEVATION, exmin, exmax, eymin, eymax);
 }
 
 void ElevTileBlock::RescanLimits()

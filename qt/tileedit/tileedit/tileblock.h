@@ -120,6 +120,7 @@ public:
 	void ExportPNG(const std::string &fname, double vmin, double vmax);
 	void setWaterMask(const MaskTileBlock *mtileblock);
 	double nodeElevation(int ndx, int ndy) const;
+	double nodeModElevation(int ndx, int ndy) const;
 	void dataChanged(int exmin = -1, int exmax = -1, int eymin = -1, int eymax = -1);
 	bool isModified() const { return m_isModified; }
 	void RescanLimits();

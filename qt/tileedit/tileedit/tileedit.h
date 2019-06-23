@@ -105,6 +105,7 @@ private:
 		QWidget *colourscale;
 		QLabel *rangeMin;
 		QLabel *rangeMax;
+		QLabel *currValue;
         QComboBox *layerType;
 		QLabel *fileId;
     } m_panel[3];

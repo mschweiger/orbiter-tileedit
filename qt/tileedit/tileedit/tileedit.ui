@@ -1144,6 +1144,16 @@
                </widget>
               </item>
               <item>
+               <widget class="QLabel" name="labelValue2">
+                <property name="text">
+                 <string>-</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignCenter</set>
+                </property>
+               </widget>
+              </item>
+              <item>
                <widget class="QLabel" name="labelRangeMax2">
                 <property name="text">
                  <string>-</string>
@@ -1225,6 +1235,16 @@
                <widget class="QLabel" name="labelRangeMin0">
                 <property name="text">
                  <string>-</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLabel" name="labelValue0">
+                <property name="text">
+                 <string>-</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignCenter</set>
                 </property>
                </widget>
               </item>
@@ -1314,6 +1334,16 @@
                </widget>
               </item>
               <item>
+               <widget class="QLabel" name="labelValue1">
+                <property name="text">
+                 <string>-</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignCenter</set>
+                </property>
+               </widget>
+              </item>
+              <item>
                <widget class="QLabel" name="labelRangeMax1">
                 <property name="text">
                  <string>-</string>
@@ -1370,7 +1400,7 @@
  </resources>
  <connections/>
  <buttongroups>
-  <buttongroup name="bgrpEdit"/>
   <buttongroup name="bgrpAction"/>
+  <buttongroup name="bgrpEdit"/>
  </buttongroups>
 </ui>

@@ -67,6 +67,7 @@ tileedit::tileedit(QWidget *parent)
 	m_panel[0].colourscale = ui->widgetColourscale0;
 	m_panel[0].rangeMin = ui->labelRangeMin0;
 	m_panel[0].rangeMax = ui->labelRangeMax0;
+	m_panel[0].currValue = ui->labelValue0;
 	m_panel[0].layerType = ui->comboLayerType0;
 	m_panel[0].fileId = ui->labelFileId0;
 
@@ -74,6 +75,7 @@ tileedit::tileedit(QWidget *parent)
 	m_panel[1].colourscale = ui->widgetColourscale1;
 	m_panel[1].rangeMin = ui->labelRangeMin1;
 	m_panel[1].rangeMax = ui->labelRangeMax1;
+	m_panel[1].currValue = ui->labelValue1;
 	m_panel[1].layerType = ui->comboLayerType1;
 	m_panel[1].fileId = ui->labelFileId1;
 
@@ -81,6 +83,7 @@ tileedit::tileedit(QWidget *parent)
 	m_panel[2].colourscale = ui->widgetColourscale2;
 	m_panel[2].rangeMin = ui->labelRangeMin2;
 	m_panel[2].rangeMax = ui->labelRangeMax2;
+	m_panel[2].currValue = ui->labelValue2;
 	m_panel[2].layerType = ui->comboLayerType2;
 	m_panel[2].fileId = ui->labelFileId2;
 
@@ -392,7 +395,7 @@ void tileedit::refreshPanel(int panelIdx)
         m_panel[panelIdx].canvas->setTileBlock(0, TILEMODE_NONE);
         break;
     }
-	m_panel[panelIdx].colourscale->setVisible(m_panel[panelIdx].layerType->currentIndex() == 3);
+	m_panel[panelIdx].colourscale->setVisible(m_panel[panelIdx].layerType->currentIndex() >= 3);
 }
 
 void tileedit::onResolutionChanged(int lvl)
@@ -590,7 +593,7 @@ void tileedit::OnMouseMovedInCanvas(int canvasIdx, QMouseEvent *event)
 
 		int mx = (x*iw) / cw;
 		int my = (y*ih) / ch;
-		if (m_panel[canvasIdx].layerType->currentIndex() == 3) { // elevation
+		if (m_panel[canvasIdx].layerType->currentIndex() >= 3) { // elevation
 			mx = (mx + 1) / 2;
 			my = (ih - my) / 2;
 			sprintf(cbuf, "x=%d/%d, y=%d/%d", mx, (iw / 2) + 1, my, (ih / 2) + 1);
@@ -598,7 +601,6 @@ void tileedit::OnMouseMovedInCanvas(int canvasIdx, QMouseEvent *event)
 			double elev = ((ElevTileBlock*)tileblock)->nodeElevation(mx, my);
 			sprintf(cbuf, "%+0.1lfm", elev);
 			ui->labelData3->setText(cbuf);
-			m_panel[canvasIdx].colourscale->findChild<Colorbar*>()->setValue(elev);
 		}
 		else {
 			sprintf(cbuf, "X=%d/%d, Y=%d/%d", mx, iw, my, ih);
@@ -612,12 +614,17 @@ void tileedit::OnMouseMovedInCanvas(int canvasIdx, QMouseEvent *event)
 			}
 		}
 		for (int i = 0; i < 3; i++) {
-			if (m_eTileBlock && m_panel[i].layerType->currentIndex() == 3) {
+			if (m_eTileBlock && m_panel[i].layerType->currentIndex() >= 3) {
 				iw = img.width;
 				ih = img.height;
 				mx = ((x*iw) / cw + 1) / 2;
 				my = (ih - (y*ih) / ch) / 2;
-				double elev = m_eTileBlock->nodeElevation(mx, my);
+				double elev = (m_panel[i].layerType->currentIndex() == 3 ? m_eTileBlock->nodeElevation(mx, my) : m_eTileBlock->nodeModElevation(mx, my));
+				if (elev != DBL_MAX)
+					sprintf(cbuf, "%+0.1lfm", elev);
+				else
+					strcpy(cbuf, "N/A");
+				m_panel[i].currValue->setText(cbuf);
 				m_panel[i].colourscale->findChild<Colorbar*>()->setValue(elev);
 			}
 		}

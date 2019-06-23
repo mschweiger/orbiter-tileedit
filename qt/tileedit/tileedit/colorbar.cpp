@@ -97,10 +97,12 @@ void ColorbarOverlay::paintEvent(QPaintEvent *event)
 	int w = rect().width();
 	int h = rect().height();
 
-	int x = max(1, min(w - 2, (m_val - m_vmin) / (m_vmax - m_vmin) * w));
-	painter.setPen(m_penIndicator0);
-	painter.drawLine(x, 0, x, h);
-	painter.setPen(m_penIndicator1);
-	painter.drawLine(x-1, 0, x-1, h);
-	painter.drawLine(x + 1, 0, x + 1, h);
+	if (m_val != DBL_MAX) {
+		int x = max(1, min(w - 2, (m_val - m_vmin) / (m_vmax - m_vmin) * w));
+		painter.setPen(m_penIndicator0);
+		painter.drawLine(x, 0, x, h);
+		painter.setPen(m_penIndicator1);
+		painter.drawLine(x - 1, 0, x - 1, h);
+		painter.drawLine(x + 1, 0, x + 1, h);
+	}
 }
