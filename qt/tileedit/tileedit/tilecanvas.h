@@ -30,6 +30,7 @@ public:
 	int idx() const { return m_canvasIdx; }
 	void setIdx(int idx) { m_canvasIdx = idx; }
 	void setTileedit(tileedit *te) { m_tileedit = te; }
+	const Image &getImage() const { return m_img; }
     void resizeEvent(QResizeEvent *event);
     void paintEvent(QPaintEvent *event);
     void enterEvent(QEvent *event);
@@ -37,7 +38,8 @@ public:
     void mouseMoveEvent(QMouseEvent *event);
 	void mousePressEvent(QMouseEvent *event);
     void mouseReleaseEvent(QMouseEvent *event);
-    void setTileBlock(const TileBlock *tileBlock);
+    void setTileBlock(const TileBlock *tileBlock, TileMode mode);
+	void updateImage();
 	void setGlyphMode(GlyphMode mode);
 	void setCrosshair(double x, double y, double rad);
 	void showOverlay(bool show);
@@ -48,10 +50,12 @@ protected:
 
 private:
     const TileBlock *m_tileBlock;
+	TileMode m_tileMode;
 	int m_canvasIdx;
 	int m_lvl, m_ilat0, m_ilat1, m_ilng0, m_ilng1;
 	GlyphMode m_glyphMode;
 	tileedit *m_tileedit;
+	Image m_img;
 
 signals:
     void tileChanged(int lvl, int ilat, int ilng);

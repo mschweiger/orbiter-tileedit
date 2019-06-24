@@ -73,11 +73,6 @@ const Tile *TileBlock::getTile(int idx) const
 	return m_tile[idx];
 }
 
-DWORD TileBlock::pixelColour(int px, int py) const
-{
-	return m_img.data[px + py*m_img.width];
-}
-
 bool TileBlock::hasAncestorData() const
 {
 	for (int i = 0; i < m_tile.size(); i++)
@@ -86,8 +81,15 @@ bool TileBlock::hasAncestorData() const
 	return false;
 }
 
-SurfTileBlock::SurfTileBlock(int lvl, int ilat0, int ilat1, int ilng0, int ilng1)
+
+DXT1TileBlock::DXT1TileBlock(int lvl, int ilat0, int ilat1, int ilng0, int ilng1)
 	: TileBlock(lvl, ilat0, ilat1, ilng0, ilng1)
+{
+}
+
+
+SurfTileBlock::SurfTileBlock(int lvl, int ilat0, int ilat1, int ilng0, int ilng1)
+	: DXT1TileBlock(lvl, ilat0, ilat1, ilng0, ilng1)
 {
 }
 
@@ -126,19 +128,20 @@ SurfTileBlock *SurfTileBlock::Load(int lvl, int ilat0, int ilat1, int ilng0, int
 
 	SurfTileBlock *stileblock = new SurfTileBlock(lvl, ilat0, ilat1, ilng0, ilng1);
 
-	stileblock->m_img.width = tilesize*stileblock->m_nblocklng;
-	stileblock->m_img.height = tilesize*stileblock->m_nblocklat;
-	stileblock->m_img.data.resize(stileblock->m_img.width * stileblock->m_img.height);
+	stileblock->m_idata.width = tilesize*stileblock->m_nblocklng;
+	stileblock->m_idata.height = tilesize*stileblock->m_nblocklat;
+	stileblock->m_idata.data.resize(stileblock->m_idata.width * stileblock->m_idata.height);
 
 	for (int ilat = ilat0; ilat < ilat1; ilat++) {
 		for (int ilng = ilng0; ilng < ilng1; ilng++) {
 			int idx = (ilat - ilat0)*stileblock->m_nblocklng + (ilng - ilng0);
-			stileblock->m_tile[idx] = SurfTile::Load(lvl, ilat, ilng);
-			if (!stileblock->m_tile[idx]) {
+			SurfTile *stile = SurfTile::Load(lvl, ilat, ilng);
+			if (!stile) {
 				delete stileblock;
 				return 0;
 			}
-			const Image &im = stileblock->m_tile[idx]->getImage();
+			stileblock->m_tile[idx] = stile;
+			const Image &im = stile->getData();
 			int yrep = tilesize / im.height;
 			int xrep = tilesize / im.width;
 			int yofs = (ilat - ilat0) * tilesize;
@@ -149,8 +152,8 @@ SurfTileBlock *SurfTileBlock::Load(int lvl, int ilat0, int ilat1, int ilng0, int
 					for (int j = 0; j < im.width; j++) {
 						for (int jj = 0; jj < xrep; jj++) {
 							DWORD v = im.data[i*im.width + j];
-							int idx = yofs * stileblock->m_img.width + xofs + j*xrep + jj;
-							stileblock->m_img.data[idx] = v;
+							int idx = yofs * stileblock->m_idata.width + xofs + j*xrep + jj;
+							stileblock->m_idata.data[idx] = v;
 						}
 					}
 					yofs++;
@@ -162,43 +165,8 @@ SurfTileBlock *SurfTileBlock::Load(int lvl, int ilat0, int ilat1, int ilng0, int
 }
 
 
-NightlightTileBlock::NightlightTileBlock(int lvl, int ilat0, int ilat1, int ilng0, int ilng1)
-	: TileBlock(lvl, ilat0, ilat1, ilng0, ilng1)
-{
-}
-
-Tile *NightlightTileBlock::copyTile(int ilat, int ilng) const
-{
-	if (ilat < m_ilat0 || ilat >= m_ilat1) return 0;
-	if (ilng < m_ilng0 || ilng >= m_ilng1) return 0;
-
-	int idx = (ilat - m_ilat0) * m_nblocklng + (ilng - m_ilng0);
-
-	if (!m_tile[idx]) return 0;
-
-	NightlightTile *ltile = static_cast<NightlightTile*>(m_tile[idx]);
-
-	return new NightlightTile(*ltile);
-}
-
-bool NightlightTileBlock::copyTile(int ilat, int ilng, Tile *tile) const
-{
-	if (ilat < m_ilat0 || ilat >= m_ilat1) return false;
-	if (ilng < m_ilng0 || ilng >= m_ilng1) return false;
-
-	int idx = (ilat - m_ilat0) * m_nblocklng + (ilng - m_ilng0);
-	if (!m_tile[idx]) return false;
-
-	NightlightTile *ltile = static_cast<NightlightTile*>(tile);
-	if (!ltile) return false;
-
-	ltile->set(m_tile[idx]);
-	return true;
-}
-
-
 MaskTileBlock::MaskTileBlock(int lvl, int ilat0, int ilat1, int ilng0, int ilng1)
-	: TileBlock(lvl, ilat0, ilat1, ilng0, ilng1)
+	: DXT1TileBlock(lvl, ilat0, ilat1, ilng0, ilng1)
 {
 }
 
@@ -231,45 +199,49 @@ bool MaskTileBlock::copyTile(int ilat, int ilng, Tile *tile) const
 	return true;
 }
 
-std::pair<MaskTileBlock*, NightlightTileBlock*> MaskTileBlock::Load(int lvl, int ilat0, int ilat1, int ilng0, int ilng1)
+void MaskTileBlock::ExtractImage(Image &img, TileMode mode, int exmin, int exmax, int eymin, int eymax) const
+{
+	img = m_idata;
+	if (mode == TILEMODE_WATERMASK)
+		for (int i = 0; i < img.data.size(); i++)
+			img.data[i] |= 0x00FFFFFF;
+	else
+		for (int i = 0; i < img.data.size(); i++)
+			img.data[i] |= 0xFF000000;
+}
+
+MaskTileBlock *MaskTileBlock::Load(int lvl, int ilat0, int ilat1, int ilng0, int ilng1)
 {
 	const int tilesize = 512;
 
 	MaskTileBlock *mtileblock = new MaskTileBlock(lvl, ilat0, ilat1, ilng0, ilng1);
-	NightlightTileBlock *ltileblock = new NightlightTileBlock(lvl, ilat0, ilat1, ilng0, ilng1);
 
-	mtileblock->m_img.width = tilesize*mtileblock->m_nblocklng;
-	mtileblock->m_img.height = tilesize*mtileblock->m_nblocklat;
-	mtileblock->m_img.data.resize(mtileblock->m_img.width * mtileblock->m_img.height);
-	ltileblock->m_img.width = tilesize*ltileblock->m_nblocklng;
-	ltileblock->m_img.height = tilesize*ltileblock->m_nblocklat;
-	ltileblock->m_img.data.resize(ltileblock->m_img.width * ltileblock->m_img.height);
+	mtileblock->m_idata.width = tilesize*mtileblock->m_nblocklng;
+	mtileblock->m_idata.height = tilesize*mtileblock->m_nblocklat;
+	mtileblock->m_idata.data.resize(mtileblock->m_idata.width * mtileblock->m_idata.height);
 
 	for (int ilat = ilat0; ilat < ilat1; ilat++) {
 		for (int ilng = ilng0; ilng < ilng1; ilng++) {
 			int idx = (ilat - ilat0)*mtileblock->m_nblocklng + (ilng - ilng0);
-			std::pair<MaskTile*, NightlightTile*> mltile = MaskTile::Load(lvl, ilat, ilng);
-			if (!mltile.first) {
+			MaskTile *mtile = MaskTile::Load(lvl, ilat, ilng);
+			if (!mtile) {
 				delete mtileblock;
-				delete ltileblock;
-				return std::make_pair((MaskTileBlock*)0, (NightlightTileBlock*)0);
+				return 0;
 			}
-			mtileblock->m_tile[idx] = mltile.first;
-			ltileblock->m_tile[idx] = mltile.second;
-			const Image &mim = mtileblock->m_tile[idx]->getImage();
-			const Image &lim = ltileblock->m_tile[idx]->getImage();
-			int yrep = tilesize / mim.height;
-			int xrep = tilesize / mim.width;
+			mtileblock->m_tile[idx] = mtile;
+			const Image &im = mtile->getData();
+			int yrep = tilesize / im.height;
+			int xrep = tilesize / im.width;
 			int yofs = (ilat - ilat0) * tilesize;
 			int xofs = (ilng - ilng0) * tilesize;
 
-			for (int i = 0; i < mim.height; i++) {
+			for (int i = 0; i < im.height; i++) {
 				for (int ii = 0; ii < yrep; ii++) {
-					for (int j = 0; j < mim.width; j++) {
+					for (int j = 0; j < im.width; j++) {
 						for (int jj = 0; jj < xrep; jj++) {
-							int idx = yofs * mtileblock->m_img.width + xofs + j*xrep + jj;
-							mtileblock->m_img.data[idx] = mim.data[i*mim.width + j];
-							ltileblock->m_img.data[idx] = lim.data[i*lim.width + j];
+							DWORD v = im.data[i*im.width + j];
+							int idx = yofs * mtileblock->m_idata.width + xofs + j*xrep + jj;
+							mtileblock->m_idata.data[idx] = v;
 						}
 					}
 					yofs++;
@@ -277,7 +249,7 @@ std::pair<MaskTileBlock*, NightlightTileBlock*> MaskTileBlock::Load(int lvl, int
 			}
 		}
 	}
-	return std::make_pair(mtileblock, ltileblock);
+	return mtileblock;
 }
 
 
@@ -612,7 +584,7 @@ void ElevTileBlock::setWaterMask(const MaskTileBlock *mtileblock)
 	int w = (m_edata.width - 2) * 2 - 2;
 	int h = (m_edata.height - 2) * 2 - 2;
 
-	const Image &mask = mtileblock->getImage();
+	const Image &mask = mtileblock->getData();
 	if (mask.width == w && mask.height == h) {
 		m_waterMask.resize(w*h);
 		for (int i = 0; i < h; i++) {
@@ -626,7 +598,15 @@ void ElevTileBlock::setWaterMask(const MaskTileBlock *mtileblock)
 double ElevTileBlock::nodeElevation(int ndx, int ndy) const
 {
 	int idx = (ndy + 1)*m_edata.width + (ndx + 1);
-	return (double)m_edata.data[idx];
+	return m_edata.data[idx];
+}
+
+double ElevTileBlock::nodeModElevation(int ndx, int ndy) const
+{
+	int idx = (ndy + 1)*m_edata.width + (ndx + 1);
+	double v = m_edata.data[idx];
+	double v0 = m_edataBase.data[idx];
+	return (v != v0 ? v : DBL_MAX);
 }
 
 void ElevTileBlock::dataChanged(int exmin, int exmax, int eymin, int eymax)
@@ -635,8 +615,6 @@ void ElevTileBlock::dataChanged(int exmin, int exmax, int eymin, int eymax)
 	auto minmax = std::minmax_element(m_edata.data.begin(), m_edata.data.end());
 	m_edata.dmin = *minmax.first;
 	m_edata.dmax = *minmax.second;
-
-	ExtractImage(exmin, exmax, eymin, eymax);
 }
 
 void ElevTileBlock::RescanLimits()
@@ -644,13 +622,18 @@ void ElevTileBlock::RescanLimits()
 	m_edata.RescanLimits();
 }
 
-void ElevTileBlock::ExtractImage(int exmin, int exmax, int eymin, int eymax)
+void ElevTileBlock::ExtractImage(Image &img, TileMode mode, int exmin, int exmax, int eymin, int eymax) const
 {
+	if (mode == TILEMODE_ELEVMOD) {
+		ExtractModImage(img, mode, exmin, exmax, eymin, eymax);
+		return;
+	}
+
 	double dmin, dmax;
 
-	m_img.width = (m_edata.width - 2) * 2 - 2;
-	m_img.height = (m_edata.height - 2) * 2 - 2;
-	m_img.data.resize(m_img.width * m_img.height);
+	img.width = (m_edata.width - 2) * 2 - 2;
+	img.height = (m_edata.height - 2) * 2 - 2;
+	img.data.resize(img.width * img.height);
 
 	if (s_elevDisplayParam->autoRange) {
 		dmin = m_edata.dmin;
@@ -663,9 +646,9 @@ void ElevTileBlock::ExtractImage(int exmin, int exmax, int eymin, int eymax)
 	double dscale = (dmax > dmin ? 256.0 / (dmax - dmin) : 1.0);
 
 	int imin = (exmin < 0 ? 0 : max(0, (exmin - 1) * 2 - 1));
-	int imax = (exmax < 0 ? m_img.width : min((int)m_img.width, exmax * 2));
-	int jmin = (eymax < 0 ? 0 : max(0, (int)m_img.height - (eymax - 1) * 2));
-	int jmax = (eymin < 0 ? m_img.height : min((int)m_img.height, (int)m_img.height - (eymin - 1) * 2 + 1));
+	int imax = (exmax < 0 ? img.width : min((int)img.width, exmax * 2));
+	int jmin = (eymax < 0 ? 0 : max(0, (int)img.height - (eymax - 1) * 2));
+	int jmax = (eymin < 0 ? img.height : min((int)img.height, (int)img.height - (eymin - 1) * 2 + 1));
 
 	const Cmap &cm = cmap(s_elevDisplayParam->cmName);
 	bool useMask = s_elevDisplayParam->useWaterMask && m_waterMask.size();
@@ -673,23 +656,58 @@ void ElevTileBlock::ExtractImage(int exmin, int exmax, int eymin, int eymax)
 	for (int j = jmin; j < jmax; j++)
 		for (int i = imin; i < imax; i++) {
 			int ex = (i + 1) / 2 + 1;
-			int ey = (m_img.height - j) / 2 + 1;
+			int ey = (img.height - j) / 2 + 1;
 			double d = m_edata.data[ex + ey * m_edata.width];
 			int v = max(min((int)((d - dmin) * dscale), 255), 0);
-			if (v < 0 || v > 255)
-				std::cerr << "Problem" << std::endl;
-			m_img.data[i + j * m_img.width] = (0xff000000 | cm[v]);
+			img.data[i + j * img.width] = (0xff000000 | cm[v]);
 
-			if (useMask && m_waterMask[i + j * m_img.width])
-				m_img.data[i + j * m_img.width] = 0xffB9E3FF;
+			if (useMask && m_waterMask[i + j * img.width])
+				img.data[i + j * img.width] = 0xffB9E3FF;
 		}
 }
 
-void ElevTileBlock::displayParamChanged()
+void ElevTileBlock::ExtractModImage(Image &img, TileMode mode, int exmin, int exmax, int eymin, int eymax) const
 {
-	ExtractImage();
-}
+	double dmin, dmax;
 
+	img.width = (m_edata.width - 2) * 2 - 2;
+	img.height = (m_edata.height - 2) * 2 - 2;
+	img.data.resize(img.width * img.height);
+
+	if (s_elevDisplayParam->autoRange) {
+		dmin = m_edata.dmin;
+		dmax = m_edata.dmax;
+	}
+	else {
+		dmin = s_elevDisplayParam->rangeMin;
+		dmax = s_elevDisplayParam->rangeMax;
+	}
+	double dscale = (dmax > dmin ? 256.0 / (dmax - dmin) : 1.0);
+
+	int imin = (exmin < 0 ? 0 : max(0, (exmin - 1) * 2 - 1));
+	int imax = (exmax < 0 ? img.width : min((int)img.width, exmax * 2));
+	int jmin = (eymax < 0 ? 0 : max(0, (int)img.height - (eymax - 1) * 2));
+	int jmax = (eymin < 0 ? img.height : min((int)img.height, (int)img.height - (eymin - 1) * 2 + 1));
+
+	const Cmap &cm = cmap(s_elevDisplayParam->cmName);
+	bool useMask = s_elevDisplayParam->useWaterMask && m_waterMask.size();
+
+	for (int j = jmin; j < jmax; j++)
+		for (int i = imin; i < imax; i++) {
+			int ex = (i + 1) / 2 + 1;
+			int ey = (img.height - j) / 2 + 1;
+			double d = m_edata.data[ex + ey * m_edata.width];
+			double db = m_edataBase.data[ex + ey * m_edata.width];
+			if (d != db) {
+				int v = max(min((int)((d - dmin) * dscale), 255), 0);
+				img.data[i + j * img.width] = (0xff000000 | cm[v]);
+			}
+			else {
+				bool b = (i / 8 + j / 8) & 1;
+				img.data[i + j * img.width] = (b ? 0xff808080 : 0xff909090);
+			}
+		}
+}
 
 #ifdef UNDEF
 bool ElevTileBlock::getTile(int ilat, int ilng, Tile *tile) const

@@ -105,6 +105,7 @@ private:
 		QWidget *colourscale;
 		QLabel *rangeMin;
 		QLabel *rangeMax;
+		QLabel *currValue;
         QComboBox *layerType;
 		QLabel *fileId;
     } m_panel[3];
@@ -135,7 +136,6 @@ private:
 
     SurfTileBlock *m_sTileBlock;
 	MaskTileBlock *m_mTileBlock;
-	NightlightTileBlock *m_lTileBlock;
 	ElevTileBlock *m_eTileBlock;
 	ElevTileBlock *m_eTileBlockRef;
 
