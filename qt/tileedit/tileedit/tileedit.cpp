@@ -64,26 +64,17 @@ tileedit::tileedit(QWidget *parent)
     ui->setupUi(this);
 
     m_panel[0].canvas = ui->widgetCanvas0;
-	m_panel[0].colourscale = ui->widgetColourscale0;
-	m_panel[0].rangeMin = ui->labelRangeMin0;
-	m_panel[0].rangeMax = ui->labelRangeMax0;
-	m_panel[0].currValue = ui->labelValue0;
+	m_panel[0].colorbar = ui->widgetColourbar0;
 	m_panel[0].layerType = ui->comboLayerType0;
 	m_panel[0].fileId = ui->labelFileId0;
 
 	m_panel[1].canvas = ui->widgetCanvas1;
-	m_panel[1].colourscale = ui->widgetColourscale1;
-	m_panel[1].rangeMin = ui->labelRangeMin1;
-	m_panel[1].rangeMax = ui->labelRangeMax1;
-	m_panel[1].currValue = ui->labelValue1;
+	m_panel[1].colorbar = ui->widgetColourbar1;
 	m_panel[1].layerType = ui->comboLayerType1;
 	m_panel[1].fileId = ui->labelFileId1;
 
     m_panel[2].canvas = ui->widgetCanvas2;
-	m_panel[2].colourscale = ui->widgetColourscale2;
-	m_panel[2].rangeMin = ui->labelRangeMin2;
-	m_panel[2].rangeMax = ui->labelRangeMax2;
-	m_panel[2].currValue = ui->labelValue2;
+	m_panel[2].colorbar = ui->widgetColourbar2;
 	m_panel[2].layerType = ui->comboLayerType2;
 	m_panel[2].fileId = ui->labelFileId2;
 
@@ -125,8 +116,7 @@ tileedit::tileedit(QWidget *parent)
 		connect(m_panel[i].canvas, SIGNAL(mouseMovedInCanvas(int, QMouseEvent*)), this, SLOT(OnMouseMovedInCanvas(int, QMouseEvent*)));
 		connect(m_panel[i].canvas, SIGNAL(mousePressedInCanvas(int, QMouseEvent*)), this, SLOT(OnMousePressedInCanvas(int, QMouseEvent*)));
 		connect(m_panel[i].canvas, SIGNAL(mouseReleasedInCanvas(int, QMouseEvent*)), this, SLOT(OnMouseReleasedInCanvas(int, QMouseEvent*)));
-		m_panel[i].colourscale->setVisible(false);
-		m_panel[i].colourscale->findChild<Colorbar*>()->setElevDisplayParam(m_elevDisplayParam);
+		m_panel[i].colorbar->setElevDisplayParam(m_elevDisplayParam);
 	}
 	m_settings->endArray();
     connect(m_panel[0].layerType, SIGNAL(currentIndexChanged(int)), this, SLOT(onLayerType0(int)));
@@ -204,23 +194,9 @@ void tileedit::elevDisplayParamChanged()
 		if (m_panel[i].layerType->currentIndex() >= 3) {
 			m_panel[i].canvas->updateImage();
 		}
-		Colorbar *cbar = m_panel[i].colourscale->findChild<Colorbar*>();
+		Colorbar *cbar = m_panel[i].colorbar;
 		if (cbar) {
 			cbar->displayParamChanged();
-		}
-		if (m_elevDisplayParam.autoRange) {
-			if (m_eTileBlock) {
-				sprintf(cbuf, "%+0.1f", m_eTileBlock->getData().dmin);
-				m_panel[i].rangeMin->setText(cbuf);
-				sprintf(cbuf, "%+0.1f", m_eTileBlock->getData().dmax);
-				m_panel[i].rangeMax->setText(cbuf);
-			}
-		}
-		else {
-			sprintf(cbuf, "%+0.1f", m_elevDisplayParam.rangeMin);
-			m_panel[i].rangeMin->setText(cbuf);
-			sprintf(cbuf, "%+0.1f", m_elevDisplayParam.rangeMax);
-			m_panel[i].rangeMax->setText(cbuf);
 		}
 	}
 
@@ -377,25 +353,30 @@ void tileedit::refreshPanel(int panelIdx)
     switch(m_panel[panelIdx].layerType->currentIndex()) {
     case 0:
         m_panel[panelIdx].canvas->setTileBlock(m_sTileBlock, TILEMODE_SURFACE);
-        break;
+		m_panel[panelIdx].colorbar->setTileMode(TILEMODE_SURFACE);
+		break;
 	case 1:
 		m_panel[panelIdx].canvas->setTileBlock(m_mTileBlock, TILEMODE_WATERMASK);
+		m_panel[panelIdx].colorbar->setTileMode(TILEMODE_WATERMASK);
 		break;
 	case 2:
 		m_panel[panelIdx].canvas->setTileBlock(m_mTileBlock, TILEMODE_NIGHTLIGHT);
+		m_panel[panelIdx].colorbar->setTileMode(TILEMODE_NIGHTLIGHT);
 		break;
 	case 3:
 		m_panel[panelIdx].canvas->setTileBlock(m_eTileBlock, TILEMODE_ELEVATION);
+		m_panel[panelIdx].colorbar->setTileMode(TILEMODE_ELEVATION);
 		elevDisplayParamChanged();
 		break;
 	case 4:
 		m_panel[panelIdx].canvas->setTileBlock(m_eTileBlock, TILEMODE_ELEVMOD);
+		m_panel[panelIdx].colorbar->setTileMode(TILEMODE_ELEVMOD);
 		break;
 	default:
         m_panel[panelIdx].canvas->setTileBlock(0, TILEMODE_NONE);
-        break;
+		m_panel[panelIdx].colorbar->setTileMode(TILEMODE_NONE);
+		break;
     }
-	m_panel[panelIdx].colourscale->setVisible(m_panel[panelIdx].layerType->currentIndex() >= 3);
 }
 
 void tileedit::onResolutionChanged(int lvl)
@@ -614,18 +595,20 @@ void tileedit::OnMouseMovedInCanvas(int canvasIdx, QMouseEvent *event)
 			}
 		}
 		for (int i = 0; i < 3; i++) {
-			if (m_eTileBlock && m_panel[i].layerType->currentIndex() >= 3) {
-				iw = img.width;
-				ih = img.height;
-				mx = ((x*iw) / cw + 1) / 2;
-				my = (ih - (y*ih) / ch) / 2;
-				double elev = (m_panel[i].layerType->currentIndex() == 3 ? m_eTileBlock->nodeElevation(mx, my) : m_eTileBlock->nodeModElevation(mx, my));
-				if (elev != DBL_MAX)
-					sprintf(cbuf, "%+0.1lfm", elev);
-				else
-					strcpy(cbuf, "N/A");
-				m_panel[i].currValue->setText(cbuf);
-				m_panel[i].colourscale->findChild<Colorbar*>()->setValue(elev);
+			if (m_panel[i].layerType->currentIndex() >= 3) {
+				if (m_eTileBlock) {
+					iw = img.width;
+					ih = img.height;
+					mx = ((x*iw) / cw + 1) / 2;
+					my = (ih - (y*ih) / ch) / 2;
+					double elev = (m_panel[i].layerType->currentIndex() == 3 ? m_eTileBlock->nodeElevation(mx, my) : m_eTileBlock->nodeModElevation(mx, my));
+					m_panel[i].colorbar->setScalarValue(elev);
+				}
+			}
+			else if (m_panel[i].layerType->currentIndex() == 0 || m_panel[i].layerType->currentIndex() == 2) {
+				const Image &img = m_panel[i].canvas->getImage();
+				DWORD col = img.data[mx + my*img.width];
+				m_panel[i].colorbar->setRGBValue((col >> 0x10) & 0xFF, (col >> 0x08) & 0xFF, col & 0xFF);
 			}
 		}
 	}
