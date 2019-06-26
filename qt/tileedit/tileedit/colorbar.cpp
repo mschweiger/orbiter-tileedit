@@ -55,7 +55,6 @@ void Colorbar::paintEvent(QPaintEvent *event)
 	int textHeight = fm.height();
 
 	QRect cbRect(rect().left(), rect().top(), rect().width(), rect().height() - textHeight);
-	QRect lbRect(rect().left(), rect().height() - textHeight, rect().width(), textHeight);
 
 	if (m_mode == TILEMODE_ELEVATION || m_mode == TILEMODE_ELEVMOD) {
 		if (m_elevDisplayParam) {
@@ -82,6 +81,13 @@ void Colorbar::paintEvent(QPaintEvent *event)
 		}
 		QImage qimg((BYTE*)data, 256, 3, QImage::Format_ARGB32);
 		painter.drawImage(cbRect, qimg);
+	}
+	else if (m_mode == TILEMODE_WATERMASK) {
+		painter.setPen(QPen("black"));
+		painter.setBrush(QColor("black"));
+		painter.drawRect(0, 0, cbRect.width() / 2 - 1, cbRect.height() - 1);
+		painter.setBrush(QColor("white"));
+		painter.drawRect(cbRect.width() / 2, 0, cbRect.width() - cbRect.width() / 2 - 1, cbRect.height() - 1);
 	}
 }
 
@@ -126,7 +132,7 @@ void ColorbarOverlay::setRange(double vmin, double vmax)
 void ColorbarOverlay::setScalarValue(double val)
 {
 	m_val = val;
-	if (m_mode == TILEMODE_ELEVATION || m_mode == TILEMODE_ELEVMOD)
+	if (m_mode == TILEMODE_ELEVATION || m_mode == TILEMODE_ELEVMOD || m_mode == TILEMODE_WATERMASK)
 		update();
 }
 
@@ -220,5 +226,21 @@ void ColorbarOverlay::paintEvent(QPaintEvent *event)
 		sprintf(cbuf, "%d", m_b);
 		QString qb(cbuf);
 		painter.drawText(x0, h - 2, qb);
+	}
+	else if (m_mode == TILEMODE_WATERMASK) {
+		painter.setPen(m_penIndicator0);
+		bool isWater = (m_val == 0.0);
+		if (isWater) {
+			painter.drawRect(2, 2, w / 2 - 5, cbh - 5);
+			painter.setPen(m_penIndicator1);
+			painter.drawRect(1, 1, w / 2 - 3, cbh - 3);
+			painter.drawRect(3, 3, w / 2 - 7, cbh - 7);
+		} 
+		else
+			painter.drawRect(w / 2 + 2, 2, w - w / 2 - 5, cbh - 5);
+
+		QString s(isWater ? "Water (specular)" : "Land (diffuse)");
+		painter.setPen(QPen("black"));
+		painter.drawText((w - fm.width(s)) / 2, h - 2, s);
 	}
 }

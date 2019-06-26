@@ -572,21 +572,22 @@ void tileedit::OnMouseMovedInCanvas(int canvasIdx, QMouseEvent *event)
 		sprintf(cbuf, "Lng=%+0.6lf, Lat=%+0.6lf", lng, lat);
 		ui->labelData1->setText(cbuf);
 
-		int mx = (x*iw) / cw;
-		int my = (y*ih) / ch;
+		int mpx = (x*iw) / cw; // pixel coordinates
+		int mpy = (y*ih) / ch;
+		int mnx = (mpx + 1) / 2;  // node coordinates
+		int mny = (ih - mpy) / 2;
+
 		if (m_panel[canvasIdx].layerType->currentIndex() >= 3) { // elevation
-			mx = (mx + 1) / 2;
-			my = (ih - my) / 2;
-			sprintf(cbuf, "x=%d/%d, y=%d/%d", mx, (iw / 2) + 1, my, (ih / 2) + 1);
+			sprintf(cbuf, "x=%d/%d, y=%d/%d", mnx, (iw / 2) + 1, mny, (ih / 2) + 1);
 			ui->labelData2->setText(cbuf);
-			double elev = ((ElevTileBlock*)tileblock)->nodeElevation(mx, my);
+			double elev = ((ElevTileBlock*)tileblock)->nodeElevation(mnx, mny);
 			sprintf(cbuf, "%+0.1lfm", elev);
 			ui->labelData3->setText(cbuf);
 		}
 		else {
-			sprintf(cbuf, "X=%d/%d, Y=%d/%d", mx, iw, my, ih);
+			sprintf(cbuf, "X=%d/%d, Y=%d/%d", mpx, iw, mpy, ih);
 			ui->labelData2->setText(cbuf);
-			DWORD col = img.data[mx + my*img.width];
+			DWORD col = img.data[mpx + mpy*img.width];
 			if (m_panel[canvasIdx].layerType->currentIndex() == 1) {
 				ui->labelData3->setText(col & 0xFF000000 ? "Diffuse (Land)" : "Specular (Water)");
 			} else {
@@ -597,18 +598,19 @@ void tileedit::OnMouseMovedInCanvas(int canvasIdx, QMouseEvent *event)
 		for (int i = 0; i < 3; i++) {
 			if (m_panel[i].layerType->currentIndex() >= 3) {
 				if (m_eTileBlock) {
-					iw = img.width;
-					ih = img.height;
-					mx = ((x*iw) / cw + 1) / 2;
-					my = (ih - (y*ih) / ch) / 2;
-					double elev = (m_panel[i].layerType->currentIndex() == 3 ? m_eTileBlock->nodeElevation(mx, my) : m_eTileBlock->nodeModElevation(mx, my));
+					double elev = (m_panel[i].layerType->currentIndex() == 3 ? m_eTileBlock->nodeElevation(mnx, mny) : m_eTileBlock->nodeModElevation(mnx, mny));
 					m_panel[i].colorbar->setScalarValue(elev);
 				}
 			}
 			else if (m_panel[i].layerType->currentIndex() == 0 || m_panel[i].layerType->currentIndex() == 2) {
 				const Image &img = m_panel[i].canvas->getImage();
-				DWORD col = img.data[mx + my*img.width];
+				DWORD col = img.data[mpx + mpy*img.width];
 				m_panel[i].colorbar->setRGBValue((col >> 0x10) & 0xFF, (col >> 0x08) & 0xFF, col & 0xFF);
+			}
+			else if (m_panel[i].layerType->currentIndex() == 1) {
+				const Image &img = m_panel[i].canvas->getImage();
+				bool isWater = (img.data[mpx + mpy*img.width] & 0xFF000000) == 0;
+				m_panel[i].colorbar->setScalarValue(isWater ? 0.0 : 1.0);
 			}
 		}
 	}
