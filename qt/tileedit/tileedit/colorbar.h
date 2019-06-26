@@ -15,9 +15,11 @@ class Colorbar : public QWidget
 public:
 	explicit Colorbar(QWidget *parent = 0);
 	~Colorbar();
+	void setTileMode(TileMode mode);
 	void setElevDisplayParam(const ElevDisplayParam &elevDisplayParam);
 	void displayParamChanged();
-	void setValue(double val);
+	void setScalarValue(double val);
+	void setRGBValue(BYTE r, BYTE g, BYTE b);
 
 protected:
 	void paintEvent(QPaintEvent *event);
@@ -26,6 +28,7 @@ protected:
 private:
 	const ElevDisplayParam *m_elevDisplayParam;
 	ColorbarOverlay *m_overlay;
+	TileMode m_mode;
 };
 
 
@@ -35,15 +38,19 @@ class ColorbarOverlay : public QWidget
 
 public:
 	explicit ColorbarOverlay(QWidget *parent = 0);
+	void setTileMode(TileMode mode);
 	void setRange(double vmin, double vmax);
-	void setValue(double val);
+	void setScalarValue(double val);
+	void setRGBValue(BYTE r, BYTE g, BYTE b);
 
 protected:
 	void paintEvent(QPaintEvent *event);
 
 private:
+	TileMode m_mode;
 	double m_vmin, m_vmax;
 	double m_val;
+	BYTE m_r, m_g, m_b;
 	QPen m_penIndicator0;
 	QPen m_penIndicator1;
 };

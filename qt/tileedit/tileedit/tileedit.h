@@ -11,6 +11,7 @@
 
 #include "elevtile.h"
 #include "ZTreeMgr.h"
+#include "colorbar.h"
 
 #define TILESEARCH_CACHE 0x1
 #define TILESEARCH_ARCHIVE 0x2
@@ -102,10 +103,7 @@ private:
 
     struct TilePanel {
         TileCanvas *canvas;
-		QWidget *colourscale;
-		QLabel *rangeMin;
-		QLabel *rangeMax;
-		QLabel *currValue;
+		Colorbar *colorbar;
         QComboBox *layerType;
 		QLabel *fileId;
     } m_panel[3];
