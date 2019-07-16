@@ -18,6 +18,7 @@ public:
 	DlgSurfImport(tileedit *parent);
 
 public slots:
+	void onOpenFileDialog();
 	void onParamFromMeta();
 	void onParamFromUser();
 	void onMetaFileChanged(const QString&);
@@ -29,7 +30,9 @@ protected:
 
 private:
 	Ui::DlgSurfImport *ui;
+	tileedit *m_tileedit;
 	SurfPatchMetaInfo m_metaInfo;
+	bool m_pathEdited, m_metaEdited;
 	bool m_haveMeta;
 };
 

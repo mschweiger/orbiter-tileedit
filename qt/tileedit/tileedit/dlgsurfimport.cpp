@@ -3,21 +3,43 @@
 #include "tileedit.h"
 #include "tileblock.h"
 
+#include <QFileDialog>
 #include <QMessageBox>
 
 DlgSurfImport::DlgSurfImport(tileedit *parent)
 	: QDialog(parent)
+	, m_tileedit(parent)
 	, ui(new Ui::DlgSurfImport)
 {
 	ui->setupUi(this);
 
+	connect(ui->pushOpenFileDialog, SIGNAL(clicked()), this, SLOT(onOpenFileDialog()));
 	connect(ui->radioParamFromMeta, SIGNAL(clicked()), this, SLOT(onParamFromMeta()));
 	connect(ui->radioParamFromUser, SIGNAL(clicked()), this, SLOT(onParamFromUser()));
 	connect(ui->editMetaPath, SIGNAL(textChanged(const QString&)), this, SLOT(onMetaFileChanged(const QString&)));
 	connect(ui->spinLvl, SIGNAL(valueChanged(int)), this, SLOT(onLvl(int)));
 
+	m_pathEdited = m_metaEdited = false;
 	m_haveMeta = false;
 	memset(&m_metaInfo, 0, sizeof(SurfPatchMetaInfo));
+}
+
+void DlgSurfImport::onOpenFileDialog()
+{
+	QString path = ui->editPath->text();
+	if (!path.size()) {
+		QSettings *settings = m_tileedit->settings();
+		path = settings->value("export/path", ".").toString();
+	}
+	path = QFileDialog::getOpenFileName(this, tr("Import surface tiles from image file"), path, tr("Portable network graphics (*.png)"));
+	if (path.size()) {
+		ui->editPath->setText(path);
+		if (!m_metaEdited) {
+			path.append(".hdr");
+			ui->editMetaPath->setText(path);
+		}
+		m_pathEdited = true;
+	}
 }
 
 void DlgSurfImport::onParamFromMeta()
@@ -78,10 +100,26 @@ void DlgSurfImport::accept()
 	}
 
 	SurfTileBlock *sblock = SurfTileBlock::Load(m_metaInfo.lvl, m_metaInfo.ilat0, m_metaInfo.ilat1, m_metaInfo.ilng0, m_metaInfo.ilng1);
-	if (!dxtread_png(ui->editPath->text().toLatin1(), m_metaInfo, sblock->getData())) {
-		QMessageBox mbox(QMessageBox::Warning, tr("tileedit: Warning"), tr("Error reading PNG file"), QMessageBox::Close);
+	int res = dxtread_png(ui->editPath->text().toLatin1(), m_metaInfo, sblock->getData());
+	if (res != 0) {
+		QString msg("Error reading PNG file:\n");
+		switch (res) {
+		case -1:
+			msg.append("File could not be opened.");
+			break;
+		case -2:
+			msg.append("Invalid image size. Expected: ").append(QString::number(sblock->getData().width)).append(" x ").append(QString::number(sblock->getData().width));
+			break;
+		}
+		QMessageBox mbox(QMessageBox::Warning, tr("tileedit: Warning"), msg, QMessageBox::Close);
 		mbox.exec();
 		return;
+	}
+	else {
+		QString path = ui->editPath->text();
+		QFileInfo fi(path);
+		QSettings *settings = m_tileedit->settings();
+		settings->setValue("export/path", fi.absolutePath());
 	}
 
 	for (int ilat = m_metaInfo.ilat0; ilat < m_metaInfo.ilat1; ilat++)

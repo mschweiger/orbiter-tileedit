@@ -13,6 +13,6 @@ struct SurfPatchMetaInfo
 
 void dxt1write(const char *fname, const Image &idata);
 
-bool dxtread_png(const char *fname, const SurfPatchMetaInfo &meta, Image &sdata);
+int dxtread_png(const char *fname, const SurfPatchMetaInfo &meta, Image &sdata);
 
 #endif // !DXT_IO_H

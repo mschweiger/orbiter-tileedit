@@ -63,9 +63,9 @@ void dxt1write(const char *fname, const Image &idata)
 	delete[]dxt1;
 }
 
-bool dxtread_png(const char *fname, const SurfPatchMetaInfo &meta, Image &sdata)
+int dxtread_png(const char *fname, const SurfPatchMetaInfo &meta, Image &sdata)
 {
-	bool ok = false;
+	int res = 0;
 	png_image image;
 	memset(&image, 0, sizeof(png_image));
 	image.version = PNG_IMAGE_VERSION;
@@ -73,11 +73,9 @@ bool dxtread_png(const char *fname, const SurfPatchMetaInfo &meta, Image &sdata)
 	if (png_image_begin_read_from_file(&image, fname)) {
 		image.format = PNG_FORMAT_RGB;
 
-		int nblock_x = meta.ilng1 - meta.ilng0;
-		int nblock_y = meta.ilat1 - meta.ilat0;
-		int w = nblock_x * TILE_SURFSTRIDE;
-		int h = nblock_y * TILE_SURFSTRIDE;
-		if (image.width == w || image.height == h) {
+		int w = sdata.width;
+		int h = sdata.height;
+		if (image.width == w && image.height == h) {
 
 			int n = w*h;
 			unsigned char *buf = new unsigned char[n * 3];
@@ -92,9 +90,14 @@ bool dxtread_png(const char *fname, const SurfPatchMetaInfo &meta, Image &sdata)
 				}
 			}
 			delete[]buf;
-			ok = true;
+		}
+		else {
+			res = -2;
 		}
 	}
+	else {
+		res = -1;
+	}
 	png_image_free(&image);
-	return ok;
+	return res;
 }

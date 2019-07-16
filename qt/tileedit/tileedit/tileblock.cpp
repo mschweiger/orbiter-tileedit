@@ -131,6 +131,8 @@ bool SurfTileBlock::copyTile(int ilat, int ilng, Tile *tile) const
 
 void SurfTileBlock::syncTile(int ilat, int ilng)
 {
+	int tilesize = (m_lvl == 1 ? 128 : m_lvl == 2 ? 256 : TILE_SURFSTRIDE);
+
 	if (ilat < m_ilat0 || ilat >= m_ilat1) return;
 	if (ilng < m_ilng0 || ilng >= m_ilng1) return;
 
@@ -145,20 +147,20 @@ void SurfTileBlock::syncTile(int ilat, int ilng)
 		m_tile[idx] = stile;
 	}
 	Image &idata = stile->getData();
-	if (idata.width < TILE_SURFSTRIDE || idata.height < TILE_SURFSTRIDE) {
-		idata.width = idata.height = TILE_SURFSTRIDE;
+	if (idata.width != tilesize || idata.height != tilesize) {
+		idata.width = idata.height = tilesize;
 		idata.data.resize(idata.width * idata.height);
 	}
 
 	int xblock = ilng - m_ilng0;
 	int yblock = m_ilat1 - 1 - ilat;
 
-	int block_x0 = xblock * TILE_SURFSTRIDE;
-	int block_y0 = yblock * TILE_SURFSTRIDE;
+	int block_x0 = xblock * tilesize;
+	int block_y0 = yblock * tilesize;
 
-	for (int y = 0; y < TILE_SURFSTRIDE; y++) {
-		for (int x = 0; x < TILE_SURFSTRIDE; x++) {
-			stile->getData().data[y*TILE_SURFSTRIDE + x] =
+	for (int y = 0; y < tilesize; y++) {
+		for (int x = 0; x < tilesize; x++) {
+			stile->getData().data[y*tilesize + x] =
 				m_idata.data[(block_y0 + y) * m_idata.width + (block_x0 + x)];
 		}
 	}
@@ -166,7 +168,7 @@ void SurfTileBlock::syncTile(int ilat, int ilng)
 
 SurfTileBlock *SurfTileBlock::Load(int lvl, int ilat0, int ilat1, int ilng0, int ilng1)
 {
-	const int tilesize = 512;
+	int tilesize = (lvl == 1 ? 128 : lvl == 2 ? 256 : TILE_SURFSTRIDE);
 
 	SurfTileBlock *stileblock = new SurfTileBlock(lvl, ilat0, ilat1, ilng0, ilng1);
 
