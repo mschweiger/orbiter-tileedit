@@ -4,7 +4,7 @@
   <PropertyGroup Label="UserMacros">
     <FastdxtDir>$(MSBuildThisFileDirectory)extern\fastdxt</FastdxtDir>
     <FastdxtIncludeDir>$(FastdxtDir)</FastdxtIncludeDir>
-    <FastdxtLibDir>$(FastdxtDir)\$(Configuration)</FastdxtLibDir>
+    <FastdxtLibDir>$(FastdxtDir)\$(Platform)\$(Configuration)</FastdxtLibDir>
   </PropertyGroup>
   <PropertyGroup />
   <ItemDefinitionGroup>

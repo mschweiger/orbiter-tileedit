@@ -2,10 +2,28 @@
 #include "ddsread.h"
 #include <iostream>
 #include <algorithm>
+#include <direct.h>
+#include <dxt_io.h>
 
 int Tile::s_openMode = 0x3;
 bool Tile::s_queryAncestor = true;
 std::string Tile::s_root;
+
+// ==================================================================================
+
+void ensureLayerDir(const char *rootDir, const char *layer, int lvl, int ilat)
+{
+	char path[256];
+	sprintf(path, "%s/%s", rootDir, layer);
+	mkdir(path);
+	sprintf(path, "%s/%s/%02d", rootDir, layer, lvl);
+	mkdir(path);
+	sprintf(path, "%s/%s/%02d/%06d", rootDir, layer, lvl, ilat);
+	mkdir(path);
+}
+
+
+// ==================================================================================
 
 Tile::Tile(int lvl, int ilat, int ilng)
 {
@@ -57,6 +75,11 @@ void Tile::setQueryAncestor(bool query)
 	s_queryAncestor = query;
 }
 
+void Tile::ensureLayerDir()
+{
+	::ensureLayerDir(s_root.c_str(), Layer().c_str(), m_lvl, m_ilat);
+}
+
 
 DXT1Tile::DXT1Tile(int lvl, int ilat, int ilng)
 	: Tile(lvl, ilat, ilng)
@@ -84,6 +107,14 @@ void DXT1Tile::LoadDXT1(const ZTreeMgr *mgr)
 	if (m_idata.data.size() == 0 && s_queryAncestor) {
 		LoadSubset(this, mgr);
 	}
+}
+
+void DXT1Tile::SaveDXT1()
+{
+	char path[1024];
+	sprintf(path, "%s/%s/%02d/%06d/%06d.dds", s_root.c_str(), Layer().c_str(), m_lvl, m_ilat, m_ilng);
+	ensureLayerDir();
+	dxt1write(path, m_idata);
 }
 
 void DXT1Tile::LoadSubset(DXT1Tile *tile, const ZTreeMgr *mgr)
@@ -150,6 +181,11 @@ SurfTile *SurfTile::Load(int lvl, int ilat, int ilng)
 		return 0;
 	}
 	return stile;
+}
+
+void SurfTile::Save()
+{
+	SaveDXT1();
 }
 
 void SurfTile::setTreeMgr(const ZTreeMgr *treeMgr)

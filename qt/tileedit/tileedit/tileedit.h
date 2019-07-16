@@ -69,6 +69,7 @@ private slots:
     void openDir();
 	void on_actionExit_triggered();
 	void on_actionConfig_triggered();
+	void onSurfImportImage();
 	void onElevConfig();
 	void onElevExportImage();
 	void onElevImportImage();
@@ -95,9 +96,10 @@ private:
     QAction *openAct;
 	QAction *actionConfig;
 	QAction *actionExit;
+	QAction *actionSurfImport;
 	QAction *actionElevConfig;
-	QAction *actionExportImage;
-	QAction *actionImportImage;
+	QAction *actionElevExport;
+	QAction *actionElevImport;
 
     QLabel *status;
 

@@ -18,6 +18,7 @@ public:
 	int iLng1() const { return m_ilng1; }
 	int nLat() const { return (m_lvl < 4 ? 1 : 1 << (m_lvl - 4)); }
 	int nLng() const { return (m_lvl < 4 ? 1 : 1 << (m_lvl - 3)); }
+	int iLng_norm(int ilng) const { int ilngn = ilng; int nlng = nLng(); while (ilngn < 0) ilngn += nlng; while (ilngn >= nlng) ilngn -= nlng; return ilngn; }
 	int nLatBlock() const { return m_nblocklat; }
 	int nLngBlock() const { return m_nblocklng; }
 	int nBlock() const { return m_nblocklat * m_nblocklng; }
@@ -50,6 +51,18 @@ public:
 	virtual bool copyTile(int ilat, int ilng, Tile *tile) const = 0;
 
 	/**
+	* \brief Map edits to the tileblock back to one of the individual tiles
+	*/
+	virtual void syncTile(int ilat, int ilng) {};
+
+	/**
+	* \brief Map edits to the tileblock back to the individual tiles
+	*
+	* This must be called before calling Save() or SaveMod() to make sure the tiles are up to date.
+	*/
+	void syncTiles();
+
+	/**
 	 * \brief Returns true if at least one of the tiles has been synthesized from an ancestor
 	 */
 	bool hasAncestorData() const;
@@ -72,6 +85,7 @@ public:
 	virtual void ExtractImage(Image &img, TileMode mode, int exmin = -1, int exmax = -1, int eymin = -1, int eymax = -1) const
 	{ img = m_idata; }
 	const Image &getData() const { return m_idata; }
+	Image &getData() { return m_idata; }
 
 protected:
 	Image m_idata;
@@ -84,6 +98,7 @@ public:
 	static SurfTileBlock *Load(int lvl, int ilat0, int ilat1, int ilng0, int ilng1);
 	virtual Tile *copyTile(int ilat, int ilng) const;
 	virtual bool copyTile(int ilat, int ilng, Tile *tile) const;
+	virtual void syncTile(int ilat, int ilng);
 
 protected:
 	SurfTileBlock(int lvl, int ilat0, int ilat1, int ilng0, int ilng1);
@@ -126,16 +141,9 @@ public:
 	void RescanLimits();
 
 	/**
-	 * \brief Map edits to the tileblock back to the individual tiles
-	 *
-	 * This must be called before calling Save() or SaveMod() to make sure the tiles are up to date.
-	 */
-	void SyncTiles();
-
-	/**
 	 * \brief Map edits to the tileblock back to one of the individual tiles
 	 */
-	void SyncTile(int ilat, int ilng);
+	void syncTile(int ilat, int ilng);
 
 	/**
 	* \brief Propagate edits in the boundary overlap zones to the neighbour tiles

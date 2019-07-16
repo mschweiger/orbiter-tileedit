@@ -1,0 +1,36 @@
+#ifndef DLGSURFIMPORT_H
+#define DLGSURFIMPORT_H
+
+#include "dxt_io.h"
+#include <QDialog>
+
+namespace Ui {
+	class DlgSurfImport;
+}
+
+class tileedit;
+
+class DlgSurfImport : public QDialog
+{
+	Q_OBJECT
+
+public:
+	DlgSurfImport(tileedit *parent);
+
+public slots:
+	void onParamFromMeta();
+	void onParamFromUser();
+	void onMetaFileChanged(const QString&);
+	void onLvl(int);
+	void accept();
+
+protected:
+	bool scanMetaFile(const char *fname, SurfPatchMetaInfo &meta);
+
+private:
+	Ui::DlgSurfImport *ui;
+	SurfPatchMetaInfo m_metaInfo;
+	bool m_haveMeta;
+};
+
+#endif // !DLGSURFIMPORT_H

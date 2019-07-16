@@ -28,7 +28,7 @@ public slots:
 	void accept();
 
 protected:
-	bool scanMetaFile(const char *fname, ImageMetaInfo &meta);
+	bool scanMetaFile(const char *fname, ElevPatchMetaInfo &meta);
 
 private:
 	Ui::DlgElevImport *ui;
@@ -36,7 +36,7 @@ private:
 	bool m_pathEdited, m_metaEdited;
 	bool m_haveMeta;
 	int m_propagationLevel;
-	ImageMetaInfo m_metaInfo;
+	ElevPatchMetaInfo m_metaInfo;
 };
 
 #endif // !DLGELEVIMPORT_H

@@ -1,5 +1,4 @@
 #include <windows.h>
-#include <direct.h>
 #include <vector>
 #include <algorithm>
 #define _USE_MATH_DEFINES
@@ -395,7 +394,7 @@ void elvmodwrite(const char *fname, const ElevData &edata, const ElevData &ebase
 
 // ==================================================================================
 
-bool elvread_png(const char *fname, const ImageMetaInfo &meta, ElevData &edata)
+bool elvread_png(const char *fname, const ElevPatchMetaInfo &meta, ElevData &edata)
 {
 	bool ok = false;
 	png_image image;
@@ -468,17 +467,4 @@ void elvwrite_png(const char *fname, const ElevData &edata, double vmin, double 
 	png_image_write_to_file(&image, fname, 0, buf, 0, 0);
 	png_image_free(&image);
 	delete[]buf;
-}
-
-// ==================================================================================
-
-void ensureLayerDir(const char *rootDir, const char *layer, int lvl, int ilat)
-{
-	char path[256];
-	sprintf(path, "%s/%s", rootDir, layer);
-	mkdir(path);
-	sprintf(path, "%s/%s/%02d", rootDir, layer, lvl);
-	mkdir(path);
-	sprintf(path, "%s/%s/%02d/%06d", rootDir, layer, lvl, ilat);
-	mkdir(path);
 }

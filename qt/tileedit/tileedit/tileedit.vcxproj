@@ -174,6 +174,8 @@
     <ClCompile Include="dlgelevconfig.cpp" />
     <ClCompile Include="dlgelevexport.cpp" />
     <ClCompile Include="dlgelevimport.cpp" />
+    <ClCompile Include="dlgsurfimport.cpp" />
+    <ClCompile Include="dxt_io.cpp" />
     <ClCompile Include="elevtile.cpp" />
     <ClCompile Include="elv_io.cpp" />
     <ClCompile Include="main.cpp" />
@@ -191,6 +193,7 @@
     <QtUic Include="dlgElevConfig.ui" />
     <QtUic Include="dlgElevExport.ui" />
     <QtUic Include="dlgElevImport.ui" />
+    <QtUic Include="dlgSurfImport.ui" />
     <QtUic Include="tileedit.ui" />
   </ItemGroup>
   <ItemGroup>
@@ -213,6 +216,12 @@
       <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.\GeneratedFiles;.;$(QTDIR)\include;.\GeneratedFiles\$(ConfigurationName);$(QTDIR)\include\QtCore;$(QTDIR)\include\QtGui;$(QTDIR)\include\QtANGLE;$(QTDIR)\include\QtWidgets;$(LibpngIncludeDir);$(ZlibIncludeDir)</IncludePath>
       <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release_static|x64'">.\GeneratedFiles;.;$(QTDIR)\include;.\GeneratedFiles\$(ConfigurationName);$(QTDIR)\include\QtCore;$(QTDIR)\include\QtGui;$(QTDIR)\include\QtANGLE;$(QTDIR)\include\QtWidgets;$(LibpngIncludeDir);$(ZlibIncludeDir)</IncludePath>
     </QtMoc>
+    <QtMoc Include="dlgsurfimport.h">
+      <IncludePath Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.\GeneratedFiles;.;$(QTDIR)\include;.\GeneratedFiles\$(ConfigurationName);$(QTDIR)\include\QtCore;$(QTDIR)\include\QtGui;$(QTDIR)\include\QtANGLE;$(QTDIR)\include\QtWidgets;$(FastdxtIncludeDir);$(LibpngIncludeDir);$(ZlibIncludeDir)</IncludePath>
+      <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.\GeneratedFiles;.;$(QTDIR)\include;.\GeneratedFiles\$(ConfigurationName);$(QTDIR)\include\QtCore;$(QTDIR)\include\QtGui;$(QTDIR)\include\QtANGLE;$(QTDIR)\include\QtWidgets;$(FastdxtIncludeDir);$(LibpngIncludeDir);$(ZlibIncludeDir)</IncludePath>
+      <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release_static|x64'">.\GeneratedFiles;.;$(QTDIR)\include;.\GeneratedFiles\$(ConfigurationName);$(QTDIR)\include\QtCore;$(QTDIR)\include\QtGui;$(QTDIR)\include\QtANGLE;$(QTDIR)\include\QtWidgets;$(FastdxtIncludeDir);$(LibpngIncludeDir);$(ZlibIncludeDir)</IncludePath>
+    </QtMoc>
+    <ClInclude Include="dxt_io.h" />
     <ClInclude Include="ZTreeMgr.h" />
     <QtMoc Include="colorbar.h">
       <IncludePath Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.\GeneratedFiles;.;$(QTDIR)\include;.\GeneratedFiles\$(ConfigurationName);$(QTDIR)\include\QtCore;$(QTDIR)\include\QtGui;$(QTDIR)\include\QtANGLE;$(QTDIR)\include\QtWidgets</IncludePath>

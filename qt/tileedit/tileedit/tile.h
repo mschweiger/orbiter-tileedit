@@ -6,6 +6,8 @@
 #include "ddsread.h"
 #include "ZTreeMgr.h"
 
+#define TILE_SURFSTRIDE 512
+
 enum TileMode {
 	TILEMODE_NONE,
 	TILEMODE_SURFACE,
@@ -17,6 +19,9 @@ enum TileMode {
 
 inline int nLat(int lvl) { return (lvl < 4 ? 1 : 1 << (lvl - 4)); }
 inline int nLng(int lvl) { return (lvl < 4 ? 1 : 1 << (lvl - 3)); }
+
+void ensureLayerDir(const char *rootDir, const char *layer, int lvl, int ilat);
+
 
 class Tile
 {
@@ -48,6 +53,8 @@ public:
 	static void setQueryAncestor(bool query);
 
 protected:
+	void ensureLayerDir();
+
     int m_lvl;
     int m_ilat;
     int m_ilng;
@@ -68,10 +75,12 @@ public:
 	DXT1Tile(int lvl, int ilat, int ilng);
 	DXT1Tile(const DXT1Tile &tile);
 	virtual void set(const Tile *tile);
+	Image &getData() { return m_idata; }
 	const Image &getData() const { return m_idata; }
 
 protected:
 	virtual void LoadDXT1(const ZTreeMgr *mgr = 0);
+	void SaveDXT1();
 	void LoadSubset(DXT1Tile *tile, const ZTreeMgr *mgr = 0);
 	void LoadImage(Image &im, int lvl, int ilat, int ilng, const ZTreeMgr *mgr);
 
@@ -81,12 +90,13 @@ protected:
 class SurfTile: public DXT1Tile
 {
 public:
-    static SurfTile *Load(int lvl, int ilat, int ilng);
+	SurfTile(int lvl, int ilat, int ilng);
+	static SurfTile *Load(int lvl, int ilat, int ilng);
+	void Save();
 	static void setTreeMgr(const ZTreeMgr *mgr);
 	const std::string Layer() const { return std::string("Surf"); }
 
 protected:
-    SurfTile(int lvl, int ilat, int ilng);
 	static const ZTreeMgr *s_treeMgr;
 };
 
