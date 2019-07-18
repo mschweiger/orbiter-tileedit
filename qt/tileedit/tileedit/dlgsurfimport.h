@@ -19,6 +19,7 @@ public:
 
 public slots:
 	void onOpenFileDialog();
+	void onOpenMetaFileDialog();
 	void onParamFromMeta();
 	void onParamFromUser();
 	void onMetaFileChanged(const QString&);

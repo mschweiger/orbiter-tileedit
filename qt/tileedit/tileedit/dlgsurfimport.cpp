@@ -14,6 +14,7 @@ DlgSurfImport::DlgSurfImport(tileedit *parent)
 	ui->setupUi(this);
 
 	connect(ui->pushOpenFileDialog, SIGNAL(clicked()), this, SLOT(onOpenFileDialog()));
+	connect(ui->pushOpenMetaFileDialog, SIGNAL(clicked()), this, SLOT(onOpenMetaFileDialog()));
 	connect(ui->radioParamFromMeta, SIGNAL(clicked()), this, SLOT(onParamFromMeta()));
 	connect(ui->radioParamFromUser, SIGNAL(clicked()), this, SLOT(onParamFromUser()));
 	connect(ui->editMetaPath, SIGNAL(textChanged(const QString&)), this, SLOT(onMetaFileChanged(const QString&)));
@@ -39,6 +40,19 @@ void DlgSurfImport::onOpenFileDialog()
 			ui->editMetaPath->setText(path);
 		}
 		m_pathEdited = true;
+	}
+}
+
+void DlgSurfImport::onOpenMetaFileDialog()
+{
+	QString path = QFileDialog::getOpenFileName(this, tr("Import surface tiles from image file"), ui->editMetaPath->text(), tr("Metadata file (*.hdr)"));
+	if (path.size()) {
+		ui->editMetaPath->setText(path);
+		if (!m_pathEdited) {
+			path.truncate(path.length() - 4);
+			ui->editPath->setText(path);
+		}
+		m_metaEdited = true;
 	}
 }
 
