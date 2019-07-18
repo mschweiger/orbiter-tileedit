@@ -112,6 +112,7 @@ void DlgSurfImport::accept()
 			return;
 		}
 	}
+	m_metaInfo.alphaBlend = ui->checkAlphaBlend->isChecked();
 
 	SurfTileBlock *sblock = SurfTileBlock::Load(m_metaInfo.lvl, m_metaInfo.ilat0, m_metaInfo.ilat1, m_metaInfo.ilng0, m_metaInfo.ilng1);
 	int res = dxtread_png(ui->editPath->text().toLatin1(), m_metaInfo, sblock->getData());

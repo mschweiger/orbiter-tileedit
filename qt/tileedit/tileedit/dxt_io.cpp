@@ -71,22 +71,42 @@ int dxtread_png(const char *fname, const SurfPatchMetaInfo &meta, Image &sdata)
 	image.version = PNG_IMAGE_VERSION;
 	image.opaque = NULL;
 	if (png_image_begin_read_from_file(&image, fname)) {
-		image.format = PNG_FORMAT_RGB;
+		image.format = PNG_FORMAT_RGBA;
 
 		int w = sdata.width;
 		int h = sdata.height;
 		if (image.width == w && image.height == h) {
 
 			int n = w*h;
-			unsigned char *buf = new unsigned char[n * 3];
-			png_image_finish_read(&image, NULL, buf, w * 3, NULL);
+			unsigned char *buf = new unsigned char[n * 4];
+			png_image_finish_read(&image, NULL, buf, w * 4, NULL);
 
 			int idx = 0;
 			for (int ih = 0; ih < h; ih++) {
 				for (int iw = 0; iw < w; iw++) {
-					DWORD v = 0xff000000 | (buf[idx + 2] << 16) | (buf[idx + 1] << 8) | buf[idx];
-					sdata.data[iw + ih*w] = v;
-					idx += 3;
+					DWORD v;
+					if (!meta.alphaBlend || buf[idx + 3] == 0xff) {
+						v = 0xff000000 | (buf[idx + 2] << 16) | (buf[idx + 1] << 8) | buf[idx];
+						sdata.data[iw + ih*w] = v;
+					} 
+					else if (buf[idx + 3]) {
+						v = 0xff000000;
+						DWORD s = buf[idx + 3];
+						DWORD ch1 = (DWORD)buf[idx + 2];
+						DWORD ch2 = (sdata.data[iw + ih*w] >> 16) & 0xFF;
+						DWORD ch = (ch1 * s + ch2 * (255 - s)) / 255;
+						v |= ch << 16;
+						ch1 = (DWORD)buf[idx + 1];
+						ch2 = (sdata.data[iw + ih*w] >> 8) & 0xff;
+						ch = (ch1 * s + ch2 * (255 - s)) / 255;
+						v |= ch << 8;
+						ch1 = (DWORD)buf[idx];
+						ch2 = (sdata.data[iw + ih*w] & 0xff);
+						ch = (ch1 * s + ch2 * (255 - s)) / 255;
+						v |= ch;
+						sdata.data[iw + ih*w] = v;
+					}
+					idx += 4;
 				}
 			}
 			delete[]buf;

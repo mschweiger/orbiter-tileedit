@@ -9,6 +9,7 @@ struct SurfPatchMetaInfo
 	int ilat0, ilat1, ilng0, ilng1;
 	double latmin, latmax, lngmin, lngmax;
 	std::vector<std::pair<int, int> > missing;
+	bool alphaBlend;
 };
 
 void dxt1write(const char *fname, const Image &idata);
