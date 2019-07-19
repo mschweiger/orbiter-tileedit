@@ -67,6 +67,13 @@ public:
 	 */
 	bool hasAncestorData() const;
 
+	/**
+	* \brief Recursively map edits to parents down to level minlvl
+	*
+	* Requires SyncTiles to have been called.
+	*/
+	bool mapToAncestors(int minlvl) const;
+
 protected:
 
 	int m_lvl;
@@ -149,13 +156,6 @@ public:
 	* \brief Propagate edits in the boundary overlap zones to the neighbour tiles
 	*/
 	void MatchNeighbourTiles();
-
-	/**
-	 * \brief Recursively map edits to parents down to level minlvl
-	 *
-	 * Requires SyncTiles to have been called.
-	 */
-	bool MatchParentTiles(int minlvl) const;
 
 	void ExtractImage(Image &img, TileMode mode, int exmin = -1, int exmax = -1, int eymin = -1, int eymax = -1) const;
 

@@ -861,7 +861,7 @@ void tileedit::setTile(int lvl, int ilat, int ilng)
 		m_eTileBlock->syncTiles();
 		m_eTileBlock->MatchNeighbourTiles();
 		m_eTileBlock->SaveMod();
-		m_eTileBlock->MatchParentTiles(m_eTileBlock->Level() - 5);
+		m_eTileBlock->mapToAncestors(m_eTileBlock->Level() - 5);
 	}
 
 	m_lvl = lvl;

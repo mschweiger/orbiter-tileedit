@@ -52,6 +52,8 @@ public:
 	static void setOpenMode(int mode);
 	static void setQueryAncestor(bool query);
 
+	virtual bool mapToAncestors(int minlvl) const { return false; }
+
 protected:
 	void ensureLayerDir();
 
@@ -95,6 +97,7 @@ public:
 	void Save();
 	static void setTreeMgr(const ZTreeMgr *mgr);
 	const std::string Layer() const { return std::string("Surf"); }
+	bool mapToAncestors(int minlvl) const;
 
 protected:
 	static const ZTreeMgr *s_treeMgr;

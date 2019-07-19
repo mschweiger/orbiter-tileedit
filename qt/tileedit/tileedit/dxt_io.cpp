@@ -51,7 +51,14 @@ void dxt1write(const char *fname, const Image &idata)
 	const char magic[4] = { 'D', 'D', 'S', ' ' };
 	int format = FORMAT_DXT1;
 	byte *dxt1 = new byte[idata.width * idata.height * 4];
-	int n = CompressDXT((const byte*)idata.data.data(), dxt1, idata.width, idata.height, format);
+
+	// Need to flip RGB order for the compression engine
+	DWORD *inp = new DWORD[idata.width * idata.height];
+	const DWORD *id = idata.data.data();
+	for (int i = 0; i < idata.width*idata.height; i++)
+		inp[i] = 0xff000000 | ((id[i] & 0xff) << 16) | (id[i] & 0xff00) | ((id[i] & 0xff0000) >> 16);
+
+	int n = CompressDXT((const byte*)inp, dxt1, idata.width, idata.height, format);
 
 	DDS_HEADER hdr;
 	setdxt1header(idata, hdr);
@@ -61,6 +68,7 @@ void dxt1write(const char *fname, const Image &idata)
 	fwrite(dxt1, n, 1, f);
 	fclose(f);
 	delete[]dxt1;
+	delete[]inp;
 }
 
 int dxtread_png(const char *fname, const SurfPatchMetaInfo &meta, Image &sdata)
@@ -86,13 +94,13 @@ int dxtread_png(const char *fname, const SurfPatchMetaInfo &meta, Image &sdata)
 				for (int iw = 0; iw < w; iw++) {
 					DWORD v;
 					if (!meta.alphaBlend || buf[idx + 3] == 0xff) {
-						v = 0xff000000 | (buf[idx + 2] << 16) | (buf[idx + 1] << 8) | buf[idx];
+						v = 0xff000000 | (buf[idx] << 16) | (buf[idx + 1] << 8) | buf[idx + 2];
 						sdata.data[iw + ih*w] = v;
 					} 
 					else if (buf[idx + 3]) {
 						v = 0xff000000;
 						DWORD s = buf[idx + 3];
-						DWORD ch1 = (DWORD)buf[idx + 2];
+						DWORD ch1 = (DWORD)buf[idx];
 						DWORD ch2 = (sdata.data[iw + ih*w] >> 16) & 0xFF;
 						DWORD ch = (ch1 * s + ch2 * (255 - s)) / 255;
 						v |= ch << 16;
@@ -100,7 +108,7 @@ int dxtread_png(const char *fname, const SurfPatchMetaInfo &meta, Image &sdata)
 						ch2 = (sdata.data[iw + ih*w] >> 8) & 0xff;
 						ch = (ch1 * s + ch2 * (255 - s)) / 255;
 						v |= ch << 8;
-						ch1 = (DWORD)buf[idx];
+						ch1 = (DWORD)buf[idx+2];
 						ch2 = (sdata.data[iw + ih*w] & 0xff);
 						ch = (ch1 * s + ch2 * (255 - s)) / 255;
 						v |= ch;

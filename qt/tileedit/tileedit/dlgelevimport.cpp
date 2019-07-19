@@ -216,7 +216,7 @@ void DlgElevImport::accept()
 			}
 		}
 	if (m_propagationLevel) {
-		eblock->MatchParentTiles(m_propagationLevel);
+		eblock->mapToAncestors(m_propagationLevel);
 	}
 
 	QDialog::accept();

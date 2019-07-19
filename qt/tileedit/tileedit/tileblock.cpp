@@ -88,6 +88,18 @@ bool TileBlock::hasAncestorData() const
 	return false;
 }
 
+bool TileBlock::mapToAncestors(int minlvl) const
+{
+	bool isModified = false;
+	for (int ilat = m_ilat0; ilat < m_ilat1; ilat++) {
+		for (int ilng = m_ilng0; ilng < m_ilng1; ilng++) {
+			const Tile *tile = getTile(ilat, ilng);
+			isModified = tile->mapToAncestors(minlvl) || isModified;
+		}
+	}
+	return isModified;
+}
+
 
 DXT1TileBlock::DXT1TileBlock(int lvl, int ilat0, int ilat1, int ilng0, int ilng1)
 	: TileBlock(lvl, ilat0, ilat1, ilng0, ilng1)
@@ -600,18 +612,6 @@ void ElevTileBlock::MatchNeighbourTiles()
 			}
 		}
 	}
-}
-
-bool ElevTileBlock::MatchParentTiles(int minlvl) const
-{
-	bool isModified = false;
-	for (int ilat = m_ilat0; ilat < m_ilat1; ilat++) {
-		for (int ilng = m_ilng0; ilng < m_ilng1; ilng++) {
-			const ElevTile *etile = (const ElevTile*)getTile(ilat, ilng);
-			isModified = isModified || etile->MatchParentTile(minlvl);
-		}
-	}
-	return isModified;
 }
 
 void ElevTileBlock::setWaterMask(const MaskTileBlock *mtileblock)

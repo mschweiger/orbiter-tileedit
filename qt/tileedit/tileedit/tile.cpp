@@ -188,6 +188,53 @@ void SurfTile::Save()
 	SaveDXT1();
 }
 
+bool SurfTile::mapToAncestors(int minlvl) const
+{
+	if (m_lvl <= 4 || m_lvl <= minlvl)
+		return false;
+
+	int lvl = m_lvl - 1;
+	int ilat = m_ilat / 2;
+	int ilng = m_ilng / 2;
+
+	SurfTile *stile = SurfTile::Load(lvl, ilat, ilng);
+	if (!stile)
+		return false;
+
+	Image &idata = stile->getData();
+	const int szh = TILE_SURFSTRIDE / 2;
+	int xofs = (m_ilng & 1 ? szh : 0);
+	int yofs = (m_ilat & 1 ? szh : 0);
+	bool isModified = false;
+
+	for (int y = 0; y < szh; y++) {
+		for (int x = 0; x < szh; x++) {
+			DWORD p1 = m_idata.data[x * 2 + y * 2 * TILE_SURFSTRIDE];
+			DWORD p2 = m_idata.data[x * 2 + 1 + y * 2 * TILE_SURFSTRIDE];
+			DWORD p3 = m_idata.data[x * 2 + (y * 2 + 1) * TILE_SURFSTRIDE];
+			DWORD p4 = m_idata.data[x * 2 + 1 + (y * 2 + 1) * TILE_SURFSTRIDE];
+
+			DWORD c1 = ((DWORD)(p1 & 0xff) + (DWORD)(p2 & 0xff) + (DWORD)(p3 & 0xff) + (DWORD)(p4 & 0xff)) >> 2;
+			DWORD c2 = ((DWORD)((p1 >> 8) & 0xff) + (DWORD)((p2 >> 8) & 0xff) + (DWORD)((p3 >> 8) & 0xff) + (DWORD)((p4 >> 8) & 0xff)) >> 2;
+			DWORD c3 = ((DWORD)((p1 >> 16) & 0xff) + (DWORD)((p2 >> 16) & 0xff) + (DWORD)((p3 >> 16) & 0xff) + (DWORD)((p4 >> 16) & 0xff)) >> 2;
+
+			DWORD v = 0xff000000 | c1 | (c2 << 8) | (c3 << 16);
+			if (v != idata.data[xofs + x + (yofs + y) * TILE_SURFSTRIDE]) {
+				idata.data[xofs + x + (yofs + y)*TILE_SURFSTRIDE] = v;
+				isModified = true;
+			}
+		}
+	}
+
+	if (isModified) {
+		stile->Save();
+		stile->mapToAncestors(minlvl);
+	}
+	delete stile;
+	return isModified;
+}
+
+
 void SurfTile::setTreeMgr(const ZTreeMgr *treeMgr)
 {
 	s_treeMgr = treeMgr;

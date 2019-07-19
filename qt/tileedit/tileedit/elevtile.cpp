@@ -331,7 +331,7 @@ void ElevTile::MatchNeighbourTiles()
 	}
 }
 
-bool ElevTile::MatchParentTile(int minlvl) const
+bool ElevTile::mapToAncestors(int minlvl) const
 {
 	const double eps = 1e-6;
 
@@ -374,7 +374,7 @@ bool ElevTile::MatchParentTile(int minlvl) const
 	if (isModified) {
 		etile->dataChanged();
 		etile->SaveMod();
-		etile->MatchParentTile(minlvl); // recursively propagate changes down the quadtree
+		etile->mapToAncestors(minlvl); // recursively propagate changes down the quadtree
 	}
 	delete etile;
 

@@ -61,7 +61,7 @@ public:
 	void Save();
 	void SaveMod();
 	void MatchNeighbourTiles();
-	bool MatchParentTile(int minlvl) const;
+	bool mapToAncestors(int minlvl) const;
 
 	/**
 	 * \brief Interpolate the tile to the next resolution level
