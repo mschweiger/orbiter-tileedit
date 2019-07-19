@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>400</width>
-    <height>480</height>
+    <height>540</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -17,7 +17,7 @@
    <property name="geometry">
     <rect>
      <x>20</x>
-     <y>430</y>
+     <y>490</y>
      <width>351</width>
      <height>33</height>
     </rect>
@@ -270,7 +270,7 @@
     </rect>
    </property>
    <property name="title">
-    <string>Mode</string>
+    <string>Blending</string>
    </property>
    <layout class="QVBoxLayout" name="verticalLayout_2">
     <item>
@@ -286,7 +286,7 @@
    <property name="geometry">
     <rect>
      <x>19</x>
-     <y>329</y>
+     <y>395</y>
      <width>361</width>
      <height>81</height>
     </rect>
@@ -348,6 +348,40 @@
         </spacer>
        </item>
       </layout>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QGroupBox" name="groupBox_4">
+   <property name="geometry">
+    <rect>
+     <x>19</x>
+     <y>329</y>
+     <width>361</width>
+     <height>53</height>
+    </rect>
+   </property>
+   <property name="title">
+    <string>Colour matching</string>
+   </property>
+   <layout class="QVBoxLayout" name="verticalLayout_4">
+    <item>
+     <widget class="QComboBox" name="comboColourmatch">
+      <item>
+       <property name="text">
+        <string>None</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>Cumulative histogram</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>Hue + saturation</string>
+       </property>
+      </item>
      </widget>
     </item>
    </layout>

@@ -178,6 +178,7 @@
     <ClCompile Include="dxt_io.cpp" />
     <ClCompile Include="elevtile.cpp" />
     <ClCompile Include="elv_io.cpp" />
+    <ClCompile Include="imagetools.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="tile.cpp" />
     <ClCompile Include="tileblock.cpp" />
@@ -222,6 +223,7 @@
       <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release_static|x64'">.\GeneratedFiles;.;$(QTDIR)\include;.\GeneratedFiles\$(ConfigurationName);$(QTDIR)\include\QtCore;$(QTDIR)\include\QtGui;$(QTDIR)\include\QtANGLE;$(QTDIR)\include\QtWidgets;$(FastdxtIncludeDir);$(LibpngIncludeDir);$(ZlibIncludeDir)</IncludePath>
     </QtMoc>
     <ClInclude Include="dxt_io.h" />
+    <ClInclude Include="imagetools.h" />
     <ClInclude Include="ZTreeMgr.h" />
     <QtMoc Include="colorbar.h">
       <IncludePath Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.\GeneratedFiles;.;$(QTDIR)\include;.\GeneratedFiles\$(ConfigurationName);$(QTDIR)\include\QtCore;$(QTDIR)\include\QtGui;$(QTDIR)\include\QtANGLE;$(QTDIR)\include\QtWidgets</IncludePath>

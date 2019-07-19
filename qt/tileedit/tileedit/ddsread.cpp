@@ -1,6 +1,5 @@
 #include <windows.h>
 #include <iostream>
-#include <vector>
 #include "ddsread.h"
 
 struct DDSPIXELFORMAT {
@@ -30,32 +29,6 @@ struct DDSHEADER {
     DWORD dwCaps4;
     DWORD dwReserved2;
 };
-
-Image &Image::operator=(const Image &img)
-{
-	data = img.data;
-	width = img.width;
-	height = img.height;
-	return *this;
-}
-
-Image Image::SubImage(const std::pair<DWORD,DWORD> &xrange, const std::pair<DWORD,DWORD> &yrange)
-{
-    Image sub;
-    sub.width = xrange.second - xrange.first;
-    sub.height = yrange.second - yrange.first;
-
-    sub.data.resize(sub.width * sub.height);
-
-    DWORD *imgptr = data.data();
-    DWORD *subptr = sub.data.data();
-    for (int y = 0; y < sub.height; y++) {
-        memcpy(subptr + y*sub.width, imgptr + (y+yrange.first)*width + xrange.first, sub.width*sizeof(DWORD));
-    }
-    return sub;
-}
-
-
 
 std::vector<DWORD> ExtractDXT1 (WORD *data, DWORD ndata, DWORD height, DWORD width);
 

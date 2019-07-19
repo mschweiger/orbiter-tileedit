@@ -79,7 +79,7 @@ int dxtread_png(const char *fname, const SurfPatchMetaInfo &meta, Image &sdata)
 	image.version = PNG_IMAGE_VERSION;
 	image.opaque = NULL;
 	if (png_image_begin_read_from_file(&image, fname)) {
-		image.format = PNG_FORMAT_RGBA;
+		image.format = PNG_FORMAT_BGRA;
 
 		int w = sdata.width;
 		int h = sdata.height;
@@ -89,18 +89,36 @@ int dxtread_png(const char *fname, const SurfPatchMetaInfo &meta, Image &sdata)
 			unsigned char *buf = new unsigned char[n * 4];
 			png_image_finish_read(&image, NULL, buf, w * 4, NULL);
 
+			if (meta.colourMatch >= 1) {
+				// cumulative histogram matching
+				Image sdata2;
+				sdata2.width = w;
+				sdata2.height = h;
+				sdata2.data.resize(w*h);
+				memcpy(sdata2.data.data(), buf, w*h * sizeof(DWORD));
+				switch (meta.colourMatch) {
+				case 1:
+					match_histogram(sdata2, sdata);
+					break;
+				case 2:
+					match_hue_sat(sdata2, sdata);
+					break;
+				}
+				memcpy(buf, sdata2.data.data(), w*h * sizeof(DWORD));
+			}
+
 			int idx = 0;
 			for (int ih = 0; ih < h; ih++) {
 				for (int iw = 0; iw < w; iw++) {
 					DWORD v;
 					if (!meta.alphaBlend || buf[idx + 3] == 0xff) {
-						v = 0xff000000 | (buf[idx] << 16) | (buf[idx + 1] << 8) | buf[idx + 2];
+						v = 0xff000000 | (buf[idx+2] << 16) | (buf[idx + 1] << 8) | buf[idx];
 						sdata.data[iw + ih*w] = v;
 					} 
 					else if (buf[idx + 3]) {
 						v = 0xff000000;
 						DWORD s = buf[idx + 3];
-						DWORD ch1 = (DWORD)buf[idx];
+						DWORD ch1 = (DWORD)buf[idx+2];
 						DWORD ch2 = (sdata.data[iw + ih*w] >> 16) & 0xFF;
 						DWORD ch = (ch1 * s + ch2 * (255 - s)) / 255;
 						v |= ch << 16;
@@ -108,7 +126,7 @@ int dxtread_png(const char *fname, const SurfPatchMetaInfo &meta, Image &sdata)
 						ch2 = (sdata.data[iw + ih*w] >> 8) & 0xff;
 						ch = (ch1 * s + ch2 * (255 - s)) / 255;
 						v |= ch << 8;
-						ch1 = (DWORD)buf[idx+2];
+						ch1 = (DWORD)buf[idx];
 						ch2 = (sdata.data[iw + ih*w] & 0xff);
 						ch = (ch1 * s + ch2 * (255 - s)) / 255;
 						v |= ch;
