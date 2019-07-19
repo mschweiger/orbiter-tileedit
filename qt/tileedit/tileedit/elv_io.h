@@ -3,7 +3,7 @@
 
 #include "elevtile.h"
 
-struct ImageMetaInfo
+struct ElevPatchMetaInfo
 {
 	int lvl;
 	int ilat0, ilat1, ilng0, ilng1;
@@ -24,9 +24,7 @@ bool elvmodscan(const BYTE *data, int ndata, ElevData &edata);
 void elvwrite(const char *fname, const ElevData &edata, double latmin, double latmax, double lngmin, double lngmax);
 void elvmodwrite(const char *fname, const ElevData &edata, const ElevData &ebasedata, double latmin, double latmax, double lngmin, double lngmax);
 
-bool elvread_png(const char *fname, const ImageMetaInfo &meta, ElevData &edata);
+bool elvread_png(const char *fname, const ElevPatchMetaInfo &meta, ElevData &edata);
 void elvwrite_png(const char *fname, const ElevData &edata, double vmin, double vmax);
-
-void ensureLayerDir(const char *rootDir, const char *layer, int lvl, int ilat);
 
 #endif // !ELV_IO_H

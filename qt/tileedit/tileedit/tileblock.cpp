@@ -73,12 +73,31 @@ const Tile *TileBlock::getTile(int idx) const
 	return m_tile[idx];
 }
 
+void TileBlock::syncTiles()
+{
+	for (int ilat = m_ilat0; ilat < m_ilat1; ilat++)
+		for (int ilng = m_ilng0; ilng < m_ilng1; ilng++)
+			syncTile(ilat, ilng);
+}
+
 bool TileBlock::hasAncestorData() const
 {
 	for (int i = 0; i < m_tile.size(); i++)
 		if (m_tile[i]->Level() != m_tile[i]->subLevel())
 			return true;
 	return false;
+}
+
+bool TileBlock::mapToAncestors(int minlvl) const
+{
+	bool isModified = false;
+	for (int ilat = m_ilat0; ilat < m_ilat1; ilat++) {
+		for (int ilng = m_ilng0; ilng < m_ilng1; ilng++) {
+			const Tile *tile = getTile(ilat, ilng);
+			isModified = tile->mapToAncestors(minlvl) || isModified;
+		}
+	}
+	return isModified;
 }
 
 
@@ -122,9 +141,46 @@ bool SurfTileBlock::copyTile(int ilat, int ilng, Tile *tile) const
 	return true;
 }
 
+void SurfTileBlock::syncTile(int ilat, int ilng)
+{
+	int tilesize = (m_lvl == 1 ? 128 : m_lvl == 2 ? 256 : TILE_SURFSTRIDE);
+
+	if (ilat < m_ilat0 || ilat >= m_ilat1) return;
+	if (ilng < m_ilng0 || ilng >= m_ilng1) return;
+
+	int nlat = nLat();
+	int nlng = nLng();
+
+	SurfTile *stile = (SurfTile*)_getTile(ilat, ilng);
+	if (!stile) {
+		int ilng_norm = iLng_norm(ilng);
+		stile = new SurfTile(m_lvl, ilat, ilng_norm);
+		int idx = (ilat - m_ilat0) * m_nblocklng + (ilng - m_ilng0);
+		m_tile[idx] = stile;
+	}
+	Image &idata = stile->getData();
+	if (idata.width != tilesize || idata.height != tilesize) {
+		idata.width = idata.height = tilesize;
+		idata.data.resize(idata.width * idata.height);
+	}
+
+	int xblock = ilng - m_ilng0;
+	int yblock = m_ilat1 - 1 - ilat;
+
+	int block_x0 = xblock * tilesize;
+	int block_y0 = yblock * tilesize;
+
+	for (int y = 0; y < tilesize; y++) {
+		for (int x = 0; x < tilesize; x++) {
+			stile->getData().data[y*tilesize + x] =
+				m_idata.data[(block_y0 + y) * m_idata.width + (block_x0 + x)];
+		}
+	}
+}
+
 SurfTileBlock *SurfTileBlock::Load(int lvl, int ilat0, int ilat1, int ilng0, int ilng1)
 {
-	const int tilesize = 512;
+	int tilesize = (lvl == 1 ? 128 : lvl == 2 ? 256 : TILE_SURFSTRIDE);
 
 	SurfTileBlock *stileblock = new SurfTileBlock(lvl, ilat0, ilat1, ilng0, ilng1);
 
@@ -443,14 +499,7 @@ void ElevTileBlock::ExportPNG(const std::string &fname, double vmin, double vmax
 
 }
 
-void ElevTileBlock::SyncTiles()
-{
-	for (int ilat = m_ilat0; ilat < m_ilat1; ilat++)
-		for (int ilng = m_ilng0; ilng < m_ilng1; ilng++)
-			SyncTile(ilat, ilng);
-}
-
-void ElevTileBlock::SyncTile(int ilat, int ilng)
+void ElevTileBlock::syncTile(int ilat, int ilng)
 {
 	if (ilat < m_ilat0 || ilat >= m_ilat1) return;
 	if (ilng < m_ilng0 || ilng >= m_ilng1) return;
@@ -460,9 +509,7 @@ void ElevTileBlock::SyncTile(int ilat, int ilng)
 
 	ElevTile *etile = (ElevTile*)_getTile(ilat, ilng);
 	if (!etile) {
-		int ilng_norm = ilng;
-		while (ilng_norm < 0) ilng_norm += nlng;
-		while (ilng_norm >= nlng) ilng_norm -= nlng;
+		int ilng_norm = iLng_norm(ilng);
 		etile = new ElevTile(m_lvl, ilat, ilng_norm);
 		int idx = (ilat - m_ilat0) * m_nblocklng + (ilng - m_ilng0);
 		m_tile[idx] = etile;
@@ -539,7 +586,7 @@ void ElevTileBlock::MatchNeighbourTiles()
 		for (ilng = m_ilng0; ilng < m_ilng1; ilng++)
 			etilepad.setTile(ilat, ilng, getTile(ilat, ilng));
 
-	etilepad.SyncTiles();
+	etilepad.syncTiles();
 
 	// check for modifications in the neighbours
 	for (yblock = 0; yblock < npadlat; yblock++) {
@@ -565,18 +612,6 @@ void ElevTileBlock::MatchNeighbourTiles()
 			}
 		}
 	}
-}
-
-bool ElevTileBlock::MatchParentTiles(int minlvl) const
-{
-	bool isModified = false;
-	for (int ilat = m_ilat0; ilat < m_ilat1; ilat++) {
-		for (int ilng = m_ilng0; ilng < m_ilng1; ilng++) {
-			const ElevTile *etile = (const ElevTile*)getTile(ilat, ilng);
-			isModified = isModified || etile->MatchParentTile(minlvl);
-		}
-	}
-	return isModified;
 }
 
 void ElevTileBlock::setWaterMask(const MaskTileBlock *mtileblock)

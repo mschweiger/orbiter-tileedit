@@ -246,7 +246,7 @@ void ElevTile::Save()
 		double lngmax = lngmin + 2.0*M_PI / nlng;
 		RescanLimits();
 
-		ensureLayerDir(s_root.c_str(), Layer().c_str(), m_lvl, m_ilat);
+		ensureLayerDir();
 		elvwrite(path, m_edata, latmin, latmax, lngmin, lngmax);
 		m_modified = false;
 	}
@@ -257,7 +257,7 @@ void ElevTile::SaveMod()
 	if (m_modified) {
 		char path[1024];
 		sprintf(path, "%s_mod", Layer().c_str());
-		ensureLayerDir(s_root.c_str(), path, m_lvl, m_ilat);
+		::ensureLayerDir(s_root.c_str(), path, m_lvl, m_ilat);
 		sprintf(path, "%s/%s_mod/%02d/%06d/%06d.elv", s_root.c_str(), Layer().c_str(), m_lvl, m_ilat, m_ilng);
 		int nlat = (m_lvl < 4 ? 1 : 1 << (m_lvl - 4));
 		int nlng = (m_lvl < 4 ? 1 : 1 << (m_lvl - 3));
@@ -331,7 +331,7 @@ void ElevTile::MatchNeighbourTiles()
 	}
 }
 
-bool ElevTile::MatchParentTile(int minlvl) const
+bool ElevTile::mapToAncestors(int minlvl) const
 {
 	const double eps = 1e-6;
 
@@ -374,7 +374,7 @@ bool ElevTile::MatchParentTile(int minlvl) const
 	if (isModified) {
 		etile->dataChanged();
 		etile->SaveMod();
-		etile->MatchParentTile(minlvl); // recursively propagate changes down the quadtree
+		etile->mapToAncestors(minlvl); // recursively propagate changes down the quadtree
 	}
 	delete etile;
 
@@ -430,7 +430,7 @@ ElevTileBlock ElevTile::Prolong()
 			}
 		}
 	}
-	tblock.SyncTiles();
+	tblock.syncTiles();
 	for (int ilat = ilat0; ilat < ilat1; ilat++) {
 		for (int ilng = ilng0; ilng < ilng1; ilng++) {
 			Tile *tile = tblock._getTile(ilat, ilng);

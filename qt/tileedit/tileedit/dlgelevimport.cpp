@@ -23,7 +23,7 @@ DlgElevImport::DlgElevImport(tileedit *parent)
 	m_pathEdited = m_metaEdited = false;
 	m_haveMeta = false;
 	m_propagationLevel = ui->spinPropagationLevel->value();
-	memset(&m_metaInfo, 0, sizeof(ImageMetaInfo));
+	memset(&m_metaInfo, 0, sizeof(ElevPatchMetaInfo));
 }
 
 void DlgElevImport::onOpenFileDialog()
@@ -76,7 +76,7 @@ void DlgElevImport::onMetaFileChanged(const QString &name)
 		ui->spinIlng1->setMaximum(m_metaInfo.ilng1 - 1);
 	}
 	else {
-		memset(&m_metaInfo, 0, sizeof(ImageMetaInfo));
+		memset(&m_metaInfo, 0, sizeof(ElevPatchMetaInfo));
 		ui->labelLvl->setText("-");
 		ui->spinIlat0->setValue(0);
 		ui->spinIlat1->setValue(0);
@@ -114,7 +114,7 @@ void DlgElevImport::onPropagateChanges(int state)
 	ui->widgetPropagateChanges->setEnabled(state == Qt::Checked);
 }
 
-bool DlgElevImport::scanMetaFile(const char *fname, ImageMetaInfo &meta)
+bool DlgElevImport::scanMetaFile(const char *fname, ElevPatchMetaInfo &meta)
 {
 	FILE *f = fopen(fname, "rt");
 	if (!f) return false;
@@ -200,7 +200,7 @@ void DlgElevImport::accept()
 
 	for (int ilat = ilat0; ilat < ilat1; ilat++)
 		for (int ilng = ilng0; ilng < ilng1; ilng++) {
-			eblock->SyncTile(ilat, ilng);
+			eblock->syncTile(ilat, ilng);
 			ElevTile *etile = (ElevTile*)eblock->_getTile(ilat, ilng);
 			if (etile->Level() == etile->subLevel())
 				etile->SaveMod();
@@ -216,7 +216,7 @@ void DlgElevImport::accept()
 			}
 		}
 	if (m_propagationLevel) {
-		eblock->MatchParentTiles(m_propagationLevel);
+		eblock->mapToAncestors(m_propagationLevel);
 	}
 
 	QDialog::accept();

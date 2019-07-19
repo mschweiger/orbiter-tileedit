@@ -3,6 +3,7 @@
 #include "tile.h"
 #include "elevtile.h"
 #include "tileblock.h"
+#include "dlgsurfimport.h"
 #include "dlgconfig.h"
 #include "dlgelevconfig.h"
 #include "dlgelevexport.h"
@@ -143,6 +144,8 @@ tileedit::~tileedit()
 
 void tileedit::createMenus()
 {
+	QMenu *menu;
+
     fileMenu = ui->menuBar->addMenu(tr("&File"));
     fileMenu->addAction(openAct);
 	fileMenu->addSeparator();
@@ -150,11 +153,14 @@ void tileedit::createMenus()
 	fileMenu->addSeparator();
 	fileMenu->addAction(actionExit);
 
-	QMenu *menu = ui->menuBar->addMenu(tr("&Elevation"));
+	menu = ui->menuBar->addMenu(tr("&Surface"));
+	menu->addAction(actionSurfImport);
+
+	menu = ui->menuBar->addMenu(tr("&Elevation"));
 	menu->addAction(actionElevConfig);
 	menu->addSeparator();
-	menu->addAction(actionExportImage);
-	menu->addAction(actionImportImage);
+	menu->addAction(actionElevExport);
+	menu->addAction(actionElevImport);
 }
 
 void tileedit::createActions()
@@ -168,15 +174,18 @@ void tileedit::createActions()
 	actionExit = new QAction(tr("E&xit"), this);
 	connect(actionExit, &QAction::triggered, this, &tileedit::on_actionExit_triggered);
 
+	actionSurfImport = new QAction(tr("&Import from image"), this);
+	connect(actionSurfImport, &QAction::triggered, this, &tileedit::onSurfImportImage);
+
 	actionElevConfig = new QAction(tr("&Configure"), this);
 	actionElevConfig->setCheckable(true);
 	connect(actionElevConfig, &QAction::triggered, this, &tileedit::onElevConfig);
 
-	actionExportImage = new QAction(tr("&Export to image"), this);
-	connect(actionExportImage, &QAction::triggered, this, &tileedit::onElevExportImage);
+	actionElevExport = new QAction(tr("&Export to image"), this);
+	connect(actionElevExport, &QAction::triggered, this, &tileedit::onElevExportImage);
 
-	actionImportImage = new QAction(tr("&Import from image"), this);
-	connect(actionImportImage, &QAction::triggered, this, &tileedit::onElevImportImage);
+	actionElevImport = new QAction(tr("&Import from image"), this);
+	connect(actionElevImport, &QAction::triggered, this, &tileedit::onElevImportImage);
 }
 
 void tileedit::elevDisplayParamChanged()
@@ -304,6 +313,14 @@ void tileedit::onElevExportImage()
 
 	DlgElevExport dlg(this);
 	dlg.exec();
+}
+
+void tileedit::onSurfImportImage()
+{
+	DlgSurfImport dlg(this);
+	if (dlg.exec() == QDialog::Accepted) {
+		loadTile(m_lvl, m_ilat, m_ilng); // refresh
+	}
 }
 
 void tileedit::onElevImportImage()
@@ -587,12 +604,15 @@ void tileedit::OnMouseMovedInCanvas(int canvasIdx, QMouseEvent *event)
 		else {
 			sprintf(cbuf, "X=%d/%d, Y=%d/%d", mpx, iw, mpy, ih);
 			ui->labelData2->setText(cbuf);
-			DWORD col = img.data[mpx + mpy*img.width];
-			if (m_panel[canvasIdx].layerType->currentIndex() == 1) {
-				ui->labelData3->setText(col & 0xFF000000 ? "Diffuse (Land)" : "Specular (Water)");
-			} else {
-				sprintf(cbuf, "R=%d, G=%d, B=%d", (col >> 0x10) & 0xFF, (col >> 0x08) & 0xFF, col & 0xFF);
-				ui->labelData3->setText(cbuf);
+			if (mpx >= 0 && mpx < img.width && mpy >= 0 && mpy < img.height) {
+				DWORD col = img.data[mpx + mpy*img.width];
+				if (m_panel[canvasIdx].layerType->currentIndex() == 1) {
+					ui->labelData3->setText(col & 0xFF000000 ? "Diffuse (Land)" : "Specular (Water)");
+				}
+				else {
+					sprintf(cbuf, "R=%d, G=%d, B=%d", (col >> 0x10) & 0xFF, (col >> 0x08) & 0xFF, col & 0xFF);
+					ui->labelData3->setText(cbuf);
+				}
 			}
 		}
 		for (int i = 0; i < 3; i++) {
@@ -604,13 +624,17 @@ void tileedit::OnMouseMovedInCanvas(int canvasIdx, QMouseEvent *event)
 			}
 			else if (m_panel[i].layerType->currentIndex() == 0 || m_panel[i].layerType->currentIndex() == 2) {
 				const Image &img = m_panel[i].canvas->getImage();
-				DWORD col = img.data[mpx + mpy*img.width];
-				m_panel[i].colorbar->setRGBValue((col >> 0x10) & 0xFF, (col >> 0x08) & 0xFF, col & 0xFF);
+				if (mpx >= 0 && mpx < img.width && mpy >= 0 && mpy < img.height) {
+					DWORD col = img.data[mpx + mpy*img.width];
+					m_panel[i].colorbar->setRGBValue((col >> 0x10) & 0xFF, (col >> 0x08) & 0xFF, col & 0xFF);
+				}
 			}
 			else if (m_panel[i].layerType->currentIndex() == 1) {
 				const Image &img = m_panel[i].canvas->getImage();
-				bool isWater = (img.data[mpx + mpy*img.width] & 0xFF000000) == 0;
-				m_panel[i].colorbar->setScalarValue(isWater ? 0.0 : 1.0);
+				if (mpx >= 0 && mpx < img.width && mpy >= 0 && mpy < img.height) {
+					bool isWater = (img.data[mpx + mpy*img.width] & 0xFF000000) == 0;
+					m_panel[i].colorbar->setScalarValue(isWater ? 0.0 : 1.0);
+				}
 			}
 		}
 	}
@@ -834,10 +858,10 @@ void tileedit::setToolOptions()
 void tileedit::setTile(int lvl, int ilat, int ilng)
 {
 	if (m_eTileBlock && m_eTileBlock->isModified()) {
-		m_eTileBlock->SyncTiles();
+		m_eTileBlock->syncTiles();
 		m_eTileBlock->MatchNeighbourTiles();
 		m_eTileBlock->SaveMod();
-		m_eTileBlock->MatchParentTiles(m_eTileBlock->Level() - 5);
+		m_eTileBlock->mapToAncestors(m_eTileBlock->Level() - 5);
 	}
 
 	m_lvl = lvl;

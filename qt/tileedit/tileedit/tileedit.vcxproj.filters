@@ -75,6 +75,15 @@
     <ClCompile Include="dlgelevimport.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="dlgsurfimport.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="dxt_io.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="imagetools.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="tileedit.h">
@@ -98,6 +107,9 @@
     <QtMoc Include="dlgelevimport.h">
       <Filter>Header Files</Filter>
     </QtMoc>
+    <QtMoc Include="dlgsurfimport.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
   </ItemGroup>
   <ItemGroup>
     <QtUic Include="tileedit.ui">
@@ -113,6 +125,9 @@
       <Filter>Form Files</Filter>
     </QtUic>
     <QtUic Include="dlgElevImport.ui">
+      <Filter>Form Files</Filter>
+    </QtUic>
+    <QtUic Include="dlgSurfImport.ui">
       <Filter>Form Files</Filter>
     </QtUic>
   </ItemGroup>
@@ -144,6 +159,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ZTreeMgr.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="dxt_io.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="imagetools.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
