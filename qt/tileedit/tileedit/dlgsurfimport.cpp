@@ -19,11 +19,9 @@ DlgSurfImport::DlgSurfImport(tileedit *parent)
 	connect(ui->radioParamFromUser, SIGNAL(clicked()), this, SLOT(onParamFromUser()));
 	connect(ui->editMetaPath, SIGNAL(textChanged(const QString&)), this, SLOT(onMetaFileChanged(const QString&)));
 	connect(ui->spinLvl, SIGNAL(valueChanged(int)), this, SLOT(onLvl(int)));
-	connect(ui->checkPropagateChanges, SIGNAL(stateChanged(int)), this, SLOT(onPropagateChanges(int)));
 
 	m_pathEdited = m_metaEdited = false;
 	m_haveMeta = false;
-	m_propagationLevel = ui->spinPropagationLevel->value();
 	memset(&m_metaInfo, 0, sizeof(SurfPatchMetaInfo));
 }
 
@@ -100,12 +98,6 @@ void DlgSurfImport::onLvl(int val)
 	ui->spinIlng1->setMaximum(nlng - 1);
 }
 
-void DlgSurfImport::onPropagateChanges(int state)
-{
-	m_propagationLevel = (state == Qt::Checked ? ui->spinPropagationLevel->value() : 0);
-	ui->widgetPropagateChanges->setEnabled(state == Qt::Checked);
-}
-
 void DlgSurfImport::accept()
 {
 	if (ui->radioParamFromUser->isChecked()) {
@@ -156,9 +148,8 @@ void DlgSurfImport::accept()
 				stile->Save();
 			// ...
 		}
-	if (m_propagationLevel) {
-		sblock->mapToAncestors(m_propagationLevel);
-	}
+	if (ui->checkPropagateChanges->isChecked())
+		sblock->mapToAncestors(ui->spinPropagationLevel->value());
 	
 	QDialog::accept();
 }
