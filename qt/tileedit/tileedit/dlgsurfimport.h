@@ -24,7 +24,6 @@ public slots:
 	void onParamFromUser();
 	void onMetaFileChanged(const QString&);
 	void onLvl(int);
-	void onPropagateChanges(int);
 	void accept();
 
 protected:
@@ -36,7 +35,6 @@ private:
 	SurfPatchMetaInfo m_metaInfo;
 	bool m_pathEdited, m_metaEdited;
 	bool m_haveMeta;
-	int m_propagationLevel;
 };
 
 #endif // !DLGSURFIMPORT_H
