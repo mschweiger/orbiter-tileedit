@@ -40,6 +40,7 @@ struct ElevDisplayParam {
 
 
 class ElevTile : public Tile {
+	friend class TileBlock;
 	friend class ElevTileBlock;
 
 public:
@@ -66,7 +67,7 @@ public:
 	/**
 	 * \brief Interpolate the tile to the next resolution level
 	 */
-	ElevTileBlock Prolong();
+	TileBlock *ProlongToChildren() const;
 
 	void setWaterMask(const MaskTile *mtile);
 

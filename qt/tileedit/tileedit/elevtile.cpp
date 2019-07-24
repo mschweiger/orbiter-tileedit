@@ -155,7 +155,7 @@ bool ElevTile::InterpolateFromAncestor()
 		if (!parent.InterpolateFromAncestor())
 			return false;
 
-	ElevTileBlock tblock = parent.Prolong();
+	TileBlock *tblock = parent.ProlongToChildren();
 	m_edata.width = TILE_ELEVSTRIDE;
 	m_edata.height = TILE_ELEVSTRIDE;
 	m_edata.data.resize(m_edata.width * m_edata.height);
@@ -163,7 +163,9 @@ bool ElevTile::InterpolateFromAncestor()
 	m_edataBase.height = TILE_ELEVSTRIDE;
 	m_edataBase.data.resize(m_edataBase.width * m_edataBase.height);
 
-	return tblock.copyTile(m_ilat, m_ilng, this);
+	bool ok = tblock->copyTile(m_ilat, m_ilng, this);
+	delete tblock;
+	return ok;
 }
 
 void ElevTile::LoadData(ElevData &edata, int lvl, int ilat, int ilng)
@@ -381,7 +383,7 @@ bool ElevTile::mapToAncestors(int minlvl) const
 	return isModified;
 }
 
-ElevTileBlock ElevTile::Prolong()
+TileBlock *ElevTile::ProlongToChildren() const
 {
 	int i, j, ip, jp, idx;
 	int ilat0 = m_ilat * 2;
@@ -389,9 +391,9 @@ ElevTileBlock ElevTile::Prolong()
 	int ilng0 = m_ilng * 2;
 	int ilng1 = ilng0 + 2;
 	int lvl = m_lvl + 1;
-	ElevTileBlock tblock(lvl, ilat0, ilat1, ilng0, ilng1);
-	ElevData &edata = tblock.getData();
-	ElevData &edataBase = tblock.getBaseData();
+	ElevTileBlock *tblock = new ElevTileBlock(lvl, ilat0, ilat1, ilng0, ilng1);
+	ElevData &edata = tblock->getData();
+	ElevData &edataBase = tblock->getBaseData();
 
 	for (i = 0; i < edata.height; i++) {
 		ip = i - 1;
@@ -430,10 +432,10 @@ ElevTileBlock ElevTile::Prolong()
 			}
 		}
 	}
-	tblock.syncTiles();
+	tblock->syncTiles();
 	for (int ilat = ilat0; ilat < ilat1; ilat++) {
 		for (int ilng = ilng0; ilng < ilng1; ilng++) {
-			Tile *tile = tblock._getTile(ilat, ilng);
+			Tile *tile = tblock->_getTile(ilat, ilng);
 			tile->setSubLevel(m_sublvl);
 			tile->setSubiLat(m_subilat);
 			tile->setSubiLng(m_subilng);

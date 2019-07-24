@@ -144,9 +144,7 @@ void DlgSurfImport::accept()
 		for (int ilng = m_metaInfo.ilng0; ilng < m_metaInfo.ilng1; ilng++) {
 			sblock->syncTile(ilat, ilng);
 			SurfTile *stile = (SurfTile*)sblock->_getTile(ilat, ilng);
-			if (stile->Level() == stile->subLevel())
-				stile->Save();
-			// ...
+			stile->Save();
 		}
 	if (ui->checkPropagateChanges->isChecked())
 		sblock->mapToAncestors(ui->spinPropagationLevel->value());

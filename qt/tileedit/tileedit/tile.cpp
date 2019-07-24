@@ -1,4 +1,5 @@
 #include "tile.h"
+#include "tileblock.h"
 #include "ddsread.h"
 #include <iostream>
 #include <algorithm>
@@ -100,15 +101,6 @@ void DXT1Tile::set(const Tile *tile)
 		m_idata = dxt1tile->m_idata;
 }
 
-void DXT1Tile::LoadDXT1(const ZTreeMgr *mgr)
-{
-	LoadImage(m_idata, m_lvl, m_ilat, m_ilng, mgr);
-
-	if (m_idata.data.size() == 0 && s_queryAncestor) {
-		LoadSubset(this, mgr);
-	}
-}
-
 void DXT1Tile::SaveDXT1()
 {
 	char path[1024];
@@ -117,7 +109,15 @@ void DXT1Tile::SaveDXT1()
 	dxt1write(path, m_idata);
 }
 
-void DXT1Tile::LoadSubset(DXT1Tile *tile, const ZTreeMgr *mgr)
+bool DXT1Tile::LoadDXT1(const ZTreeMgr *mgr, bool directOnly)
+{
+	LoadData(m_idata, m_lvl, m_ilat, m_ilng, mgr);
+	if (!m_idata.data.size() && !directOnly && s_queryAncestor)
+		LoadSubset(mgr);
+	return m_idata.data.size() > 0;
+}
+
+void DXT1Tile::LoadSubset(const ZTreeMgr *mgr)
 {
 	if (m_sublvl > 1) {
 		lat_subrange.first /= 2;
@@ -136,9 +136,9 @@ void DXT1Tile::LoadSubset(DXT1Tile *tile, const ZTreeMgr *mgr)
 		m_subilat /= 2;
 		m_subilng /= 2;
 
-		LoadImage(m_idata, m_sublvl, m_subilat, m_subilng, mgr);
+		LoadData(m_idata, m_sublvl, m_subilat, m_subilng, mgr);
 		if (m_idata.data.size() == 0) {
-			LoadSubset(tile, mgr);
+			LoadSubset(mgr);
 		}
 		else {
 			m_idata = m_idata.SubImage(lng_subrange, lat_subrange);
@@ -146,7 +146,7 @@ void DXT1Tile::LoadSubset(DXT1Tile *tile, const ZTreeMgr *mgr)
 	}
 }
 
-void DXT1Tile::LoadImage(Image &im, int lvl, int ilat, int ilng, const ZTreeMgr *mgr)
+void DXT1Tile::LoadData(Image &im, int lvl, int ilat, int ilng, const ZTreeMgr *mgr)
 {
 	if (s_openMode & 0x1) { // try cache
 		char path[1024];
@@ -161,6 +161,36 @@ void DXT1Tile::LoadImage(Image &im, int lvl, int ilat, int ilng, const ZTreeMgr 
 			mgr->ReleaseData(buf);
 		}
 	}
+}
+
+TileBlock *DXT1Tile::ProlongToChildren() const
+{
+	int i, j, ii, jj;
+	int lvl = m_lvl + 1;
+	int ilat0 = m_ilat * 2;
+	int ilat1 = ilat0 + 2;
+	int ilng0 = m_ilng * 2;
+	int ilng1 = ilng0 + 2;
+	SurfTileBlock *tblock = new SurfTileBlock(lvl, ilat0, ilat1, ilng0, ilng1);
+	Image &idata = tblock->getData();
+	for (i = 0; i < m_idata.height; i++) {
+		for (j = 0; j < m_idata.width; j++) {
+			DWORD v = m_idata.data[i*m_idata.width + j];
+			for (ii = 0; ii < 2; ii++)
+				for (jj = 0; jj < 2; jj++)
+					idata.data[(i * 2 + ii)*idata.width + (j * 2 + jj)] = v;
+		}
+	}
+	tblock->syncTiles();
+	for (int ilat = ilat0; ilat < ilat1; ilat++) {
+		for (int ilng = ilng0; ilng < ilng1; ilng++) {
+			Tile *tile = tblock->_getTile(ilat, ilng);
+			tile->setSubLevel(m_sublvl);
+			tile->setSubiLat(m_subilat);
+			tile->setSubiLng(m_subilng);
+		}
+	}
+	return tblock;
 }
 
 
@@ -183,9 +213,37 @@ SurfTile *SurfTile::Load(int lvl, int ilat, int ilng)
 	return stile;
 }
 
+SurfTile *SurfTile::InterpolateFromAncestor(int lvl, int ilat, int ilng)
+{
+	SurfTile *stile = new SurfTile(lvl, ilat, ilng);
+	if (!stile->InterpolateFromAncestor()) {
+		delete stile;
+		stile = 0;
+	}
+	return stile;
+}
+
 void SurfTile::Save()
 {
 	SaveDXT1();
+}
+
+bool SurfTile::InterpolateFromAncestor()
+{
+	if (m_lvl <= 4) return false;
+	int parent_lvl = m_lvl - 1;
+	int parent_ilat = m_ilat / 2;
+	int parent_ilng = m_ilng / 2;
+	SurfTile parent(parent_lvl, parent_ilat, parent_ilng);
+
+	if (!parent.LoadDXT1(s_treeMgr, true))
+		if (!parent.InterpolateFromAncestor())
+			return false;
+
+	TileBlock *tblock = parent.ProlongToChildren();
+	bool ok = tblock->copyTile(m_ilat, m_ilng, this);
+	delete tblock;
+	return ok;
 }
 
 bool SurfTile::mapToAncestors(int minlvl) const
@@ -200,6 +258,10 @@ bool SurfTile::mapToAncestors(int minlvl) const
 	SurfTile *stile = SurfTile::Load(lvl, ilat, ilng);
 	if (!stile)
 		return false;
+
+	if (stile->m_sublvl != lvl) {
+		stile->InterpolateFromAncestor();
+	}
 
 	Image &idata = stile->getData();
 	const int szh = TILE_SURFSTRIDE / 2;

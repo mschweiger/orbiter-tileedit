@@ -73,6 +73,8 @@ protected:
 
 class DXT1Tile: public Tile
 {
+	friend class TileBlock;
+
 public:
 	DXT1Tile(int lvl, int ilat, int ilng);
 	DXT1Tile(const DXT1Tile &tile);
@@ -81,10 +83,11 @@ public:
 	const Image &getData() const { return m_idata; }
 
 protected:
-	virtual void LoadDXT1(const ZTreeMgr *mgr = 0);
 	void SaveDXT1();
-	void LoadSubset(DXT1Tile *tile, const ZTreeMgr *mgr = 0);
-	void LoadImage(Image &im, int lvl, int ilat, int ilng, const ZTreeMgr *mgr);
+	bool LoadDXT1(const ZTreeMgr *mgr = 0, bool directOnly = false);
+	void LoadSubset(const ZTreeMgr *mgr = 0);
+	void LoadData(Image &im, int lvl, int ilat, int ilng, const ZTreeMgr *mgr);
+	TileBlock *ProlongToChildren() const;
 
 	Image m_idata;
 };
@@ -94,12 +97,14 @@ class SurfTile: public DXT1Tile
 public:
 	SurfTile(int lvl, int ilat, int ilng);
 	static SurfTile *Load(int lvl, int ilat, int ilng);
+	static SurfTile *InterpolateFromAncestor(int lvl, int ilat, int ilng);
 	void Save();
 	static void setTreeMgr(const ZTreeMgr *mgr);
 	const std::string Layer() const { return std::string("Surf"); }
 	bool mapToAncestors(int minlvl) const;
-
+	
 protected:
+	bool InterpolateFromAncestor();
 	static const ZTreeMgr *s_treeMgr;
 };
 
