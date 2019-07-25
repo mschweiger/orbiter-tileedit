@@ -134,7 +134,7 @@ bool ElevTile::Load(bool directOnly)
 	if (m_edata.data.size()) {
 		LoadModData(m_edata, m_lvl, m_ilat, m_ilng);
 	}
-	else if (!directOnly && s_queryAncestor) {
+	else if (!directOnly && s_globalLoadMode != TILELOADMODE_DIRECTONLY) {
 		// interpolate from ancestor
 		LoadSubset();
 	}

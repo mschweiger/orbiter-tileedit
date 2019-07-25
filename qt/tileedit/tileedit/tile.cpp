@@ -7,7 +7,7 @@
 #include <dxt_io.h>
 
 int Tile::s_openMode = 0x3;
-bool Tile::s_queryAncestor = true;
+TileLoadMode Tile::s_globalLoadMode = TILELOADMODE_ANCESTORSUBSECTION;
 std::string Tile::s_root;
 
 // ==================================================================================
@@ -71,9 +71,9 @@ void Tile::setOpenMode(int mode)
 	s_openMode = mode;
 }
 
-void Tile::setQueryAncestor(bool query)
+void Tile::setGlobalLoadMode(TileLoadMode mode)
 {
-	s_queryAncestor = query;
+	s_globalLoadMode = mode;
 }
 
 void Tile::ensureLayerDir()
@@ -109,11 +109,15 @@ void DXT1Tile::SaveDXT1()
 	dxt1write(path, m_idata);
 }
 
-bool DXT1Tile::LoadDXT1(const ZTreeMgr *mgr, bool directOnly)
+bool DXT1Tile::LoadDXT1(const ZTreeMgr *mgr, TileLoadMode mode)
 {
 	LoadData(m_idata, m_lvl, m_ilat, m_ilng, mgr);
-	if (!m_idata.data.size() && !directOnly && s_queryAncestor)
-		LoadSubset(mgr);
+	if (!m_idata.data.size()) {
+		if (mode == TILELOADMODE_USEGLOBALSETTING)
+			mode = s_globalLoadMode;
+		if (mode != TILELOADMODE_DIRECTONLY)
+			LoadSubset(mgr);
+	}
 	return m_idata.data.size() > 0;
 }
 
@@ -202,11 +206,10 @@ SurfTile::SurfTile(int lvl, int ilat, int ilng)
 {
 }
 
-SurfTile *SurfTile::Load(int lvl, int ilat, int ilng)
+SurfTile *SurfTile::Load(int lvl, int ilat, int ilng, TileLoadMode mode)
 {
     SurfTile *stile = new SurfTile(lvl, ilat, ilng);
-	stile->LoadDXT1(s_treeMgr);
-	if (!stile->m_idata.data.size()) {
+	if (!stile->LoadDXT1(s_treeMgr, mode)) {
 		delete stile;
 		return 0;
 	}
@@ -236,7 +239,7 @@ bool SurfTile::InterpolateFromAncestor()
 	int parent_ilng = m_ilng / 2;
 	SurfTile parent(parent_lvl, parent_ilat, parent_ilng);
 
-	if (!parent.LoadDXT1(s_treeMgr, true))
+	if (!parent.LoadDXT1(s_treeMgr, TILELOADMODE_DIRECTONLY))
 		if (!parent.InterpolateFromAncestor())
 			return false;
 
@@ -255,7 +258,7 @@ bool SurfTile::mapToAncestors(int minlvl) const
 	int ilat = m_ilat / 2;
 	int ilng = m_ilng / 2;
 
-	SurfTile *stile = SurfTile::Load(lvl, ilat, ilng);
+	SurfTile *stile = SurfTile::Load(lvl, ilat, ilng, TILELOADMODE_ANCESTORSUBSECTION);
 	if (!stile)
 		return false;
 

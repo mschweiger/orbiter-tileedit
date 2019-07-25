@@ -17,6 +17,13 @@ enum TileMode {
 	TILEMODE_ELEVMOD
 };
 
+enum TileLoadMode {
+	TILELOADMODE_USEGLOBALSETTING,
+	TILELOADMODE_DIRECTONLY,
+	TILELOADMODE_ANCESTORSUBSECTION,
+	TILELOADMODE_ANCESTORINTERPOLATE
+};
+
 inline int nLat(int lvl) { return (lvl < 4 ? 1 : 1 << (lvl - 4)); }
 inline int nLng(int lvl) { return (lvl < 4 ? 1 : 1 << (lvl - 3)); }
 
@@ -50,7 +57,7 @@ public:
 	static void setRoot(const std::string &root);
 	static const std::string &root() { return s_root; }
 	static void setOpenMode(int mode);
-	static void setQueryAncestor(bool query);
+	static void setGlobalLoadMode(TileLoadMode mode);
 
 	virtual bool mapToAncestors(int minlvl) const { return false; }
 
@@ -68,7 +75,7 @@ protected:
 
 	static std::string s_root;
 	static int s_openMode;
-	static bool s_queryAncestor;
+	static TileLoadMode s_globalLoadMode;
 };
 
 class DXT1Tile: public Tile
@@ -84,7 +91,7 @@ public:
 
 protected:
 	void SaveDXT1();
-	bool LoadDXT1(const ZTreeMgr *mgr = 0, bool directOnly = false);
+	bool LoadDXT1(const ZTreeMgr *mgr = 0, TileLoadMode mode = TILELOADMODE_USEGLOBALSETTING);
 	void LoadSubset(const ZTreeMgr *mgr = 0);
 	void LoadData(Image &im, int lvl, int ilat, int ilng, const ZTreeMgr *mgr);
 	TileBlock *ProlongToChildren() const;
@@ -96,7 +103,7 @@ class SurfTile: public DXT1Tile
 {
 public:
 	SurfTile(int lvl, int ilat, int ilng);
-	static SurfTile *Load(int lvl, int ilat, int ilng);
+	static SurfTile *Load(int lvl, int ilat, int ilng, TileLoadMode mode = TILELOADMODE_USEGLOBALSETTING);
 	static SurfTile *InterpolateFromAncestor(int lvl, int ilat, int ilng);
 	void Save();
 	static void setTreeMgr(const ZTreeMgr *mgr);

@@ -194,7 +194,7 @@ SurfTileBlock *SurfTileBlock::Load(int lvl, int ilat0, int ilat1, int ilng0, int
 	for (int ilat = ilat0; ilat < ilat1; ilat++) {
 		for (int ilng = ilng0; ilng < ilng1; ilng++) {
 			int idx = (ilat - ilat0)*stileblock->m_nblocklng + (ilng - ilng0);
-			SurfTile *stile = SurfTile::Load(lvl, ilat, ilng);
+			SurfTile *stile = SurfTile::Load(lvl, ilat, ilng, TILELOADMODE_ANCESTORSUBSECTION);
 			if (!stile) {
 				delete stileblock;
 				return 0;
