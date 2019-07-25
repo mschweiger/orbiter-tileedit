@@ -19,7 +19,7 @@ DlgSurfImport::DlgSurfImport(tileedit *parent)
 	connect(ui->radioParamFromUser, SIGNAL(clicked()), this, SLOT(onParamFromUser()));
 	connect(ui->editMetaPath, SIGNAL(textChanged(const QString&)), this, SLOT(onMetaFileChanged(const QString&)));
 	connect(ui->spinLvl, SIGNAL(valueChanged(int)), this, SLOT(onLvl(int)));
-
+	connect(ui->checkPropagateChanges, SIGNAL(stateChanged(int)), this, SLOT(onPropagateChanges(int)));
 	m_pathEdited = m_metaEdited = false;
 	m_haveMeta = false;
 	memset(&m_metaInfo, 0, sizeof(SurfPatchMetaInfo));
@@ -96,6 +96,11 @@ void DlgSurfImport::onLvl(int val)
 	ui->spinIlat1->setMaximum(nlat - 1);
 	ui->spinIlng0->setMaximum(nlng - 1);
 	ui->spinIlng1->setMaximum(nlng - 1);
+}
+
+void DlgSurfImport::onPropagateChanges(int state)
+{
+	ui->widgetPropagateChanges->setEnabled(state == Qt::Checked);
 }
 
 void DlgSurfImport::accept()
