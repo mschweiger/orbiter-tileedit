@@ -104,6 +104,9 @@ bool TileBlock::mapToAncestors(int minlvl) const
 DXT1TileBlock::DXT1TileBlock(int lvl, int ilat0, int ilat1, int ilng0, int ilng1)
 	: TileBlock(lvl, ilat0, ilat1, ilng0, ilng1)
 {
+	m_idata.width = (ilng1 - ilng0) * TILE_SURFSTRIDE;
+	m_idata.height = (ilat1 - ilat0) * TILE_SURFSTRIDE;
+	m_idata.data.resize(m_idata.width * m_idata.height);
 }
 
 
@@ -165,7 +168,7 @@ void SurfTileBlock::syncTile(int ilat, int ilng)
 	}
 
 	int xblock = ilng - m_ilng0;
-	int yblock = m_ilat1 - 1 - ilat;
+	int yblock = ilat - m_ilat0;
 
 	int block_x0 = xblock * tilesize;
 	int block_y0 = yblock * tilesize;

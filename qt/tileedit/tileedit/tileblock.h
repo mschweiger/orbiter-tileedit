@@ -103,12 +103,10 @@ class SurfTileBlock : public DXT1TileBlock
 {
 public:
 	static SurfTileBlock *Load(int lvl, int ilat0, int ilat1, int ilng0, int ilng1);
+	SurfTileBlock(int lvl, int ilat0, int ilat1, int ilng0, int ilng1);
 	virtual Tile *copyTile(int ilat, int ilng) const;
 	virtual bool copyTile(int ilat, int ilng, Tile *tile) const;
 	virtual void syncTile(int ilat, int ilng);
-
-protected:
-	SurfTileBlock(int lvl, int ilat0, int ilat1, int ilng0, int ilng1);
 };
 
 

@@ -24,6 +24,7 @@ public slots:
 	void onParamFromUser();
 	void onMetaFileChanged(const QString&);
 	void onLvl(int);
+	void onPropagateChanges(int);
 	void accept();
 
 protected:

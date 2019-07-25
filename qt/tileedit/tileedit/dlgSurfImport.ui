@@ -18,7 +18,7 @@
     <rect>
      <x>20</x>
      <y>490</y>
-     <width>351</width>
+     <width>361</width>
      <height>33</height>
     </rect>
    </property>
@@ -304,6 +304,9 @@
     </item>
     <item>
      <widget class="QWidget" name="widgetPropagateChanges" native="true">
+      <property name="enabled">
+       <bool>false</bool>
+      </property>
       <layout class="QHBoxLayout" name="horizontalLayout_3">
        <property name="leftMargin">
         <number>20</number>
