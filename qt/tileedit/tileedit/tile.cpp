@@ -81,6 +81,13 @@ void Tile::ensureLayerDir()
 	::ensureLayerDir(s_root.c_str(), Layer().c_str(), m_lvl, m_ilat);
 }
 
+void Tile::ensureTmpLayerDir()
+{
+	char cbuf[1024];
+	sprintf(cbuf, "%s/tileedit.tmp", s_root.c_str());
+	mkdir(cbuf);
+	::ensureLayerDir(cbuf, Layer().c_str(), m_lvl, m_ilat);
+}
 
 DXT1Tile::DXT1Tile(int lvl, int ilat, int ilng)
 	: Tile(lvl, ilat, ilng)
@@ -107,6 +114,14 @@ void DXT1Tile::SaveDXT1()
 	sprintf(path, "%s/%s/%02d/%06d/%06d.dds", s_root.c_str(), Layer().c_str(), m_lvl, m_ilat, m_ilng);
 	ensureLayerDir();
 	dxt1write(path, m_idata);
+}
+
+void DXT1Tile::SavePNGtmp()
+{
+	char path[1024];
+	sprintf(path, "%s/tileedit.tmp/%s/%02d/%06d/%06d.png", s_root.c_str(), Layer().c_str(), m_lvl, m_ilat, m_ilng);
+	ensureTmpLayerDir();
+	pngwrite_tmp(path, m_idata);
 }
 
 bool DXT1Tile::LoadDXT1(const ZTreeMgr *mgr, TileLoadMode mode)
@@ -228,6 +243,7 @@ SurfTile *SurfTile::InterpolateFromAncestor(int lvl, int ilat, int ilng)
 
 void SurfTile::Save()
 {
+	SavePNGtmp();
 	SaveDXT1();
 }
 

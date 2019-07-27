@@ -14,6 +14,7 @@ struct SurfPatchMetaInfo
 };
 
 void dxt1write(const char *fname, const Image &idata);
+void pngwrite_tmp(const char *fname, const Image &idata);
 
 int dxtread_png(const char *fname, const SurfPatchMetaInfo &meta, Image &sdata);
 

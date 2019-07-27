@@ -63,6 +63,7 @@ public:
 
 protected:
 	void ensureLayerDir();
+	void ensureTmpLayerDir();
 
     int m_lvl;
     int m_ilat;
@@ -91,6 +92,7 @@ public:
 
 protected:
 	void SaveDXT1();
+	void SavePNGtmp();
 	bool LoadDXT1(const ZTreeMgr *mgr = 0, TileLoadMode mode = TILELOADMODE_USEGLOBALSETTING);
 	void LoadSubset(const ZTreeMgr *mgr = 0);
 	void LoadData(Image &im, int lvl, int ilat, int ilng, const ZTreeMgr *mgr);

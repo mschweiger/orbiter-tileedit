@@ -71,6 +71,24 @@ void dxt1write(const char *fname, const Image &idata)
 	delete[]inp;
 }
 
+void pngwrite_tmp(const char *fname, const Image &idata)
+{
+	int w = idata.width;
+	int h = idata.height;
+	int n = w*h;
+	
+	png_image image;
+	image.opaque = NULL;
+	image.version = PNG_IMAGE_VERSION;
+	image.format = PNG_FORMAT_BGRA;
+	image.width = w;
+	image.height = h;
+	image.flags = 0;
+	image.colormap_entries = 0;
+	png_image_write_to_file(&image, fname, 0, idata.data.data(), 0, 0);
+	png_image_free(&image);
+}
+
 int dxtread_png(const char *fname, const SurfPatchMetaInfo &meta, Image &sdata)
 {
 	int res = 0;
