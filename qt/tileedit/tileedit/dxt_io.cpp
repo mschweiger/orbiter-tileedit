@@ -71,6 +71,25 @@ void dxt1write(const char *fname, const Image &idata)
 	delete[]inp;
 }
 
+bool pngread_tmp(const char *fname, Image &idata)
+{
+	bool ok;
+	png_image image;
+	memset(&image, 0, sizeof(png_image));
+	image.version = PNG_IMAGE_VERSION;
+	image.opaque = NULL;
+	if (ok = png_image_begin_read_from_file(&image, fname)) {
+		image.format = PNG_FORMAT_BGRA;
+		idata.width = image.width;
+		idata.height = image.height;
+		int n = idata.width * idata.height;
+		idata.data.resize(n);
+		png_image_finish_read(&image, NULL, idata.data.data(), image.width * 4, NULL);
+	}
+	png_image_free(&image);
+	return ok;
+}
+
 void pngwrite_tmp(const char *fname, const Image &idata)
 {
 	int w = idata.width;
