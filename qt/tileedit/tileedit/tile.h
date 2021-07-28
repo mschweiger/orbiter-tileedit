@@ -63,6 +63,7 @@ public:
 
 protected:
 	void ensureLayerDir();
+	void ensureTmpLayerDir();
 
     int m_lvl;
     int m_ilat;
@@ -88,10 +89,13 @@ public:
 	virtual void set(const Tile *tile);
 	Image &getData() { return m_idata; }
 	const Image &getData() const { return m_idata; }
+	int TileSize() const;
 
 protected:
 	void SaveDXT1();
+	void SavePNGtmp();
 	bool LoadDXT1(const ZTreeMgr *mgr = 0, TileLoadMode mode = TILELOADMODE_USEGLOBALSETTING);
+	bool LoadPNGtmp();
 	void LoadSubset(const ZTreeMgr *mgr = 0);
 	void LoadData(Image &im, int lvl, int ilat, int ilng, const ZTreeMgr *mgr);
 	TileBlock *ProlongToChildren() const;

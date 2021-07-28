@@ -81,6 +81,13 @@ void Tile::ensureLayerDir()
 	::ensureLayerDir(s_root.c_str(), Layer().c_str(), m_lvl, m_ilat);
 }
 
+void Tile::ensureTmpLayerDir()
+{
+	char cbuf[1024];
+	sprintf(cbuf, "%s/tileedit.tmp", s_root.c_str());
+	mkdir(cbuf);
+	::ensureLayerDir(cbuf, Layer().c_str(), m_lvl, m_ilat);
+}
 
 DXT1Tile::DXT1Tile(int lvl, int ilat, int ilng)
 	: Tile(lvl, ilat, ilng)
@@ -101,12 +108,25 @@ void DXT1Tile::set(const Tile *tile)
 		m_idata = dxt1tile->m_idata;
 }
 
+int DXT1Tile::TileSize() const
+{
+	return (m_lvl == 1 ? 128 : m_lvl == 2 ? 256 : TILE_SURFSTRIDE);
+}
+
 void DXT1Tile::SaveDXT1()
 {
 	char path[1024];
 	sprintf(path, "%s/%s/%02d/%06d/%06d.dds", s_root.c_str(), Layer().c_str(), m_lvl, m_ilat, m_ilng);
 	ensureLayerDir();
 	dxt1write(path, m_idata);
+}
+
+void DXT1Tile::SavePNGtmp()
+{
+	char path[1024];
+	sprintf(path, "%s/tileedit.tmp/%s/%02d/%06d/%06d.png", s_root.c_str(), Layer().c_str(), m_lvl, m_ilat, m_ilng);
+	ensureTmpLayerDir();
+	pngwrite_tmp(path, m_idata);
 }
 
 bool DXT1Tile::LoadDXT1(const ZTreeMgr *mgr, TileLoadMode mode)
@@ -119,6 +139,16 @@ bool DXT1Tile::LoadDXT1(const ZTreeMgr *mgr, TileLoadMode mode)
 			LoadSubset(mgr);
 	}
 	return m_idata.data.size() > 0;
+}
+
+bool DXT1Tile::LoadPNGtmp()
+{
+	char path[1024];
+	sprintf(path, "%s/tileedit.tmp/%s/%02d/%06d/%06d.png", s_root.c_str(), Layer().c_str(), m_lvl, m_ilat, m_ilng);
+	bool ok = pngread_tmp(path, m_idata);
+	if (ok && (m_idata.width != TileSize() || m_idata.height != TileSize()))
+		ok = false;
+	return ok;
 }
 
 void DXT1Tile::LoadSubset(const ZTreeMgr *mgr)
@@ -209,7 +239,7 @@ SurfTile::SurfTile(int lvl, int ilat, int ilng)
 SurfTile *SurfTile::Load(int lvl, int ilat, int ilng, TileLoadMode mode)
 {
     SurfTile *stile = new SurfTile(lvl, ilat, ilng);
-	if (!stile->LoadDXT1(s_treeMgr, mode)) {
+	if (!stile->LoadPNGtmp() && !stile->LoadDXT1(s_treeMgr, mode)) {
 		delete stile;
 		return 0;
 	}
@@ -228,6 +258,7 @@ SurfTile *SurfTile::InterpolateFromAncestor(int lvl, int ilat, int ilng)
 
 void SurfTile::Save()
 {
+	SavePNGtmp();
 	SaveDXT1();
 }
 
